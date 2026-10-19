@@ -4,6 +4,7 @@ import { registerSleepStep } from "./sleep.step";
 import { registerRequireStep } from "./require.step";
 import { registerRandomStep } from "./random.step";
 import { registerNowStep } from "./now.step";
+import { registerScriptStep } from "./script.step";
 
 export function registerUtilSteps(registry: StepRegistry): void {
   registerLogStep(registry);
@@ -11,4 +12,5 @@ export function registerUtilSteps(registry: StepRegistry): void {
   registerRequireStep(registry);
   registerRandomStep(registry);
   registerNowStep(registry);
+  registerScriptStep(registry);
 }

@@ -151,6 +151,9 @@ Available tokens:
 - `${data:modelUserKey["recUserKeyValue"].field}` (test data from `testing.data`)
 - `${data:modelUserKey["recUserKeyValue"]._rec}` (raw record object when used alone)
 
+`util.script` is the exception: it resolves its own `input`, where a value that is exactly one token keeps its
+type (a list stays a list), and its `script` is never interpolated. See *Op: `util.script`*.
+
 Test data lookup details:
 - Data is indexed as `data:<modelUserKey>["<recUserKeyValue>"]`.
 - You can access fields with `.fieldName`.
@@ -537,6 +540,52 @@ Options in `with`:
 - `kind` (optional): `date` (default), `time` or `datetime`. For ISO 8601 or epoch milliseconds, pass
   `"format": "iso"` or `"epoch"` in `args`
 - `args` (optional): `offset`, `format` and `tz` as an object, e.g. `{ "offset": "+7d" }`
+
+### **Op: `util.script`**
+Description: Runs a short TypeScript function over `input` and returns its result, to keep with `saveAs`.
+Use it for what a token cannot do: find an item by a condition, combine two responses, reshape a value
+for the next request. A fixed path (`${res:r.bodyJson.records.0.id}`) or a regex (`| match:`) needs no script.
+
+Options in `with`:
+- `script` (required): a function body, as text or a list of lines, that ends with `return`
+- `input` (optional): an object of values the script reads as `input.<name>`
+- `timeoutMs` (optional, on the step): stops a script that runs too long; defaults to `5000`, at most `30000`
+
+Tokens go in `input`, code goes in `script`:
+```json
+{ "when": { "op": "api.request", "with": { "method": "GET", "url": "${env:API_BASE_URL}/api/book" }, "saveAs": "books" } },
+{ "and":  { "op": "util.script", "with": {
+    "input": { "records": "${res:books.bodyJson.records}", "title": "${params.title}" },
+    "script": [
+      "const book = input.records.find((b: any) => b.title === input.title);",
+      "if (!book) throw new Error(`No book titled ${input.title}`);",
+      "return book.id;"
+    ] }, "saveAs": "bookId" } },
+{ "then": { "op": "api.request", "with": { "method": "DELETE", "url": "${env:API_BASE_URL}/api/book/${res:bookId}" } } }
+```
+
+Notes:
+- The script sees only `input` and `console`. Anything it needs from the run, such as saved results, params,
+  test data, secrets, or random and current values, goes in `input` as a token, so each step shows what it depends on.
+- A value in `input` that is exactly one token keeps its type: `"${res:books.bodyJson.records}"` arrives as a
+  list and `"${res:r.status}"` as a number. A token inside text (`"id-${res:r.status}"`) is text, as in any op.
+- A token written inside `script` is refused, because `${...}` there is a JavaScript template literal. Use
+  template literals freely; they are left alone.
+- The script runs synchronously: no `await`, `require`, timers or network. It gets a copy of `input`, so it
+  cannot change a saved result. While it runs, nothing else in the runner's process does (in test-hub, the
+  whole API), which is why the timeout is capped at 30 seconds. Keep scripts small: there is no memory limit.
+- It must return data (text, numbers, true/false, lists or objects). The result is saved as JSON, so a date
+  comes back as ISO text. With `saveAs`, a script that returns nothing fails. Without `saveAs`, a throw still
+  fails the step, so a script can act as a custom check.
+- `console.log`, `info`, `warn`, `error` and `debug` are collected and attached to the step's report as
+  *util.script console*, also when the script fails.
+- TypeScript is compiled with the project's `typescript` package. Where that is not installed, write plain JavaScript.
+- The script runs in a Node `vm` context that is given only text: `input` arrives as JSON, `console` is defined
+  inside it, and the result leaves as JSON. That keeps the runner's own objects, and with them `process` and
+  `require`, out of reach. Node does not promise that `vm` is a security boundary, though, so a script still
+  runs with the trust of whoever can change the scenario file, and in test-hub that file is the application's
+  tracked branch.
+- For I/O, async work or logic shared between scenarios, write a `test.spec`.
 
 ### **Op: `test.spec`**
 Description: Runs a custom test spec registered via testing.specs.

@@ -203,13 +203,18 @@ export function interpolateString(input: string, ctx: TestContext): string {
   return out + input.slice(last);
 }
 
-export function interpolateDeep<T>(input: T, ctx: TestContext): T {
+export interface InterpolateOptions {
+  /** Return a whole-value token's resolved value as it is, not as text. Used for util.script's `input`. */
+  keepTypes?: boolean;
+}
+
+export function interpolateDeep<T>(input: T, ctx: TestContext, options: InterpolateOptions = {}): T {
   if (typeof input === "string") {
     const [only, ...more] = findTokens(input);
     if (only && !more.length && only.start === 0 && only.end === input.length) {
       // Resolved once: a second resolution would draw a second random value.
       const resolved = resolveTokenWithTransforms(only.inner, ctx);
-      if (resolved.raw) {
+      if (resolved.raw || options.keepTypes) {
         return resolved.value as T;
       }
       return (typeof resolved.value === "string" ? resolved.value : JSON.stringify(resolved.value)) as T;
@@ -218,13 +223,13 @@ export function interpolateDeep<T>(input: T, ctx: TestContext): T {
   }
 
   if (Array.isArray(input)) {
-    return input.map((item) => interpolateDeep(item, ctx)) as T;
+    return input.map((item) => interpolateDeep(item, ctx, options)) as T;
   }
 
   if (input && typeof input === "object") {
     const out: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(input as Record<string, any>)) {
-      out[key] = interpolateDeep(value, ctx);
+      out[key] = interpolateDeep(value, ctx, options);
     }
     return out as T;
   }
