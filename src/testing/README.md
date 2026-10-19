@@ -674,6 +674,7 @@ Common `test run` flags (all pass through solidctl unchanged):
 - `--ui-navigation-timeout-ms <number>` — default wait for `ui.goto`
 - `--timeout-ms <number>` / `--retries <number>` — scenario-level guard and retry count
 - `--scenario-ids <ids>` / `--include-tags <tags>` / `--skip-scenario-ids <ids>`
+- `--fail-fast [true|false]` — stop at the first failed scenario (the default). `--fail-fast false` runs every scenario, then still reports the run as failed and exits with code 1 if any failed
 - `--no-progress` — disable the interactive test progress footer
 
 ## Add A New Step (SOP)
