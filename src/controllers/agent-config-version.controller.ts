@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch } from '@nestjs/common';
+import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch, ParseIntPipe } from '@nestjs/common';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CreateAgentConfigVersionDto } from '../dtos/create-agent-config-version.dto';
@@ -10,6 +10,34 @@ import { AgentConfigVersionRecordService } from '../services/agent-config-versio
 @Controller('agent-config-version')
 export class AgentConfigVersionController {
     constructor(private readonly service: AgentConfigVersionRecordService) {}
+
+    @ApiBearerAuth('jwt')
+    @ApiQuery({ name: 'agentId', type: Number })
+    @ApiQuery({ name: 'leftVersionId', type: Number })
+    @ApiQuery({ name: 'rightVersionId', type: Number })
+    @Get('compare')
+    compare(
+        @Query('agentId', ParseIntPipe) agentId: number,
+        @Query('leftVersionId', ParseIntPipe) leftVersionId: number,
+        @Query('rightVersionId', ParseIntPipe) rightVersionId: number,
+    ) {
+        return this.service.getComparison(agentId, leftVersionId, rightVersionId);
+    }
+
+    @ApiBearerAuth('jwt')
+    @ApiQuery({ name: 'agentId', type: Number })
+    @ApiQuery({ name: 'leftVersionId', type: Number })
+    @ApiQuery({ name: 'rightVersionId', type: Number })
+    @ApiQuery({ name: 'diffKey', type: String, description: 'systemPrompt or skill:<catalog skill ID>' })
+    @Get('compare/diff')
+    comparisonDiff(
+        @Query('agentId', ParseIntPipe) agentId: number,
+        @Query('leftVersionId', ParseIntPipe) leftVersionId: number,
+        @Query('rightVersionId', ParseIntPipe) rightVersionId: number,
+        @Query('diffKey') diffKey: string,
+    ) {
+        return this.service.getComparisonDiff(agentId, leftVersionId, rightVersionId, diffKey);
+    }
 
     @ApiBearerAuth('jwt')
     @Post()
