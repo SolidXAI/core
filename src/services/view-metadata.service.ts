@@ -222,17 +222,30 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     }
 
     let viewModes = [];
-    const menuItemModelId = menuItem?.action?.model?.id;
-    const menuItemModuleId = menuItem?.module?.id;
     const collectionViewTypes = ['card', 'list', 'kanban', 'tree'];
-    if (menuItemModelId && menuItemModuleId) {
+    // The menu may belong to a different module than the views it opens (for
+    // example, a Consuming project menu item can open a Solid Core model). Resolve the
+    // available view modes from the module/model requested for this layout,
+    // while retaining the menu item as the navigation context in the response.
+    const requestedModel = modelName && moduleName
+      ? await this.modelMetadataRepo.findOne({
+        where: {
+          singularName: modelName,
+          module: { name: moduleName },
+        },
+        relations: { module: true },
+      })
+      : null;
+    const requestedModelId = requestedModel?.id;
+    const requestedModuleId = requestedModel?.module?.id;
+    if (requestedModelId && requestedModuleId) {
       const actionQb = await this.actionMetadataService.repo.createSecurityRuleAwareQueryBuilder('action');
       const actionsForViewModes = await actionQb
         .leftJoinAndSelect('action.model', 'model')
         .leftJoinAndSelect('action.module', 'module')
         .leftJoinAndSelect('action.view', 'view')
-        .where('model.id = :modelId', { modelId: menuItemModelId })
-        .andWhere('module.id = :moduleId', { moduleId: menuItemModuleId })
+        .where('model.id = :modelId', { modelId: requestedModelId })
+        .andWhere('module.id = :moduleId', { moduleId: requestedModuleId })
         .andWhere('view.type IN (:...viewTypes)', { viewTypes: collectionViewTypes })
         .getMany();
 
