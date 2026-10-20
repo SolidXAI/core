@@ -35,7 +35,7 @@ export class AgentSessionService extends CRUDService<AgentSession>{
     }
 
     const safePage = Math.max(1, Number.isFinite(page) ? Math.floor(page) : 1);
-    const safePageSize = Math.min(200, Math.max(1, Number.isFinite(pageSize) ? Math.floor(pageSize) : 50));
+    const safePageSize = Math.min(500, Math.max(1, Number.isFinite(pageSize) ? Math.floor(pageSize) : 50));
     const offset = (safePage - 1) * safePageSize;
     const result = await this.agentEventService.find({
       limit: safePageSize,
