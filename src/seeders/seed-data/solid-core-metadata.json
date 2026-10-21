@@ -11556,6 +11556,10 @@
         "ChatterMessageController.markCompleted",
         "ChatterMessageController.updateCustomNoteMessage",
         "ChatterMessageController.getMentionableUsers",
+
+        "ChatterMessageDetailsController.findOne",
+        "ChatterMessageDetailsController.findMany",
+
         "ListOfValuesController.findMany",
         "ListOfValuesController.findOne",
         "SettingController.getAllSettings",

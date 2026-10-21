@@ -29,13 +29,14 @@ export class AgentSessionService extends CRUDService<AgentSession>{
     });
     if (!session) throw new NotFoundException(`Agent session ${sessionId} not found`);
 
-    const isAdmin = !!activeUser?.roles?.includes('Admin');
+    // TODO: replace the Thing7 Agent Admin role with simply Agent Admin...
+    const isAdmin = !!activeUser?.roles?.includes('Admin') || !!activeUser?.roles?.includes('Thing7 Agent Admin');
     if (!isAdmin && session.user?.id !== activeUser?.sub) {
       throw new ForbiddenException('You can only view messages from your own conversations');
     }
 
     const safePage = Math.max(1, Number.isFinite(page) ? Math.floor(page) : 1);
-    const safePageSize = Math.min(200, Math.max(1, Number.isFinite(pageSize) ? Math.floor(pageSize) : 50));
+    const safePageSize = Math.min(500, Math.max(1, Number.isFinite(pageSize) ? Math.floor(pageSize) : 50));
     const offset = (safePage - 1) * safePageSize;
     const result = await this.agentEventService.find({
       limit: safePageSize,

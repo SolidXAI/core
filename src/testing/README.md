@@ -186,6 +186,50 @@ Examples:
 }
 ```
 
+### Reading saved results
+`${res:<name>.<path>}` reads what an earlier step saved with `saveAs`. An `api.request` result has `status`,
+`headers`, `bodyText` and `bodyJson`. The examples read a `books` result whose body is:
+
+```json
+{ "records": [ { "id": 7, "title": "Dune" }, { "id": 8, "title": "Emma", "note": "" } ] }
+```
+
+Paths:
+- `${res:books.status}` gives `200`.
+- `${res:books.bodyJson.records.0.id}` gives `7`. A number in the path is a position in a list, counted from 0.
+- `${res:books.bodyJson.records[1].title}` gives `Emma`. Brackets and dots mean the same.
+- `${res:books.bodyJson.records.length}` gives `2`, the number of records.
+- `${res:books.bodyJson.records.0}` gives the whole first record, as JSON text.
+- `${res:created.headers.location}` reads a response header. Header names are lower case.
+
+A token becomes text, even when it is the whole value (except a `._rec` record, a secret that is not text, and
+`util.script`'s `input`). So in `assert.equals` write the expected value as text: `"expected": "7"`, not `7`.
+
+Transforms go after the path, each after a `|`:
+- `| match:PATTERN` runs a regular expression over the value and gives the part in brackets, or the whole match
+  when the pattern has no brackets.
+- `| default:VALUE` replaces a value that is null or empty.
+
+```json
+{ "then": { "op": "assert.equals", "with": { "actual": "${res:created.headers.location | match:/api/book/(\\d+)}", "expected": "42" } } },
+{ "and":  { "op": "api.request", "with": { "method": "GET", "url": "${env:API_BASE_URL}/api/order/${res:receipt.bodyText | match:ref=([A-Z0-9-]+)}" } } },
+{ "and":  { "op": "ui.fill", "with": { "selector": "#note", "value": "${res:books.bodyJson.records.1.note | default:none}" } } }
+```
+
+The first gives `42` from a `Location: /api/book/42` header. The second takes `BK-2026-0042` from a plain-text
+body such as `Created book id=42 ref=BK-2026-0042`. The third types `none`, because that record's note is empty.
+
+Each of these fails the step:
+- A path that does not exist (`Missing resource for token`). `default:` does not help here: it replaces only a
+  null or empty value.
+- A pattern that matches nothing.
+- A pattern that contains `}` or `|`: the `}` ends the token, and `|` starts another transform. Write `\d\d`
+  rather than `\d{2}`. For alternatives such as `(id|ref)`, use `util.script`.
+
+In a JSON file, double every backslash: `\\d` in the file reaches the pattern as `\d`. On a list or object,
+`match:` runs over its JSON text. For the last item of a list, an item found by a field value, or anything
+computed, use `util.script`.
+
 ### Random test data
 Every generator, argument and value is listed on the docs page *Random Test Data* (`developer-docs/testing/random-test-data`); the table below is the short form.
 `${random:...}` generates realistic values that are never repeated within one run, so a run can
@@ -544,7 +588,8 @@ Options in `with`:
 ### **Op: `util.script`**
 Description: Runs a short TypeScript function over `input` and returns its result, to keep with `saveAs`.
 Use it for what a token cannot do: find an item by a condition, combine two responses, reshape a value
-for the next request. A fixed path (`${res:r.bodyJson.records.0.id}`) or a regex (`| match:`) needs no script.
+for the next request. A fixed path (`${res:r.bodyJson.records.0.id}`) or a regex (`| match:`) needs no script;
+see *Reading saved results*.
 
 Options in `with`:
 - `script` (required): a function body, as text or a list of lines, that ends with `return`
@@ -569,8 +614,9 @@ Notes:
   test data, secrets, or random and current values, goes in `input` as a token, so each step shows what it depends on.
 - A value in `input` that is exactly one token keeps its type: `"${res:books.bodyJson.records}"` arrives as a
   list and `"${res:r.status}"` as a number. A token inside text (`"id-${res:r.status}"`) is text, as in any op.
-- A token written inside `script` is refused, because `${...}` there is a JavaScript template literal. Use
-  template literals freely; they are left alone.
+- Don't write tokens inside `script`; the step refuses them. Inside code, `${...}` belongs to JavaScript: in a
+  template literal such as `` `Book ${input.id}` `` it inserts a variable's value. So the runner leaves the
+  script exactly as written, and values reach it only through `input`.
 - The script runs synchronously: no `await`, `require`, timers or network. It gets a copy of `input`, so it
   cannot change a saved result. While it runs, nothing else in the runner's process does (in test-hub, the
   whole API), which is why the timeout is capped at 30 seconds. Keep scripts small: there is no memory limit.
