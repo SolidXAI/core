@@ -120,6 +120,21 @@ export class TestingEngine {
     }
   }
 
+  // Interpolates the step, except the `with` fields its op takes as written (StepOptions.rawWith).
+  private resolveStep(step: OpStep, ctx: TestContext): OpStep {
+    const raw = this.registry
+      .rawWithFields(step.op)
+      .filter((field) => step.with && typeof step.with === "object" && field in step.with);
+    if (!raw.length) {
+      return interpolateDeep(step, ctx);
+    }
+    const rest = { ...step.with };
+    for (const field of raw) delete rest[field];
+    const resolved = interpolateDeep({ ...step, with: rest }, ctx);
+    const kept = Object.fromEntries(raw.map((field) => [field, step.with![field]]));
+    return { ...resolved, with: { ...resolved.with, ...kept } };
+  }
+
   private async runBlock(
     phase: StepPhase,
     steps: OpStep[],
@@ -134,7 +149,7 @@ export class TestingEngine {
       reporter.onStepStart({ scenarioId: ctx.scenarioId, phase, step });
 
       try {
-        resolvedStep = interpolateDeep(step, ctx) as OpStep;
+        resolvedStep = this.resolveStep(step, ctx);
         const handler = this.registry.get(resolvedStep.op);
         const run = handler(ctx, resolvedStep);
         const result =

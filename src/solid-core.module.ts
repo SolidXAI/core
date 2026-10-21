@@ -55,7 +55,8 @@ import { ModulePackageService } from "./services/module-package.service";
 import { SolidIntrospectService } from "./services/solid-introspect.service";
 // import { ListOfComputedFieldProvider } from './providers/list-of-computed-field-provider.service';
 import { ServeStaticModule } from "@nestjs/serve-static";
-import { basename, join } from "path";
+import { basename } from "path";
+import { PUBLIC_MEDIA_URL_PREFIX, getPublicMediaStorageDir } from "./services/file/media-storage-paths";
 import { RefreshModelCommand } from "./commands/refresh-model.command";
 import { MediaController } from "./controllers/media.controller";
 import { getLowercaseFileExtension, INLINE_SAFE_EXTENSIONS } from "./constants/media-file-types";
@@ -384,6 +385,15 @@ import { ListOfValuesSubscriber } from './subscribers/list-of-values.subscriber'
 import { ScheduledJobSubscriber } from './subscribers/scheduled-job.subscriber';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
+import { AgentRegistrySubscriber } from './subscribers/agent-registry.subscriber';
+import { AgentToolRegistrySubscriber } from './subscribers/agent-tool-registry.subscriber';
+import { AgentSkillRegistrySubscriber } from './subscribers/agent-skill-registry.subscriber';
+import { AgentHubTagSubscriber } from './subscribers/agent-hub-tag.subscriber';
+import { AgentSkillSubscriber } from './subscribers/agent-skill.subscriber';
+import { AgentToolSubscriber } from './subscribers/agent-tool.subscriber';
+import { SecretSubscriber } from './subscribers/secret.subscriber';
+import { AgentSecretSubscriber } from './subscribers/agent-secret.subscriber';
+import { AgentRoleSubscriber } from './subscribers/agent-role.subscriber';
 import { MediaStorageProviderMetadataRepository } from './repository/media-storage-provider-metadata.repository';
 import { McpCommand } from './commands/mcp.command';
 import { FixturesService } from './services/fixtures.service';
@@ -484,6 +494,7 @@ import { AgentJob } from "./entities/agent-job.entity";
 import { AgentRole } from "./entities/agent-role.entity";
 import { AgentSessionCheckpoint } from "./entities/agent-session-checkpoint.entity";
 import { AgentHumanRequest } from "./entities/agent-human-request.entity";
+import { AgentConfigVersion } from "./entities/agent-config-version.entity";
 import { AgentRegistryController } from "./controllers/agent-registry.controller";
 import { AgentEmbedController } from './controllers/agent-embed.controller';
 import { AgentToolRegistryController } from "./controllers/agent-tool-registry.controller";
@@ -498,8 +509,11 @@ import { AgentSessionController } from "./controllers/agent-session.controller";
 import { AgentJobController } from "./controllers/agent-job.controller";
 import { AgentSessionCheckpointController } from "./controllers/agent-session-checkpoint.controller";
 import { AgentHumanRequestController } from "./controllers/agent-human-request.controller";
+import { AgentConfigVersionController } from "./controllers/agent-config-version.controller";
 import { AgentHumanRequestRepository } from "./repository/agent-human-request.repository";
+import { AgentConfigVersionRepository } from "./repository/agent-config-version.repository";
 import { AgentHumanRequestService } from "./services/agent-human-request.service";
+import { AgentConfigVersionRecordService } from "./services/agent-config-version-record.service";
 import { AgentSessionCheckpointRepository } from "./repository/agent-session-checkpoint.repository";
 import { AgentSessionCheckpointService } from "./services/agent-session-checkpoint.service";
 import { AgentSessionRepository } from "./repository/agent-session.repository";
@@ -587,13 +601,14 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
       AgentSession,
       AgentJob,
       AgentSessionCheckpoint,
-      AgentHumanRequest
+      AgentHumanRequest,
+      AgentConfigVersion
     ]),
     CacheModule.registerAsync(CacheManagerOptions),
     ScheduleModule.forRoot(),
     ServeStaticModule.forRoot({
-      rootPath: join(process.cwd(), "media-files-storage"),
-      serveRoot: "/media-files-storage",
+      rootPath: getPublicMediaStorageDir(),
+      serveRoot: `/${PUBLIC_MEDIA_URL_PREFIX}`,
       serveStaticOptions: {
         setHeaders: (res, path) => {
           // Allow use of these files from a different origin (e.g., :3000 UI)
@@ -736,7 +751,8 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     AgentSessionController,
     AgentJobController,
     AgentSessionCheckpointController,
-    AgentHumanRequestController
+    AgentHumanRequestController,
+    AgentConfigVersionController
   ],
   providers: [
     {
@@ -968,6 +984,15 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     FileS3StorageProvider,
     MediaRepository,
     ViewMetadataSubsciber,
+    AgentRegistrySubscriber,
+    AgentToolRegistrySubscriber,
+    AgentSkillRegistrySubscriber,
+    AgentHubTagSubscriber,
+    AgentSkillSubscriber,
+    AgentToolSubscriber,
+    SecretSubscriber,
+    AgentSecretSubscriber,
+    AgentRoleSubscriber,
     SavedFiltersService,
     UserViewMetadataService,
     SecurityRuleService,
@@ -1122,7 +1147,9 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     AgentSessionCheckpointService,
     AgentSessionCheckpointRepository,
     AgentHumanRequestService,
-    AgentHumanRequestRepository
+    AgentHumanRequestRepository,
+    AgentConfigVersionRecordService,
+    AgentConfigVersionRepository
   ],
   exports: [
     // Exported for DI, not merely re-exported from index.ts: a consuming

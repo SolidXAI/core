@@ -1,7 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, IsDate, IsBoolean } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsDate, IsBoolean, IsInt } from 'class-validator';
 
 export class CreateSecretDto {
+    @IsOptional()
+    @IsInt()
+    @ApiProperty({ required: false })
+    moduleId: number;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ required: false })
+    moduleUserKey: string;
+
     @IsNotEmpty()
     @IsString()
     @ApiProperty({ description: "Global secret key used in workflow expressions, for example smtp.password." })

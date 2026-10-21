@@ -108,6 +108,7 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
                 ui: { baseUrl: p.uiBaseUrl, headless: p.headless ?? true, capture: p.capture, recordVideo: p.recordVideo ?? true },
                 mobile: p.mobile ? toMobileAdapterOptions(p.mobile, { recordVideo: p.recordVideo, capture: p.capture }) : undefined,
                 options: { printApiLogs: p.printApiLogs ?? true },
+                failFast: p.failFast,
                 externalRunId: p.externalRunId,
                 resolveSecrets: (keys) => this.secretService.resolveAvailable(keys),
             });

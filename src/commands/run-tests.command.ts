@@ -28,6 +28,7 @@ interface TestRunCommandOptions {
   retries?: number;
   listSpecs?: boolean;
   printApiLogs?: boolean;
+  failFast?: boolean;
   runName?: string;
   progress?: boolean;
 }
@@ -136,6 +137,7 @@ export class TestRunCommand extends CommandRunner {
             retries: options?.retries,
           },
           options: { printApiLogs },
+          failFast: options?.failFast,
           resolveSecrets: (keys) => this.secretService.resolveAvailable(keys),
           specs: specEntries.length
             ? (registry) => loadSpecRegistrations(specEntries, metadataPath, registry)
@@ -220,6 +222,16 @@ export class TestRunCommand extends CommandRunner {
     required: false,
   })
   parsePrintApiLogs(val?: string): boolean {
+    if (val === undefined) return true;
+    return val === 'false' ? false : true;
+  }
+
+  @Option({
+    flags: '--fail-fast [true|false]',
+    description: 'Stop at the first failed scenario (default true). Use --fail-fast false to run every scenario.',
+    required: false,
+  })
+  parseFailFast(val?: string): boolean {
     if (val === undefined) return true;
     return val === 'false' ? false : true;
   }

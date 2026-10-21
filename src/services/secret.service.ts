@@ -7,7 +7,7 @@ import { Secret } from '../entities/secret.entity';
 import { SecretRepository } from '../repository/secret.repository';
 import { EncryptionService } from './encryption.service';
 import { AgentSecret } from '../entities/agent-secret.entity';
-import { agentIdsForCatalog, bumpAgentConfigVersions } from './agent-config-version.service';
+import { agentIdsForCatalog, markActiveAgentsDraft } from './agent-config-version.service';
 
 const MASKED_SECRET_VALUE = "********";
 
@@ -46,21 +46,21 @@ export class SecretService extends CRUDService<Secret> {
   ): Promise<Secret> {
     const preparedDto = this.prepareSecretForSave(updateDto, false);
     const saved = await super.update(id, preparedDto, files, isPartialUpdate, solidRequestContext, isUpdate);
-    await bumpAgentConfigVersions(this.entityManager, await agentIdsForCatalog(this.entityManager, AgentSecret, 'secret', [id]));
+    await markActiveAgentsDraft(this.entityManager, await agentIdsForCatalog(this.entityManager, AgentSecret, 'secret', [id]));
     return this.maskSecret(saved);
   }
 
   override async delete(id: number, solidRequestContext: any = {}) {
     const agentIds = await agentIdsForCatalog(this.entityManager, AgentSecret, 'secret', [id]);
     const result = await super.delete(id, solidRequestContext);
-    await bumpAgentConfigVersions(this.entityManager, agentIds);
+    await markActiveAgentsDraft(this.entityManager, agentIds);
     return result;
   }
 
   override async deleteMany(ids: number[], solidRequestContext: any = {}) {
     const agentIds = await agentIdsForCatalog(this.entityManager, AgentSecret, 'secret', ids);
     const result = await super.deleteMany(ids, solidRequestContext);
-    await bumpAgentConfigVersions(this.entityManager, agentIds);
+    await markActiveAgentsDraft(this.entityManager, agentIds);
     return result;
   }
 

@@ -1,5 +1,6 @@
 import { CommonEntity } from 'src/entities/common.entity';
-import { Entity, Column, Index, JoinTable, ManyToMany, OneToMany } from 'typeorm';
+import { Entity, Column, Index, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany } from 'typeorm';
+import { ModuleMetadata } from 'src/entities/module-metadata.entity';
 import { AgentHubTag } from './agent-hub-tag.entity';
 import { AgentTool } from './agent-tool.entity';
 import { AgentSkill } from './agent-skill.entity';
@@ -8,6 +9,7 @@ import { AgentSecret } from './agent-secret.entity';
 import { AgentProcess } from './agent-process.entity';
 import { AgentSession } from './agent-session.entity';
 import { AgentJob } from './agent-job.entity'
+import { AgentConfigVersion } from './agent-config-version.entity';
 
 @Entity('ss_agent_registry')
 export class AgentRegistry extends CommonEntity {
@@ -52,6 +54,11 @@ export class AgentRegistry extends CommonEntity {
     @Column({ type: "integer", nullable: true, default: 1 })
     configVersion?: number = 1;
 
+    @Index()
+    @ManyToOne(() => ModuleMetadata, { onDelete: "RESTRICT", nullable: false })
+    @JoinColumn({ name: 'module_id', referencedColumnName: 'id' })
+    module: ModuleMetadata;
+
     @ManyToMany(() => AgentHubTag, tag => tag.agents, { cascade: ['insert', 'update'] })
     @JoinTable()
     tags: AgentHubTag[];
@@ -76,4 +83,7 @@ export class AgentRegistry extends CommonEntity {
 
     @OneToMany(() => AgentJob, agentJob => agentJob.agent, { cascade: true })
     agentJobs: AgentJob[];
+
+    @OneToMany(() => AgentConfigVersion, configVersion => configVersion.agentRegistry)
+    configVersions: AgentConfigVersion[];
 }

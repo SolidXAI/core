@@ -5,6 +5,7 @@ import * as path from 'path';
 import { Readable } from 'stream';
 import { pipeline } from 'stream/promises';
 import { IFileService, WriteOptions, CopyOptions, UrlOptions } from './file-service.interface';
+import { toPublicMediaUrlPath } from './media-storage-paths';
 
 /**
  * Disk-based implementation of IFileService.
@@ -117,7 +118,11 @@ export class DiskFileService implements IFileService {
 
   private buildUrl(filePath: string): string {
     const normalizedBaseUrl = this.baseUrl.replace(/\/+$/, '');
-    const normalizedPath = filePath.replace(/^\/+/, '');
+    const publicUrlPath = toPublicMediaUrlPath(filePath);
+    if (!publicUrlPath && path.isAbsolute(filePath)) {
+      this.logger.warn(`Building a URL for a disk path outside the public media folder: ${filePath}`);
+    }
+    const normalizedPath = (publicUrlPath ?? filePath).replace(/^\/+/, '');
 
     if (!normalizedBaseUrl) {
       return `/${normalizedPath}`;

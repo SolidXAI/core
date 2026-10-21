@@ -82,6 +82,10 @@ export class TestRunRequestDto {
   recordVideo?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  failFast?: boolean;
+
+  @IsOptional()
   @IsArray()
   includeTags?: string[];
 

@@ -12,6 +12,7 @@ import { registerAssertSteps } from "../steps/assert";
 import { registerUtilSteps } from "../steps/util";
 import { registerTestSteps } from "../steps/test";
 import { SimpleResourceStore } from "../core/resource-store";
+import { RandomDataRegistry } from "../core/random-data";
 import { StepRegistry } from "../core/step-registry";
 import { SpecRegistry } from "../core/spec-registry";
 import { TestingEngine } from "../core/testing-engine";
@@ -51,6 +52,11 @@ export type RunnerOptions = {
   mobile?: MobileAdapterOptions;
   defaults?: { timeoutMs?: number; retries?: number };
   options?: { printApiLogs?: boolean };
+  /**
+   * Stop the run at the first failed scenario (default `true`). When `false`, every
+   * scenario runs; the run still throws after the last one if any failed.
+   */
+  failFast?: boolean;
   specs?: (registry: SpecRegistry) => void;
   /**
    * Resolves `${secret:...}` references against the secret store. Injected by the
@@ -141,7 +147,8 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
   const { PlaywrightAdapter } = await import("../adapters/ui/playwright-adapter");
   const ui = new PlaywrightAdapter(opts.ui);
   const mobile = opts.mobile ? new MobileAdapter(opts.mobile) : undefined;
-  const ctxBase = { resources, reporter, api, ui, mobile, specRegistry, testData, env: opts.env, options: opts.options };
+  const randomData = new RandomDataRegistry();
+  const ctxBase = { resources, randomData, reporter, api, ui, mobile, specRegistry, testData, env: opts.env, options: opts.options };
   const uiStarted = { value: false };
   const mobileStarted = { value: false };
   let passed = 0;
@@ -187,10 +194,15 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
         passed += 1;
       } catch (error) {
         failed += 1;
-        runError = error;
-        throw error;
+        if (opts.failFast !== false) {
+          runError = error;
+          throw error;
+        }
+        // Keep going; the first failure is rethrown once every scenario has run.
+        runError ??= error;
       }
     }
+    if (runError) throw runError;
   } catch (error) {
     // Also catches a setup failure before the loop (unreachable database, absent
     // encryption key), which would otherwise leave runError unset and report ok: true.
