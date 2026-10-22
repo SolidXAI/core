@@ -8,6 +8,7 @@ import { MqMessageQueueService } from '../../services/mq-message-queue.service';
 import { QueuesModuleOptions } from "../../interfaces";
 import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
 import { PollerService } from 'src/services/poller.service';
+import { toMobileAdapterOptions } from '../../testing/adapters/mobile/run-options';
 import { runFromMetadata } from '../../testing/runner/run-from-metadata';
 import { readScenariosFile } from '../../testing/runner/read-scenarios-file';
 import {
@@ -104,7 +105,8 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
                 reporter,
                 env: p.variables,
                 api: { baseUrl: p.baseUrl },
-                ui: { baseUrl: p.uiBaseUrl, headless: p.headless ?? true, capture: p.capture, recordVideo: p.recordVideo ?? true },
+                ui: { baseUrl: p.uiBaseUrl, headless: p.headless ?? true, capture: p.capture, recordVideo: p.recordVideo ?? true, healing: p.healing },
+                mobile: p.mobile ? toMobileAdapterOptions(p.mobile, { recordVideo: p.recordVideo, capture: p.capture }) : undefined,
                 options: { printApiLogs: p.printApiLogs ?? true },
                 failFast: p.failFast,
                 externalRunId: p.externalRunId,

@@ -1,4 +1,4 @@
-export type ScenarioType = "api" | "ui" | "mixed";
+export type ScenarioType = "api" | "ui" | "mixed" | "mobile";
 
 export interface TestingDataRecord {
   modelUserKey: string;
@@ -51,7 +51,47 @@ export interface ScenarioSpec {
   tags?: string[];
   timeoutMs?: number;
   retries?: number;
+  /**
+   * Scenarios that must pass before this one runs. Selecting this scenario pulls its
+   * dependencies into the run; a failed dependency skips it with `dependency_failed`.
+   * Using it anywhere in a run switches that run from fail-fast to dependency-aware.
+   */
+  dependsOn?: string[];
+  /** Keep this scenario's browser storage state (cookies + localStorage) after it passes. */
+  saveSession?: boolean;
+  /**
+   * Browser context for this scenario:
+   * - `shared` (default): keep the context left by the previous scenario.
+   * - `restore`: new context seeded from the nearest `dependsOn` entry that saved a session.
+   * - `fresh`: new empty context.
+   */
+  session?: ScenarioSessionMode;
   steps: StepBlock[];
+}
+
+export type ScenarioSessionMode = "shared" | "restore" | "fresh";
+
+/**
+ * How UI steps react when their primary selector is missing:
+ * - `off`: primary selector only.
+ * - `report` (default): fall back to `fallbacks` / `fingerprint`, keep running, report the heal.
+ * - `auto`: as `report`, and mark the heal for automatic application to the scenario file.
+ */
+export type HealingPolicy = "off" | "report" | "auto";
+
+/**
+ * Identity of a UI target, recorded at authoring time and used to re-find the element
+ * when every selector misses. Matched with Playwright's user-facing locators only.
+ */
+export interface TargetFingerprint {
+  role?: string;
+  name?: string;
+  label?: string;
+  placeholder?: string;
+  testId?: string;
+  text?: string;
+  /** Selector scoping the search, e.g. a dialog or form. */
+  within?: string;
 }
 
 /**
