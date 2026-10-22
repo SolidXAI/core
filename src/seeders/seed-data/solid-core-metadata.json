@@ -27594,6 +27594,22 @@
                         ]
                       }
                     ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "chat-interface",
+                      "label": "Chat interface"
+                    },
+                    "children": [
+                      {
+                        "type": "custom",
+                        "attrs": {
+                          "name": "session-chat-interface",
+                          "widget": "AgentSessionChatFormWidget"
+                        }
+                      }
+                    ]
                   }
                 ]
               }
