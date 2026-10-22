@@ -1,6 +1,6 @@
 // Purpose: Basic console reporter implementation.
 
-import type { Reporter } from "./reporter.types";
+import type { Reporter, RunEndArgs, ScenarioResult, ScenarioSkipInfo } from "./reporter.types";
 import type { OpStep } from "../contracts/testing-metadata.types";
 
 const INDENT = "  ";
@@ -161,7 +161,7 @@ export class ConsoleReporter implements Reporter {
 
   onScenarioEnd(
     scenario: { id: string; name?: string },
-    result: { ok: boolean; error?: unknown; durationMs: number },
+    result: ScenarioResult,
   ): void {
     const label = scenario.name ? `${scenario.id} (${scenario.name})` : scenario.id;
     const status = result.ok ? "✔" : "✖";
@@ -172,6 +172,16 @@ export class ConsoleReporter implements Reporter {
       this.failedScenarios += 1;
     }
     console.log(`${status} Scenario: ${label} (${result.durationMs}ms)`);
+    for (const heal of result.heals ?? []) {
+      console.log(
+        `${STEP_INDENT}⚕ HEALED ${heal.stepPath ?? heal.op} via ${heal.strategy}: ${heal.from} → ${heal.to}`,
+      );
+    }
+  }
+
+  onScenarioSkipped(scenario: { id: string; name?: string }, info: ScenarioSkipInfo): void {
+    const label = scenario.name ? `${scenario.id} (${scenario.name})` : scenario.id;
+    console.log(`\n⊘ Scenario: ${label} skipped (${info.reason}: ${info.dependency})`);
   }
 
   onStepStart(args: {
@@ -250,19 +260,14 @@ export class ConsoleReporter implements Reporter {
     console.log(indentLines(dataText, `${STEP_INDENT}${INDENT}${INDENT}`));
   }
 
-  onRunEnd(args: {
-    ok: boolean;
-    total: number;
-    passed: number;
-    failed: number;
-    durationMs: number;
-  }): void {
+  onRunEnd(args: RunEndArgs): void {
     const durationSeconds = (args.durationMs / 1000).toFixed(2);
     const finalStatus = args.ok ? "PASSED" : "FAILED";
+    const skipped = args.skipped ? `, skipped=${args.skipped}` : "";
 
     console.log("\n════════ Test Run Summary ════════");
     console.log(`Result: Test run ${finalStatus}`);
-    console.log(`Cases: total=${args.total}, passed=${args.passed}, failed=${args.failed}`);
+    console.log(`Cases: total=${args.total}, passed=${args.passed}, failed=${args.failed}${skipped}`);
     console.log(`Duration: ${durationSeconds}s`);
     console.log("══════════════════════════════════");
   }

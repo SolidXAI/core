@@ -1,3 +1,5 @@
+import type { HealingPolicy } from "../../contracts/testing-metadata.types";
+
 /**
  * Per-run capture toggles for the Playwright adapter. Console/network events are
  * buffered while a scenario runs and only flushed (attached to the reporter) when the
@@ -17,4 +19,9 @@ export interface PlaywrightAdapterOptions {
   navigationTimeoutMs?: number;
   capture?: CaptureOptions;
   recordVideo?: boolean;
+  /** Selector healing for UI steps; see {@link HealingPolicy}. Defaults to `report`. */
+  healing?: HealingPolicy;
 }
+
+/** Options for wrapping a page the caller already owns. */
+export type AttachOptions = Omit<PlaywrightAdapterOptions, "headless" | "recordVideo">;

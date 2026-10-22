@@ -1,6 +1,7 @@
 import {
   IsArray,
   IsBoolean,
+  IsIn,
   IsObject,
   IsOptional,
   IsString,
@@ -8,6 +9,7 @@ import {
 
 import type { MobileRunOptionsInput } from '../testing/adapters/mobile/mobile.types';
 import type {
+  HealingPolicy,
   ScenarioSpec,
   ScenarioType,
   TestingDataRecord,
@@ -80,6 +82,11 @@ export class TestRunRequestDto {
   @IsOptional()
   @IsBoolean()
   recordVideo?: boolean;
+
+  /** Selector healing for UI steps: off | report (default) | auto. */
+  @IsOptional()
+  @IsIn(['off', 'report', 'auto'])
+  healing?: HealingPolicy;
 
   @IsOptional()
   @IsBoolean()
