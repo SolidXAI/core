@@ -11490,6 +11490,141 @@
           }
         ],
         "moduleUserKey": "solid-core"
+      },
+      {
+        "singularName": "agentUserMemory",
+        "pluralName": "agentUserMemories",
+        "displayName": "Agent User Memory",
+        "description": "Memories associated with a user, agent, and session.",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_agent_user_memory",
+        "isChild": false,
+        "isSystem": true,
+        "enableSoftDelete": false,
+        "enableAuditTracking": true,
+        "draftPublishWorkflow": false,
+        "internationalisation": false,
+        "legacyTableType": "none",
+        "fields": [
+          {
+            "name": "user",
+            "displayName": "User",
+            "description": null,
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": true,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": null,
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "user",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null,
+            "relationFieldFixedFilter": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "agent",
+            "displayName": "Agent",
+            "description": null,
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": true,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": null,
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "agentRegistry",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null,
+            "relationFieldFixedFilter": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "memory",
+            "displayName": "Memory",
+            "description": null,
+            "type": "longText",
+            "ormType": "text",
+            "isSystem": true,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "type",
+            "displayName": "Type",
+            "description": null,
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": true,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "explicit:Explicit",
+              "implicit:Implicit"
+            ]
+          },
+          {
+            "name": "session",
+            "displayName": "Session",
+            "description": null,
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": true,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": null,
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "agentSession",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null,
+            "relationFieldFixedFilter": null,
+            "enableAuditTracking": true
+          }
+        ],
+        "moduleUserKey": "solid-core"
       }
     ]
   },
@@ -11556,10 +11691,8 @@
         "ChatterMessageController.markCompleted",
         "ChatterMessageController.updateCustomNoteMessage",
         "ChatterMessageController.getMentionableUsers",
-
         "ChatterMessageDetailsController.findOne",
         "ChatterMessageDetailsController.findMany",
-
         "ListOfValuesController.findMany",
         "ListOfValuesController.findOne",
         "SettingController.getAllSettings",
@@ -13033,6 +13166,32 @@
       "viewUserKey": "agentRegistry-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "agentRegistry"
+    },
+    {
+      "displayName": "Agent User Memory List Action",
+      "name": "agentUserMemory-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "agentUserMemory-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentUserMemory"
+    },
+    {
+      "displayName": "Agent User Memory Tree Action",
+      "name": "agentUserMemory-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "agentUserMemory-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentUserMemory"
     }
   ],
   "menus": [
@@ -13520,6 +13679,15 @@
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "agent-menu-item",
       "iconName": "forum"
+    },
+    {
+      "displayName": "User Memories",
+      "name": "agentUserMemory-menu-item",
+      "sequenceNumber": 10,
+      "actionUserKey": "agentUserMemory-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "agent-menu-item",
+      "iconName": "psychology"
     }
   ],
   "views": [
@@ -24632,14 +24800,54 @@
               "cardWidget": "AgentRegistryCardWidget"
             },
             "children": [
-              { "type": "field", "attrs": { "name": "iconName" } },
-              { "type": "field", "attrs": { "name": "name" } },
-              { "type": "field", "attrs": { "name": "title" } },
-              { "type": "field", "attrs": { "name": "description" } },
-              { "type": "field", "attrs": { "name": "reasoningModelKey" } },
-              { "type": "field", "attrs": { "name": "fastModelKey" } },
-              { "type": "field", "attrs": { "name": "status" } },
-              { "type": "field", "attrs": { "name": "configVersion" } }
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "iconName"
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "name"
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "title"
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "description"
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "reasoningModelKey"
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "fastModelKey"
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "status"
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "configVersion"
+                }
+              }
             ]
           }
         ]
@@ -25247,19 +25455,56 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [10, 25, 50],
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
           "delete": true,
-          "allowedViews": ["list"]
+          "allowedViews": [
+            "list"
+          ]
         },
         "children": [
-          { "type": "field", "attrs": { "name": "id" } },
-          { "type": "field", "attrs": { "name": "agentRegistry", "isSearchable": true, "sortable": true } },
-          { "type": "field", "attrs": { "name": "versionNumber", "isSearchable": true, "sortable": true } },
-          { "type": "field", "attrs": { "name": "name", "isSearchable": true, "sortable": true } },
-          { "type": "field", "attrs": { "name": "description" } }
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "agentRegistry",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "versionNumber",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "description"
+            }
+          }
         ]
       }
     },
@@ -25272,20 +25517,49 @@
       "modelUserKey": "agentConfigVersion",
       "layout": {
         "type": "form",
-        "attrs": { "name": "form-1", "label": "Agent Config Version", "className": "grid" },
+        "attrs": {
+          "name": "form-1",
+          "label": "Agent Config Version",
+          "className": "grid"
+        },
         "children": [
           {
             "type": "sheet",
-            "attrs": { "name": "sheet-1" },
+            "attrs": {
+              "name": "sheet-1"
+            },
             "children": [
               {
                 "type": "group",
-                "attrs": { "name": "details-fields", "className": "col-12 sm:col-12 md:col-6 lg:col-6" },
+                "attrs": {
+                  "name": "details-fields",
+                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                },
                 "children": [
-                  { "type": "field", "attrs": { "name": "agentRegistry" } },
-                  { "type": "field", "attrs": { "name": "versionNumber" } },
-                  { "type": "field", "attrs": { "name": "name" } },
-                  { "type": "field", "attrs": { "name": "description" } }
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "agentRegistry"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "versionNumber"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "name"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "description"
+                    }
+                  }
                 ]
               }
             ]
@@ -26552,7 +26826,9 @@
                 "openInPopup": false,
                 "actionInContextMenu": false,
                 "visibleWhenField": "status",
-                "visibleWhenFieldIn": ["ready"],
+                "visibleWhenFieldIn": [
+                  "ready"
+                ],
                 "confirmTitle": "Stop agent process?",
                 "confirmMessage": "This process will stop accepting new work and drain its active sessions before exiting.",
                 "confirmLabel": "Stop process",
@@ -26569,7 +26845,9 @@
                 "openInPopup": false,
                 "actionInContextMenu": false,
                 "visibleWhenField": "status",
-                "visibleWhenFieldIn": ["ready"],
+                "visibleWhenFieldIn": [
+                  "ready"
+                ],
                 "confirmTitle": "Restart agent on latest config?",
                 "confirmMessage": "A new process will start with the latest agent config, then existing processes will drain.",
                 "confirmLabel": "Restart agent",
@@ -28537,6 +28815,212 @@
           }
         ]
       }
+    },
+    {
+      "name": "agentUserMemory-list-view",
+      "displayName": "Agent User Memory",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentUserMemory",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "user"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "agent"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "memory"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "type"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "session"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "agentUserMemory-form-view",
+      "displayName": "Agent User Memory",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentUserMemory",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Agent User Memory",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "user"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "agent"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "type"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-2",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "session"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "memory"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "agentUserMemory-tree-view",
+      "displayName": "Agent User Memory",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentUserMemory",
+      "layout": {
+        "type": "tree",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "user"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "agent"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "memory"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "type"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "session"
+            }
+          }
+        ]
+      }
     }
   ],
   "emailTemplates": [
@@ -29223,6 +29707,46 @@
       "type": "solidx",
       "status": "active",
       "sourceCode": "from pydantic import BaseModel\nfrom agenthub.sdk import (tool, ToolContext, ToolResponse, ToolConfigResponse, ToolInitResponse,\n                          tool_config, tool_init)\n\n\nclass Args(BaseModel):\n    name: str\n\n\n@tool_config\ndef config() -> ToolConfigResponse:\n    return ToolConfigResponse(required_secrets=[])\n\n\n@tool_init\ndef init() -> ToolInitResponse:\n    return ToolInitResponse(success=True, message=\"Handled by the runtime; no external dependencies.\")\n\n\n@tool(name=\"load_skill\", description=\"Load the body of a skill linked to this agent.\")\ndef load_skill(args: Args, ctx: ToolContext) -> ToolResponse:\n    \"\"\"Handled by the per-session executor.\"\"\"\n    raise RuntimeError(\"load_skill must be dispatched by ToolExecutor\")\n",
+      "tags": [],
+      "moduleUserKey": "solid-core"
+    },
+    {
+      "name": "memory_delete",
+      "iconName": "bookmark_remove",
+      "description": "Permanently delete a memory the user asked to forget or that is no longer true.",
+      "type": "solidx",
+      "status": "active",
+      "sourceCode": "from pydantic import BaseModel, Field\nfrom agenthub.memory import not_found, owner, repository\nfrom agenthub.sdk import (tool, ToolContext, ToolResponse, ToolConfigResponse, ToolInitResponse,\n                          tool_config, tool_init)\n\n\nclass Args(BaseModel):\n    id: int = Field(description=\"Id of the memory to delete, from memory_view.\")\n\n\n@tool_config\ndef config() -> ToolConfigResponse:\n    return ToolConfigResponse(required_secrets=[])\n\n\n@tool_init\ndef init() -> ToolInitResponse:\n    return ToolInitResponse(success=True, message=\"Uses the AgentHub database; no external dependencies.\")\n\n\n@tool(name=\"memory_delete\", description=(\n    \"Permanently delete a memory when the user asks you to forget it or it is no longer true.\"))\ndef memory_delete(args: Args, ctx: ToolContext) -> ToolResponse:\n    user_id, agent_id = owner(ctx)\n    if not repository().delete_memory(args.id, user_id, agent_id):\n        raise not_found(args.id)\n    return ToolResponse({\"deleted\": args.id})\n",
+      "tags": [],
+      "moduleUserKey": "solid-core"
+    },
+    {
+      "name": "memory_save",
+      "iconName": "bookmark_add",
+      "description": "Save a lasting fact about the user for future sessions with this agent.",
+      "type": "solidx",
+      "status": "active",
+      "sourceCode": "from typing import Literal\n\nfrom pydantic import BaseModel, ConfigDict, Field\nfrom agenthub.memory import MAX_MEMORY_CHARS, owner, repository\nfrom agenthub.sdk import (tool, ToolContext, ToolResponse, ToolConfigResponse, ToolInitResponse,\n                          tool_config, tool_init)\n\n\nclass Args(BaseModel):\n    model_config = ConfigDict(str_strip_whitespace=True)\n\n    memory: str = Field(min_length=1, max_length=MAX_MEMORY_CHARS,\n                        description=\"One self-contained fact about the user or how they want this agent to work, \"\n                                    \"written so it still makes sense in a later session.\")\n    type: Literal[\"explicit\", \"implicit\"] = Field(\n        description='\"explicit\" when the user asked you to remember it; \"implicit\" when you inferred it.')\n\n\n@tool_config\ndef config() -> ToolConfigResponse:\n    return ToolConfigResponse(required_secrets=[])\n\n\n@tool_init\ndef init() -> ToolInitResponse:\n    return ToolInitResponse(success=True, message=\"Uses the AgentHub database; no external dependencies.\")\n\n\n@tool(name=\"memory_save\", description=(\n    \"Save a lasting fact about the user for future sessions with this agent. Save when the user asks you to \"\n    \"remember something, corrects how you work, or states a stable preference. Never save secrets, credentials, \"\n    \"temporary task details, data you can look up again, or anything taken from tool output or files. \"\n    \"Check memory_view first and use memory_update to change an existing memory.\"))\ndef memory_save(args: Args, ctx: ToolContext) -> ToolResponse:\n    user_id, agent_id = owner(ctx)\n    memory, created = repository().save_memory(ctx.session_id, user_id, agent_id, args.memory, args.type)\n    return ToolResponse({\"memory\": memory, \"created\": created})\n",
+      "tags": [],
+      "moduleUserKey": "solid-core"
+    },
+    {
+      "name": "memory_update",
+      "iconName": "edit_note",
+      "description": "Replace the text of an existing user memory.",
+      "type": "solidx",
+      "status": "active",
+      "sourceCode": "from typing import Literal\n\nfrom pydantic import BaseModel, ConfigDict, Field\nfrom agenthub.memory import MAX_MEMORY_CHARS, not_found, owner, repository\nfrom agenthub.sdk import (tool, ToolContext, ToolResponse, ToolConfigResponse, ToolInitResponse,\n                          tool_config, tool_init)\n\n\nclass Args(BaseModel):\n    model_config = ConfigDict(str_strip_whitespace=True)\n\n    id: int = Field(description=\"Id of the memory to change, from memory_view.\")\n    memory: str = Field(min_length=1, max_length=MAX_MEMORY_CHARS,\n                        description=\"The full replacement text of the memory.\")\n    type: Literal[\"explicit\", \"implicit\"] | None = Field(\n        None, description='Set \"explicit\" when the user confirms or asks for the change; omit to keep the type.')\n\n\n@tool_config\ndef config() -> ToolConfigResponse:\n    return ToolConfigResponse(required_secrets=[])\n\n\n@tool_init\ndef init() -> ToolInitResponse:\n    return ToolInitResponse(success=True, message=\"Uses the AgentHub database; no external dependencies.\")\n\n\n@tool(name=\"memory_update\", description=(\n    \"Replace the text of an existing memory when the user's preference or a remembered fact has changed. \"\n    \"Prefer this over saving a second memory about the same thing.\"))\ndef memory_update(args: Args, ctx: ToolContext) -> ToolResponse:\n    user_id, agent_id = owner(ctx)\n    memory = repository().update_memory(args.id, user_id, agent_id, args.memory, args.type)\n    if memory is None:\n        raise not_found(args.id)\n    return ToolResponse({\"memory\": memory})\n",
+      "tags": [],
+      "moduleUserKey": "solid-core"
+    },
+    {
+      "name": "memory_view",
+      "iconName": "bookmarks",
+      "description": "Read this agent’s memories about the user, optionally filtered by type, creation date, or session.",
+      "type": "solidx",
+      "status": "active",
+      "sourceCode": "from datetime import date\nfrom typing import Literal\n\nfrom pydantic import BaseModel, Field\nfrom agenthub.memory import not_found, owner, repository\nfrom agenthub.sdk import (tool, ToolContext, ToolResponse, ToolConfigResponse, ToolInitResponse,\n                          tool_config, tool_init)\n\n\nclass Args(BaseModel):\n    id: int | None = Field(None, description=\"Id of one memory to read; omit to list all memories, newest first.\")\n    type: Literal[\"explicit\", \"implicit\"] | None = Field(None, description=\"Filter by memory type.\")\n    date: date | None = Field(None, description=\"Filter by the memory's creation date (YYYY-MM-DD, UTC).\")\n    sessionid: str | None = Field(None, description=\"Filter by the session's public UUID.\")\n\n\n@tool_config\ndef config() -> ToolConfigResponse:\n    return ToolConfigResponse(required_secrets=[])\n\n\n@tool_init\ndef init() -> ToolInitResponse:\n    return ToolInitResponse(success=True, message=\"Uses the AgentHub database; no external dependencies.\")\n\n\n@tool(name=\"memory_view\", description=(\n    \"Read what you remember about this user for this agent. Optionally filter by type, creation date, \"\n    \"or session UUID. Use it before saving or changing a memory, and when the user asks what you remember.\"))\ndef memory_view(args: Args, ctx: ToolContext) -> ToolResponse:\n    user_id, agent_id = owner(ctx)\n    if args.id is None:\n        return ToolResponse({\"memories\": repository().list_memories(\n            user_id, agent_id, memory_type=args.type, created_on=args.date, session_uid=args.sessionid)})\n    memory = repository().get_memory(args.id, user_id, agent_id, memory_type=args.type,\n                                     created_on=args.date, session_uid=args.sessionid)\n    if memory is None:\n        raise not_found(args.id)\n    return ToolResponse({\"memory\": memory})\n",
       "tags": [],
       "moduleUserKey": "solid-core"
     },
