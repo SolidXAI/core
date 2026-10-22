@@ -2,9 +2,12 @@ import type { Reporter } from "../reporter/reporter.types";
 import type { TestingMetadata, TestingDataRecord, ScenarioSpec } from "../contracts/testing-metadata.types";
 import type { ApiAdapterOptions } from "../adapters/api/api.types";
 import type { PlaywrightAdapterOptions } from "../adapters/ui/ui.types";
+import type { MobileAdapterOptions } from "../adapters/mobile/mobile.types";
 import { ApiAdapter } from "../adapters/api/api-adapter";
+import { MobileAdapter } from "../adapters/mobile/mobile-adapter";
 import { registerApiSteps } from "../steps/api";
 import { registerUiSteps } from "../steps/ui";
+import { registerMobileSteps } from "../steps/mobile";
 import { registerAssertSteps } from "../steps/assert";
 import { registerUtilSteps } from "../steps/util";
 import { registerTestSteps } from "../steps/test";
@@ -15,7 +18,7 @@ import { SpecRegistry } from "../core/spec-registry";
 import { TestingEngine } from "../core/testing-engine";
 import { filterScenarios } from "./scenario-filter";
 import { collectSecretKeys } from "../core/interpolation";
-import { ensureUiStarted, scenarioNeedsUi } from "./lifecycle";
+import { ensureMobileStarted, ensureUiStarted, mobileScenarioProblem, scenarioNeedsMobile, scenarioNeedsUi } from "./lifecycle";
 import { ensureChromiumInstalled } from "../adapters/ui/browser-provisioner";
 import { ConsoleReporter } from "../reporter/console-reporter";
 
@@ -45,6 +48,8 @@ export type RunnerOptions = {
   reporter?: Reporter;
   api?: ApiAdapterOptions;
   ui?: PlaywrightAdapterOptions;
+  /** Device and app for mobile scenarios. Required when any scenario is a mobile scenario. */
+  mobile?: MobileAdapterOptions;
   defaults?: { timeoutMs?: number; retries?: number };
   options?: { printApiLogs?: boolean };
   /**
@@ -111,6 +116,7 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
   const registry = new StepRegistry();
   registerApiSteps(registry);
   registerUiSteps(registry);
+  registerMobileSteps(registry);
   registerAssertSteps(registry);
   registerUtilSteps(registry);
   registerTestSteps(registry);
@@ -140,9 +146,11 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
   const api = new ApiAdapter(opts.api);
   const { PlaywrightAdapter } = await import("../adapters/ui/playwright-adapter");
   const ui = new PlaywrightAdapter(opts.ui);
+  const mobile = opts.mobile ? new MobileAdapter(opts.mobile) : undefined;
   const randomData = new RandomDataRegistry();
-  const ctxBase = { resources, randomData, reporter, api, ui, specRegistry, testData, env: opts.env, options: opts.options };
+  const ctxBase = { resources, randomData, reporter, api, ui, mobile, specRegistry, testData, env: opts.env, options: opts.options };
   const uiStarted = { value: false };
+  const mobileStarted = { value: false };
   let passed = 0;
   let failed = 0;
   let runError: unknown;
@@ -155,6 +163,17 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
   });
 
   try {
+    // Checked inside the try so a bad mobile setup still reports run.end.
+    for (const scenario of scenarios) {
+      const problem = mobileScenarioProblem(scenario);
+      if (problem) throw new Error(problem);
+      if (scenarioNeedsMobile(scenario) && !opts.mobile) {
+        throw new Error(
+          `Scenario "${scenario.id}" is a mobile scenario but the run has no mobile options (device and app). Start it from Test Hub, or pass RunnerOptions.mobile.`,
+        );
+      }
+    }
+
     // One query for the whole run, after onRunStart so a failure here still reports
     // run.end. Keys that do not resolve are not fatal — they surface at the step that
     // references them, where the reporter can name the token and locate the failure.
@@ -163,6 +182,9 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
     for (const scenario of scenarios) {
       if (scenarioNeedsUi(scenario)) {
         await ensureUiStarted(ctxBase, uiStarted);
+      }
+      if (scenarioNeedsMobile(scenario)) {
+        await ensureMobileStarted(ctxBase, mobileStarted);
       }
       try {
         await engine.runScenario(scenario, {
@@ -202,6 +224,17 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
       // the reporter uploads it and references it on run.end (queued before flushPending runs).
       if (keepVideo) {
         const video = ui.getRunVideo?.();
+        if (video && reporter.attachRunArtifact) {
+          reporter.attachRunArtifact({ name: video.name, contentType: video.contentType, data: video.data });
+        }
+      }
+    }
+    if (mobile && mobileStarted.value) {
+      // Same policy as the browser video: only keep the recording when the run failed.
+      const keepVideo = !!runError;
+      await mobile.stop({ keepVideo });
+      if (keepVideo) {
+        const video = mobile.getRunVideo();
         if (video && reporter.attachRunArtifact) {
           reporter.attachRunArtifact({ name: video.name, contentType: video.contentType, data: video.data });
         }
