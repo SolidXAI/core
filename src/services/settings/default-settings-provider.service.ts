@@ -395,7 +395,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       }),
       level: SettingLevel.SystemAdminEditable,
       encrypted: true,
-      label: "AI Code Builder Configuration",
+      label: "LLM Engine Setup",
       description:
         "Structured configuration for AI providers and model assignments.",
       group: "ai-settings",
