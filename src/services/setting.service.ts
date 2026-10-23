@@ -468,10 +468,14 @@ export class SettingService {
   /**
    * 4. 
    * @param settingKey 
+   * @param namespace optional namespace declared by @SettingsProvider(namespace)
    * @returns 
    */
-  getConfigValue<T = never>(settingKey: NoInfer<T>) {
-    const cachedSetting = this.settingsByKey.get(settingKey as string);
+  getConfigValue<T = never>(settingKey: NoInfer<T>, namespace?: string) {
+    const effectiveKey = namespace !== undefined
+      ? buildSettingKey(namespace, settingKey as string)
+      : settingKey as string;
+    const cachedSetting = this.settingsByKey.get(effectiveKey);
     if (cachedSetting) {
       return cachedSetting.value;
     }
@@ -488,21 +492,6 @@ export class SettingService {
     // const getAllSettings = this.getAllSettingsFromProviders();
     // const settingValue = getAllSettings.find(i => (i.key == settingKey))
     // return settingValue?.value;
-  }
-
-  /**
-   * Returns a setting accessor scoped to a namespaced settings provider.
-   * Legacy, unnamespaced settings should continue to use getConfigValue().
-   */
-  forModule(namespace: string) {
-    validateSettingNamespace(namespace);
-    return {
-      get: <T = never>(localKey: NoInfer<T>) => {
-        const settingKey = buildSettingKey(namespace, localKey as string);
-        const cachedSetting = this.settingsByKey.get(settingKey);
-        return cachedSetting?.value ?? null;
-      },
-    };
   }
 
   async getMcpUrl(getMcpUrlDto: GetMcpUrlDto, solidRequestContext: any = {}): Promise<any> {

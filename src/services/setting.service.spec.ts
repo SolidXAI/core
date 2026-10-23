@@ -106,12 +106,12 @@ describe('SettingService provider namespaces', () => {
       .toThrow('Duplicate effective setting key "nbf:clientID"');
   });
 
-  it('reads a canonical key through forModule()', () => {
+  it('reads a canonical key through getConfigValue() with a namespace', () => {
     const service = createServiceWithProviders([]);
     (service as any).settingsByKey = new Map([
       ['nbf:clientID', setting('nbf', 'nbf:clientID', 'configured-value')],
     ]);
 
-    expect(service.forModule('nbf').get<string>('clientID')).toBe('configured-value');
+    expect(service.getConfigValue<string>('clientID', 'nbf')).toBe('configured-value');
   });
 });

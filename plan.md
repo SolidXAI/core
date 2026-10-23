@@ -106,7 +106,7 @@ New and migrated custom providers use:
 - Definitions contain local keys such as `clientID`.
 - The framework resolves them to `acme-payments:clientID`.
 - New database rows use the canonical key.
-- Callers use the module-scoped accessor or the canonical key.
+- Callers pass the local key and optional namespace to `getConfigValue()`.
 
 No existing key is changed automatically.
 
@@ -258,37 +258,35 @@ No entity or schema change is required. The existing unique index on `ss_setting
 
 Because provider aggregation resolves keys before seeding and cache hydration, existing seeding, encryption, editability checks, admin updates, and file-setting flows continue to operate on one unambiguous key.
 
-### Phase 5: Add a module-scoped accessor
+### Phase 5: Add an optional namespace to `getConfigValue()`
 
 **File:** `src/services/setting.service.ts`
 
-Keep the existing accessor unchanged:
+Extend the existing accessor without breaking one-argument calls:
 
 ```ts
-getConfigValue<T = never>(settingKey: NoInfer<T>)
+getConfigValue<T = never>(settingKey: NoInfer<T>, namespace?: string)
 ```
 
-It must continue performing an exact lookup of the supplied key. Do not silently redirect bare keys to `solid-core:<key>`, because existing Solid Core rows and cache entries remain unqualified.
-
-Add:
+When a namespace is supplied, resolve the effective key before lookup:
 
 ```ts
-forModule(namespace: string) {
-  return {
-    get: <T = never>(key: NoInfer<T>) =>
-      this.getConfigValue<T>(
-        buildSettingKey(namespace, key as string),
-      ),
-  };
+getConfigValue<T = never>(settingKey: NoInfer<T>, namespace?: string) {
+  const effectiveKey = namespace !== undefined
+    ? buildSettingKey(namespace, settingKey as string)
+    : settingKey as string;
+
+  return this.settingsByKey.get(effectiveKey)?.value ?? null;
 }
 ```
 
 Usage:
 
 ```ts
-this.settingService
-  .forModule('acme-payments')
-  .get<AcmePaymentSetting>('clientID');
+this.settingService.getConfigValue<AcmePaymentSetting>(
+  'clientID',
+  'acme-payments',
+);
 ```
 
 Direct canonical lookup remains possible:
@@ -299,7 +297,7 @@ this.settingService.getConfigValue(
 );
 ```
 
-`forModule()` removes the need for a separate `ProviderSettingKeys` object while keeping call sites explicit.
+The optional parameter removes the need for a separate `ProviderSettingKeys` object or accessor API.
 
 If repeated creation of the accessor becomes relevant, it can later be cached by namespace; it is not necessary for the initial implementation.
 
@@ -322,7 +320,7 @@ Document the following rule:
 
 > All new custom settings providers must declare a stable namespace. Existing unnamespaced providers remain supported for backward compatibility.
 
-Provide one complete custom-provider example using `@SettingsProvider(namespace)` and `forModule(namespace).get(key)`.
+Provide one complete custom-provider example using `@SettingsProvider(namespace)` and `getConfigValue(key, namespace)`.
 
 Do not emit warnings for every legacy provider in the first release. That could add noisy logs to existing applications. Deprecation warnings may be introduced later with an explicit migration policy.
 
@@ -357,7 +355,7 @@ The following should not require changes:
 1. `@SettingsProvider('module-a')` with local key `clientID` resolves to `module-a:clientID`.
 2. `module-a:clientID` and `module-b:clientID` coexist.
 3. A legacy `clientID` and namespaced `module-a:clientID` coexist.
-4. `forModule('module-a').get('clientID')` returns the correct value.
+4. `getConfigValue('clientID', 'module-a')` returns the correct value.
 5. Namespaced settings seed and hydrate from the database correctly.
 6. Namespaced encrypted settings encrypt and decrypt correctly.
 7. Namespaced readonly settings cannot be modified.
@@ -382,7 +380,7 @@ The following should not require changes:
 
 - Add optional namespace support.
 - Add canonical-key resolution.
-- Add `forModule()`.
+- Add the optional namespace parameter to `getConfigValue()`.
 - Keep all legacy behavior.
 - Require namespaces in documentation for new custom providers.
 
@@ -462,9 +460,10 @@ export class AcmePaymentsSettingsProvider implements ISettingsProvider {
 Lookup:
 
 ```ts
-const clientID = this.settingService
-  .forModule('acme-payments')
-  .get<string>('clientID');
+const clientID = this.settingService.getConfigValue<string>(
+  'clientID',
+  'acme-payments',
+);
 ```
 
 Effective cache/database/API key:
