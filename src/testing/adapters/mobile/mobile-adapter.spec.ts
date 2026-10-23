@@ -241,7 +241,35 @@ describe("MobileAdapter", () => {
       await adapter.start();
       await adapter.launch({ clearData: true });
       const scripts = driver.callsTo("execute").map((call) => call.args[0]);
-      expect(scripts.slice(0, 3)).toEqual(["mobile: terminateApp", "mobile: clearApp", "mobile: activateApp"]);
+      expect(scripts.slice(0, 4)).toEqual(["mobile: terminateApp", "mobile: clearApp", "mobile: changePermissions", "mobile: activateApp"]);
+    });
+
+    describe("permissions after a wipe on Android", () => {
+      it("grants every permission again after clearing the data", async () => {
+        const { adapter, driver } = setup();
+        await adapter.start();
+        await adapter.launch({ clearData: true });
+        const grant = driver.callsTo("execute").find((call) => call.args[0] === "mobile: changePermissions");
+        expect(grant?.args[1]).toEqual({ permissions: "all", appPackage: "com.acme.app", action: "grant" });
+      });
+
+      it("does not when the scenario tests the prompt, or when nothing was cleared", async () => {
+        const { adapter, driver } = setup();
+        await adapter.start();
+        await adapter.launch({ clearData: true, grantPermissions: false });
+        await adapter.launch();
+        const scripts = driver.callsTo("execute").map((call) => call.args[0]);
+        expect(scripts).not.toContain("mobile: changePermissions");
+      });
+
+      it("notes a failure and still launches", async () => {
+        const { adapter, driver } = setup();
+        driver.failingScripts.add("mobile: changePermissions");
+        await adapter.start();
+        await adapter.launch({ clearData: true });
+        expect(adapter.grantError).toBe("mobile: changePermissions failed");
+        expect(driver.callsTo("execute").map((call) => call.args[0])).toContain("mobile: activateApp");
+      });
     });
 
     it("fails if the app never reaches the foreground, naming the navigation timeout", async () => {

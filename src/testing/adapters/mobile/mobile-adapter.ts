@@ -230,6 +230,7 @@ export class MobileAdapter {
    * Stops the app, optionally wipes its data, then starts it and waits until it is in the foreground. On iOS a wipe is a
    * reinstall of the build (D27): `clearApp` leaves an app's preferences behind. On a simulator, permissions are granted
    * after the app is installed and before it starts, because the permission prompt cannot be accepted by the session (D28).
+   * On Android, permissions are granted again after a wipe, because clearing data revokes them.
    */
   async launch(opts: { clearData?: boolean; timeoutMs?: number; grantPermissions?: boolean } = {}): Promise<void> {
     // A phone's app is installed once, by hand, so there is no build to reinstall from: refuse before touching the app (D41).
@@ -242,7 +243,12 @@ export class MobileAdapter {
     await driver.execute("mobile: terminateApp", idArg);
     if (opts.clearData) {
       if (this.ios) await this.reinstall();
-      else await driver.execute("mobile: clearApp", idArg);
+      else {
+        await driver.execute("mobile: clearApp", idArg);
+        // Clearing an Android app's data takes back its runtime permissions, so the next permission prompt would
+        // cover the screen. Grant them again, unless the scenario is testing that prompt.
+        if (opts.grantPermissions !== false) await this.grantAndroidPermissions();
+      }
     }
     if (this.opts.simulator && opts.grantPermissions !== false && (opts.clearData || !this.launchedOnce)) {
       await this.grantPermissions();
@@ -314,6 +320,19 @@ export class MobileAdapter {
     if (!SIMULATOR_ID_RE.test(udid) || !BUNDLE_ID_RE.test(appPackage)) return;
     try {
       await (this.opts.runCommand ?? defaultRunCommand)("xcrun", ["simctl", "privacy", udid, "grant", "all", appPackage]);
+    } catch (error: any) {
+      this.grantError = String(error?.message ?? error).split("\n")[0];
+    }
+  }
+
+  /** Android: grants every runtime permission the app declares. Best-effort: a failure is noted, never thrown. */
+  private async grantAndroidPermissions(): Promise<void> {
+    try {
+      await this.getDriver().execute("mobile: changePermissions", {
+        permissions: "all",
+        appPackage: this.opts.appPackage,
+        action: "grant",
+      });
     } catch (error: any) {
       this.grantError = String(error?.message ?? error).split("\n")[0];
     }
