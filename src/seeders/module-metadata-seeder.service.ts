@@ -316,7 +316,10 @@ export class ModuleMetadataSeederService {
                         console.log(`${this.formatSeedResult(moduleMetadata.name, 'Secrets', secretCounts)}`);
 
                         currentStep = 'seedAgentHubRegistries';
-                        const agentHubCounts = await this.timeOperation('seed-agenthub-registries', () => this.seedAgentHubRegistries(overallMetadata), { moduleName: moduleMetadata.name, component: 'agenthub-registries' });
+                        let agentHubCounts = { pruned: 0, upserted: 0 };
+                        if (process.env.AGENT_HUB_ENABLED === 'true') {
+                            agentHubCounts = await this.timeOperation('seed-agenthub-registries', () => this.seedAgentHubRegistries(overallMetadata), { moduleName: moduleMetadata.name, component: 'agenthub-registries' });
+                        }
                         console.log(`${this.formatSeedResult(moduleMetadata.name, 'AgentHub Registries', agentHubCounts)}`);
 
                         currentStep = 'seedActions';
@@ -944,6 +947,14 @@ export class ModuleMetadataSeederService {
             const recordModule = await this.getAgentHubSeedModule(record, defaultModule);
             const existing = await repo.findOne({ where: { name: record.name }, relations: { module: true, tags: true }, withDeleted: true });
             const { tags: tagNames = [], moduleUserKey, ...data } = record;
+            const toolSourcePath = path.resolve(process.cwd(), 'src', recordModule.name, 'agent-hub', 'tools', `${record.name}.py`);
+            try {
+                data.sourceCode = await fs.promises.readFile(toolSourcePath, 'utf8');
+            } catch (error: any) {
+                if (error?.code !== 'ENOENT' || typeof data.sourceCode !== 'string') {
+                    throw new Error(`Tool source file not found or unreadable for ${record.name}: ${toolSourcePath}`);
+                }
+            }
             const tags = await this.getAgentHubSeedTags(tagNames, record.name);
             if (existing) {
                 if (typeof data.sourceCode === 'string' && !data.checksum) {
