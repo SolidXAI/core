@@ -1,9 +1,14 @@
 import { CommonEntity } from 'src/entities/common.entity';
-import { Entity, Column, Index } from 'typeorm';
+import { Entity, Column, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { getColumnType } from 'src/helpers/typeorm-db-helper';
+import { ModuleMetadata } from './module-metadata.entity';
 
 @Entity('ss_secret')
 export class Secret extends CommonEntity {
+    @ManyToOne(() => ModuleMetadata, { nullable: false, onDelete: 'RESTRICT' })
+    @JoinColumn()
+    module: ModuleMetadata;
+
     @Index({ unique: true })
     @Column({ type: "varchar" })
     key: string;

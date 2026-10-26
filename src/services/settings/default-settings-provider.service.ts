@@ -395,7 +395,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       }),
       level: SettingLevel.SystemAdminEditable,
       encrypted: true,
-      label: "AI Code Builder Configuration",
+      label: "LLM Engine Setup",
       description:
         "Structured configuration for AI providers and model assignments.",
       group: "ai-settings",
@@ -552,6 +552,17 @@ const getSolidCoreSettings = (isProd: boolean) =>
     },
     {
       moduleName: "solid-core",
+      key: "fileStorageRoot",
+      value: process.env.AB_MEDIA_FILE_STORAGE_ROOT ?? process.cwd(),
+      level: SettingLevel.SystemAdminReadonly,
+      label: "File Storage Root",
+      group: "storage-settings",
+      sortOrder: 25,
+      controlType: "shortText",
+      helpText: "Directory that holds the public and private media folders, e.g. an EFS mount such as /mnt/efs. Defaults to the API's working directory.",
+    },
+    {
+      moduleName: "solid-core",
       key: "fileStorageDir",
       value:
         process.env.AB_MEDIA_FILE_STORAGE_DIR ?? DEFAULT_MEDIA_FILE_STORAGE_DIR,
@@ -560,7 +571,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "storage-settings",
       sortOrder: 30,
       controlType: "shortText",
-      helpText: "Directory used by the default disk-based file storage provider for persisted files.",
+      helpText: "Folder name under the File Storage Root for public disk media. Private media is stored in a sibling '<name>-private' folder. Public files are always served at /media-files-storage.",
     },
     {
       moduleName: "solid-core",

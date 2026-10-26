@@ -88,4 +88,5 @@ export class AgentSession extends CommonEntity {
 
     @OneToMany(() => AgentHumanRequest, agentHumanRequest => agentHumanRequest.session, { cascade: true })
     agentHumanRequests: AgentHumanRequest[];
+
 }

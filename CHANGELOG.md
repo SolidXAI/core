@@ -1,5 +1,96 @@
 # Changelog
 
+## [0.1.21] - 2026-10-26
+
+### Added
+
+- add chat interface page with custom session chat widget
+- add AgentUserMemory module with controller, service, repository, and DTOs for user memory management
+- update label for AI configuration to LLM Engine Setup
+- update admin role check to include Thing7 Agent Admin for message access
+- add new ChatterMessageDetailsController methods for enhanced message retrieval
+- enhance view mode retrieval to resolve model and module from requested layout while maintaining menu item context
+- refactor view mode retrieval to use menu item context for model and module resolution
+- update view mode retrieval to support different module and model associations
+- increase maximum page size for agent messages retrieval to 500
+- add comparison endpoints for agent config versions with validation and permission checks
+- option to keep running scenarios after one fails (#200)
+- update popup width and add custom class for agent session comparison
+- add agent config version management
+- enhance subscribers to handle agent secrets, skills, tools, and metadata updates
+- enhance agent registry and metadata synchronization
+- upgrade SolidAgentEmbed to version 4 with enhanced context handling and event management
+- enhance agent and tool metadata synchronization
+- add agent registry, tool, and skill subscribers with metadata synchronization
+
+### Fixed
+
+- improve restore conflict toast message (#189)
+- improve mode handling and refactor control button creation in agent embed SDK
+
+### Documentation
+
+- add section on reading saved results and using tokens in scripts
+
+### Other
+
+- Script operator enhancements (#199)
+- Random test data (#198)
+- Random test data (#197)
+- Feat/media storage root (#196)
+- New tab op changes (#193)
+
+## [0.1.21-beta.1] - 2026-10-22
+
+### Added
+
+- add chat interface page with custom session chat widget
+- add AgentUserMemory module with controller, service, repository, and DTOs for user memory management
+- update label for AI configuration to LLM Engine Setup
+- update admin role check to include Thing7 Agent Admin for message access
+- add new ChatterMessageDetailsController methods for enhanced message retrieval
+- enhance view mode retrieval to resolve model and module from requested layout while maintaining menu item context
+- refactor view mode retrieval to use menu item context for model and module resolution
+- update view mode retrieval to support different module and model associations
+- increase maximum page size for agent messages retrieval to 500
+- add comparison endpoints for agent config versions with validation and permission checks
+- option to keep running scenarios after one fails (#200)
+- update popup width and add custom class for agent session comparison
+- add agent config version management
+- enhance subscribers to handle agent secrets, skills, tools, and metadata updates
+- enhance agent registry and metadata synchronization
+
+### Fixed
+
+- improve restore conflict toast message (#189)
+
+### Documentation
+
+- add section on reading saved results and using tokens in scripts
+
+### Other
+
+- Script operator enhancements (#199)
+- Random test data (#198)
+- Random test data (#197)
+
+## [0.1.21-beta.0] - 2026-10-15
+
+### Added
+
+- upgrade SolidAgentEmbed to version 4 with enhanced context handling and event management
+- enhance agent and tool metadata synchronization
+- add agent registry, tool, and skill subscribers with metadata synchronization
+
+### Fixed
+
+- improve mode handling and refactor control button creation in agent embed SDK
+
+### Other
+
+- Feat/media storage root (#196)
+- New tab op changes (#193)
+
 ## [0.1.20] - 2026-10-14
 
 ### Added

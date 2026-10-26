@@ -2,6 +2,7 @@ import type { ApiAdapter } from "../adapters/api/api-adapter";
 import type { PlaywrightAdapter } from "../adapters/ui/playwright-adapter";
 import type { Reporter } from "../reporter/reporter.types";
 import type { SpecRegistry } from "../core/spec-registry";
+import type { RandomDataRegistry } from "../core/random-data";
 import type { ScenarioType } from "./testing-metadata.types";
 
 export type StepPhase = "given" | "when" | "then" | "and" | "step";
@@ -36,6 +37,8 @@ export interface TestContext {
    * Scoped per scenario — a scenario never sees another scenario's secrets.
    */
   secrets?: Record<string, any>;
+  /** Hands out `${random:...}` and `util.random` values; one per run, so values never repeat in it. */
+  randomData?: RandomDataRegistry;
   options?: {
     printApiLogs?: boolean;
   };

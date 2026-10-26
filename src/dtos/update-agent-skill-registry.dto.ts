@@ -39,6 +39,16 @@ export class UpdateAgentSkillRegistryDto {
     body: string;
 
     @IsOptional()
+    @IsInt()
+    @ApiProperty({ required: false })
+    moduleId: number;
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({ required: false })
+    moduleUserKey: string;
+
+    @IsOptional()
     @ApiProperty({ required: false })
     @IsArray()
     @ValidateNested({ each: true })
