@@ -493,6 +493,7 @@ import { AgentSession } from "./entities/agent-session.entity";
 import { AgentJob } from "./entities/agent-job.entity";
 import { AgentRole } from "./entities/agent-role.entity";
 import { AgentSessionCheckpoint } from "./entities/agent-session-checkpoint.entity";
+import { AgentUserMemory } from "./entities/agent-user-memory.entity";
 import { AgentHumanRequest } from "./entities/agent-human-request.entity";
 import { AgentConfigVersion } from "./entities/agent-config-version.entity";
 import { AgentRegistryController } from "./controllers/agent-registry.controller";
@@ -508,6 +509,7 @@ import { AgentProcessController } from "./controllers/agent-process.controller";
 import { AgentSessionController } from "./controllers/agent-session.controller";
 import { AgentJobController } from "./controllers/agent-job.controller";
 import { AgentSessionCheckpointController } from "./controllers/agent-session-checkpoint.controller";
+import { AgentUserMemoryController } from "./controllers/agent-user-memory.controller";
 import { AgentHumanRequestController } from "./controllers/agent-human-request.controller";
 import { AgentConfigVersionController } from "./controllers/agent-config-version.controller";
 import { AgentHumanRequestRepository } from "./repository/agent-human-request.repository";
@@ -516,6 +518,8 @@ import { AgentHumanRequestService } from "./services/agent-human-request.service
 import { AgentConfigVersionRecordService } from "./services/agent-config-version-record.service";
 import { AgentSessionCheckpointRepository } from "./repository/agent-session-checkpoint.repository";
 import { AgentSessionCheckpointService } from "./services/agent-session-checkpoint.service";
+import { AgentUserMemoryRepository } from "./repository/agent-user-memory.repository";
+import { AgentUserMemoryService } from "./services/agent-user-memory.service";
 import { AgentSessionRepository } from "./repository/agent-session.repository";
 import { AgentJobRepository } from "./repository/agent-job.repository";
 import { AgentProcessRepository } from "./repository/agent-process.repository";
@@ -601,6 +605,7 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
       AgentSession,
       AgentJob,
       AgentSessionCheckpoint,
+      AgentUserMemory,
       AgentHumanRequest,
       AgentConfigVersion
     ]),
@@ -751,6 +756,7 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     AgentSessionController,
     AgentJobController,
     AgentSessionCheckpointController,
+    AgentUserMemoryController,
     AgentHumanRequestController,
     AgentConfigVersionController
   ],
@@ -1146,6 +1152,8 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     AgentJobRepository,
     AgentSessionCheckpointService,
     AgentSessionCheckpointRepository,
+    AgentUserMemoryService,
+    AgentUserMemoryRepository,
     AgentHumanRequestService,
     AgentHumanRequestRepository,
     AgentConfigVersionRecordService,

@@ -1,10 +1,10 @@
-/* SolidX AgentHub Embed SDK v3. No dependencies; credentials stay in memory.
+/* SolidX AgentHub Embed SDK v5. No dependencies; credentials stay in memory.
  * mode: "popup" (default) owns its launcher and floating window.
  * mode: "inline" fills the supplied container; the host owns its layout.
  */
 (function (global) {
   "use strict";
-  if (global.SolidAgentEmbed && global.SolidAgentEmbed.version >= 4) return;
+  if (global.SolidAgentEmbed && global.SolidAgentEmbed.version >= 5) return;
   var channel = "solidx-agent-embed";
   var publicProtocolVersion = 2;
   var maxContextBytes = 32 * 1024;
@@ -18,14 +18,19 @@
     var inline = mode === "inline";
     var container = typeof options.container === "string" ? document.querySelector(options.container) : options.container;
     if (!container || !container.appendChild) throw new Error("Provide an existing container element.");
-    if (!Number.isSafeInteger(options.agentId) || options.agentId <= 0) throw new Error("Provide a valid agentId.");
-    var embedUrl = new URL("/embed/agent/" + options.agentId, hostedUiOrigin);
+    var hasAgentId = options.agentId !== undefined;
+    var hasAgentName = options.agentName !== undefined;
+    if (hasAgentId === hasAgentName) throw new Error("Provide exactly one of agentId or agentName.");
+    if (hasAgentId && (!Number.isSafeInteger(options.agentId) || options.agentId <= 0)) throw new Error("Provide a valid agentId.");
+    if (hasAgentName && (typeof options.agentName !== "string" || !options.agentName.trim())) throw new Error("Provide a valid agentName.");
+    var resolvedAgentId = hasAgentId ? options.agentId : null;
+    var embedUrl = new URL("/embed/agent/" + (resolvedAgentId || ""), hostedUiOrigin);
     var endpoint = new URL(options.tokenEndpoint, location.href);
     if (!/^https?:$/.test(embedUrl.protocol) || !/^https?:$/.test(endpoint.protocol)) throw new Error("Use HTTP or HTTPS URLs.");
     if (embedUrl.username || embedUrl.password || endpoint.username || endpoint.password) throw new Error("Credentials cannot be placed in URLs.");
     if (location.protocol === "https:" && (embedUrl.protocol !== "https:" || endpoint.protocol !== "https:")) throw new Error("Use HTTPS URLs on HTTPS pages.");
     var id = crypto.randomUUID();
-    debug(id, "mount", { agentId: options.agentId, hostedUiOrigin: hostedUiOrigin, iframePath: embedUrl.pathname,
+    debug(id, "mount", { agentId: resolvedAgentId, agentName: options.agentName, hostedUiOrigin: hostedUiOrigin, iframePath: embedUrl.pathname,
       tokenEndpointOrigin: endpoint.origin, tokenEndpointPath: endpoint.pathname, pageOrigin: location.origin });
     embedUrl.searchParams.set("parentOrigin", location.origin);
     embedUrl.searchParams.set("instanceId", id);
@@ -33,7 +38,7 @@
     var destroyed = false, initialized = false, locked = false, open = false, windowMode = "popup", ready = false, tokenFlight = null;
     var pending = new Map();
     var listeners = new Map(), beforeSendListeners = [], contextSnapshots = new Map(), listenerOrder = 0, eventSequence = 0;
-    var controller = null, loadTimer = null;
+    var controller = null, loadTimer = null, bootstrapAuth = null;
     var launcherHost = null, button = null;
     if (!inline) {
       launcherHost = document.createElement("span");
@@ -123,7 +128,7 @@
       return Object.keys(value).every(function (key) { return isJsonValue(value[key], depth + 1); });
     }
     function emit(event, payload) {
-      var notification = Object.assign({ protocolVersion: publicProtocolVersion, instanceId: id, agentId: options.agentId,
+      var notification = Object.assign({ protocolVersion: publicProtocolVersion, instanceId: id, agentId: resolvedAgentId,
         eventId: crypto.randomUUID(), sequence: ++eventSequence, occurredAt: new Date().toISOString() }, payload || {});
       (listeners.get(event) || []).slice().forEach(function (entry) {
         try { entry.listener(notification); } catch (error) { debug(id, "public listener failed", { event: event, message: error && error.message }); }
@@ -246,18 +251,23 @@
         var extraHeaders = typeof options.getTokenHeaders === "function" ? options.getTokenHeaders() : (options.tokenHeaders || {});
         debug(id, "sending token exchange", { hasAuthorizationHeader: !!(extraHeaders && extraHeaders.Authorization) });
         return fetch(endpoint.href, { method: "POST", credentials: "same-origin", cache: "no-store", signal: controller.signal,
-          headers: Object.assign({ "Content-Type": "application/json" }, extraHeaders), body: JSON.stringify({ agentId: options.agentId }) });
+          headers: Object.assign({ "Content-Type": "application/json" }, extraHeaders),
+          body: JSON.stringify(hasAgentName ? { agentName: options.agentName } : { agentId: options.agentId }) });
       }).then(function (response) {
         debug(id, "token endpoint response", { status: response.status, ok: response.ok, contentType: response.headers.get("content-type") });
         if (!response.ok) throw new Error("Chat authentication failed (HTTP " + response.status + ").");
         return response.json();
       }).then(function (auth) {
-        var valid = !!auth && auth.embed === true && auth.agentId === options.agentId && !!auth.agentToken && !!auth.wsUrl && !!auth.httpUrl && Array.isArray(auth.requiredInputs);
+        var valid = !!auth && auth.embed === true && Number.isSafeInteger(auth.agentId) && auth.agentId > 0
+          && (!hasAgentId || auth.agentId === options.agentId) && !!auth.agentToken && !!auth.wsUrl && !!auth.httpUrl && Array.isArray(auth.requiredInputs);
         debug(id, "token response validated", { valid: valid, embed: !!auth && auth.embed === true,
-          agentIdMatches: !!auth && auth.agentId === options.agentId, hasAgentToken: !!auth && !!auth.agentToken,
+          agentIdMatches: !!auth && (!hasAgentId || auth.agentId === options.agentId), hasAgentToken: !!auth && !!auth.agentToken,
           hasWsUrl: !!auth && !!auth.wsUrl, hasHttpUrl: !!auth && !!auth.httpUrl,
           requiredInputsIsArray: !!auth && Array.isArray(auth.requiredInputs) });
         if (!valid) throw new Error("The token endpoint returned an invalid embed response.");
+        if (resolvedAgentId && resolvedAgentId !== auth.agentId) throw new Error("The token endpoint resolved a different agent.");
+        resolvedAgentId = auth.agentId;
+        embedUrl.pathname = "/embed/agent/" + resolvedAgentId;
         return auth;
       }).catch(function (error) {
         debug(id, "token exchange failed", { name: error && error.name, message: error && error.message });
@@ -283,7 +293,7 @@
         if (missing.length) { emitError(new Error("This hosted chat needs an upgrade. Missing capabilities: " + missing.join(", "))); return; }
         ready = true;
         clearTimeout(loadTimer);
-        emit("onReady", { protocolVersion: publicProtocolVersion, instanceId: id, agentId: options.agentId, capabilities: frameCapabilities });
+        emit("onReady", { protocolVersion: publicProtocolVersion, instanceId: id, agentId: resolvedAgentId, capabilities: frameCapabilities });
         debug(id, "iframe ready", { protocolVersion: publicProtocolVersion, capabilities: frameCapabilities });
       }
       else if (data.type === "close") hide();
@@ -298,7 +308,11 @@
         if (command) { clearTimeout(command.timer); pending.delete(data.requestId); data.ok ? command.resolve(data.result) : command.reject(new Error(data.error || "Embed command failed.")); }
       }
       else if (data.type === "token_request") {
-        fetchToken().then(function (auth) { debug(id, "sending token bootstrap to iframe", { requestId: data.requestId, inputsCount: Object.keys(inputs).length }); post("token", { requestId: data.requestId, auth: auth, inputs: inputs }); })
+        (bootstrapAuth ? Promise.resolve(bootstrapAuth) : fetchToken()).then(function (auth) {
+          bootstrapAuth = null;
+          debug(id, "sending token bootstrap to iframe", { requestId: data.requestId, inputsCount: Object.keys(inputs).length });
+          post("token", { requestId: data.requestId, auth: auth, inputs: inputs });
+        })
           .catch(function (error) { post("token_error", { requestId: data.requestId, error: error.message }); emitError(error); });
       } else if (data.type === "authenticated") { emitRecovered(); emit("onAuthenticationStateChanged", { state: "authenticated" }); }
       else if (data.type === "error") { emit("onAuthenticationStateChanged", { state: "failed", code: "embed_error" }); emitError(new Error(data.error)); }
@@ -310,15 +324,24 @@
     }
     function show() {
       if (destroyed) throw new Error("This embed was destroyed.");
-      if (open) return;
+      if (open && initialized) return;
+      var wasOpen = open;
       open = true;
-      emit("onPanelVisibilityChanged", { visible: true, reason: "open" });
+      if (!wasOpen) emit("onPanelVisibilityChanged", { visible: true, reason: "open" });
       surfaceHost.style.display = "block";
       if (button) button.setAttribute("aria-expanded", "true");
       position();
       if (!initialized) {
-        initialized = true; debug(id, "opening hosted iframe", { iframeUrl: embedUrl.href }); frame.src = embedUrl.href; panel.appendChild(frame);
-        loadTimer = setTimeout(function () { if (!ready) emitError(new Error("The hosted chat did not load. Check its URL and framing policy.")); }, 20000);
+        initialized = true;
+        var openFrame = function () {
+          if (destroyed) return;
+          debug(id, "opening hosted iframe", { iframeUrl: embedUrl.href }); frame.src = embedUrl.href; panel.appendChild(frame);
+          loadTimer = setTimeout(function () { if (!ready) emitError(new Error("The hosted chat did not load. Check its URL and framing policy.")); }, 20000);
+        };
+        if (hasAgentName) {
+          fetchToken().then(function (auth) { bootstrapAuth = auth; openFrame(); })
+            .catch(function (error) { initialized = false; emitError(error); });
+        } else openFrame();
       }
       if (!inline) closeButton.focus();
     }
@@ -404,7 +427,7 @@
         }
         catch (error) { return Promise.reject(error); }
         contextSnapshots.set(namespace, JSON.parse(JSON.stringify(contribution)));
-        emit("onContextChanged", { protocolVersion: publicProtocolVersion, instanceId: id, agentId: options.agentId, namespace: namespace, revision: revision, displaySummary: displaySummary });
+        emit("onContextChanged", { protocolVersion: publicProtocolVersion, instanceId: id, agentId: resolvedAgentId, namespace: namespace, revision: revision, displaySummary: displaySummary });
         return sendCommand("setContext", { namespace: namespace, contribution: contribution });
       },
       sendMessage: function (message) {
@@ -433,7 +456,7 @@
       },
       destroy: function () {
         if (destroyed) return;
-        emit("onDestroyed", { protocolVersion: publicProtocolVersion, instanceId: id, agentId: options.agentId,
+        emit("onDestroyed", { protocolVersion: publicProtocolVersion, instanceId: id, agentId: resolvedAgentId,
           eventId: crypto.randomUUID(), sequence: ++eventSequence, occurredAt: new Date().toISOString() });
         destroyed = true;
         clearTimeout(loadTimer);
@@ -452,5 +475,5 @@
       }
     };
   }
-  global.SolidAgentEmbed = { version: 4, mount: mount };
+  global.SolidAgentEmbed = { version: 5, mount: mount };
 })(window);
