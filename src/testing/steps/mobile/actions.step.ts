@@ -27,13 +27,25 @@ async function targetOf(ctx: TestContext, mobile: MobileAdapter, step: OpStep, o
   }
 }
 
+/**
+ * On iOS the keyboard can cover a control, and a tap on its centre would land on a key. Returns where to tap instead when
+ * only part of the control is clear of it, after putting the keyboard away or scrolling when that is what it takes.
+ */
+async function clearOfKeyboard(mobile: MobileAdapter, element: MobileElement, step: OpStep): Promise<{ x: number; y: number } | undefined> {
+  if (!mobile.ios) return undefined;
+  const reach = await reachTarget(mobile, element, mobile.describeLocator(step.with?.locator));
+  return reach.kind === "point" ? { x: reach.x, y: reach.y } : undefined;
+}
+
 export function registerActionSteps(registry: StepRegistry): void {
   registry.register("mobile.tap", async (ctx: TestContext, step: OpStep) => {
     const mobile = requireMobile(ctx, "mobile.tap");
     requireLocator(step, "mobile.tap");
     const element = await targetOf(ctx, mobile, step, "mobile.tap");
     if (!element) return OPTIONAL_SKIPPED;
-    await element.click();
+    const point = await clearOfKeyboard(mobile, element, step);
+    if (point) await mobile.getDriver().execute("mobile: tap", point);
+    else await element.click();
   });
 
   registry.register("mobile.type", async (ctx: TestContext, step: OpStep) => {
@@ -46,6 +58,10 @@ export function registerActionSteps(registry: StepRegistry): void {
     const clear = optionalBoolean(step, "clear", "mobile.type") ?? true;
     const element = await targetOf(ctx, mobile, step, "mobile.type");
     if (!element) return OPTIONAL_SKIPPED;
+    // A field only partly clear of the keyboard is tapped where it shows so it has focus before the text goes in. This has
+    // not been tried on a device: WebDriverAgent is expected not to tap a field that already has keyboard focus.
+    const point = await clearOfKeyboard(mobile, element, step);
+    if (point) await mobile.getDriver().execute("mobile: tap", point);
     if (clear) {
       await element.setValue(String(text));
     } else {
@@ -57,6 +73,8 @@ export function registerActionSteps(registry: StepRegistry): void {
     const mobile = requireMobile(ctx, "mobile.clear");
     requireLocator(step, "mobile.clear");
     const element = await mobile.findDisplayed(await resolveMobileTarget(ctx, step, stepTimeout(step)), stepTimeout(step));
+    const point = await clearOfKeyboard(mobile, element, step);
+    if (point) await mobile.getDriver().execute("mobile: tap", point);
     await element.clearValue();
   });
 

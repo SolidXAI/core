@@ -239,3 +239,87 @@ describe("mobile.hideKeyboard on a real iPhone (D47)", () => {
     expect(driver.callsTo("isKeyboardShown")).toHaveLength(0);
   });
 });
+
+describe("a control under the iPhone keyboard", () => {
+  const LOGIN = { by: "accessibilityId", value: "Login" };
+  /** A Login button whose top is `top` points down the screen; the keyboard starts at 500. */
+  const login = (driver: FakeDriver, top: number) => driver.add("~Login", new FakeElement({ location: { x: 20, y: top }, size: { width: 360, height: 60 } }))[0];
+
+  it("clicks a control that is clear of the keyboard", async () => {
+    const { run, driver } = await withKeyboard();
+    const button = login(driver, 400);
+    await run("mobile.tap", { locator: LOGIN });
+    expect(button.calls).toContain("click");
+    expect(executes(driver)).toEqual([]);
+  });
+
+  it("clicks without looking further when there is no keyboard", async () => {
+    const { run, driver } = await setup(true);
+    const button = login(driver, 700);
+    await run("mobile.tap", { locator: LOGIN });
+    expect(button.calls).toContain("click");
+    expect(executes(driver)).toEqual([]);
+  });
+
+  it("taps the middle of the part the keyboard leaves showing", async () => {
+    const { run, driver } = await withKeyboard();
+    const button = login(driver, 440); // 440-500 shows, 500-500 hidden: here 60 points tall, all of it above 500
+    button.size = { width: 360, height: 100 }; // 440-540: 60 points show
+    await run("mobile.tap", { locator: LOGIN });
+    expect(button.calls).not.toContain("click");
+    // Visible part is y 440-500, its middle is 470; x is the middle of the width, 20 + 180.
+    expect(executes(driver)).toEqual([["mobile: tap", { x: 200, y: 470 }]]);
+  });
+
+  it("puts the keyboard away when it covers the whole control and something hides it", async () => {
+    const { run, driver } = await withKeyboard(["tapOutside"]);
+    dismissFails(driver);
+    const button = login(driver, 600);
+    await run("mobile.tap", { locator: LOGIN });
+    expect(button.calls).toContain("click");
+  });
+
+  it("scrolls the control above the keyboard when nothing hides it", async () => {
+    const { run, driver } = await withKeyboard([]);
+    dismissFails(driver);
+    const button = login(driver, 600);
+    const drag = driver.execute.bind(driver);
+    driver.execute = (async (script: string, ...args: unknown[]) => {
+      if (script === "mobile: dragFromToForDuration") button.location = { x: 20, y: 400 };
+      return drag(script, ...args);
+    }) as typeof driver.execute;
+    await run("mobile.tap", { locator: LOGIN });
+    expect(button.calls).toContain("click");
+  });
+
+  it("says the keyboard blocks the control when nothing works", async () => {
+    const { run, driver } = await withKeyboard([]);
+    dismissFails(driver);
+    login(driver, 600);
+    await expect(run("mobile.tap", { locator: LOGIN })).rejects.toThrow(/^The keyboard covers .*Login.* and could not be hidden/);
+  });
+
+  it("taps a half-covered field where it shows before typing into it", async () => {
+    const { run, driver } = await withKeyboard();
+    const field = driver.add("~User", new FakeElement({ location: { x: 20, y: 440 }, size: { width: 360, height: 100 } }))[0];
+    await run("mobile.type", { locator: { by: "accessibilityId", value: "User" }, text: "bob" });
+    expect(executes(driver)).toEqual([["mobile: tap", { x: 200, y: 470 }]]);
+    expect(field.calls).toContain("setValue:bob");
+  });
+
+  it("does not look for a keyboard on Android", async () => {
+    const driver = new FakeDriver();
+    const mobile = new MobileAdapter({
+      appiumUrl: "http://localhost:4723", udid: "emulator-5554", platformName: "Android", appSource: "installed",
+      appPackage: "com.example", appActivity: ".Main", recordVideo: false, driverFactory: async () => driver, runCommand: jest.fn(async () => undefined),
+    });
+    await mobile.start();
+    const registry = new StepRegistry();
+    registerMobileSteps(registry);
+    const button = driver.add("~Login", new FakeElement())[0];
+    const ctx = { scenarioId: "s1", scenarioType: "mobile", params: {}, mobile } as unknown as TestContext;
+    await registry.get("mobile.tap")(ctx, { op: "mobile.tap", with: { locator: LOGIN } });
+    expect(button.calls).toContain("click");
+    expect(driver.callsTo("$$").some((call) => String(call.args[0]).includes("XCUIElementTypeKeyboard"))).toBe(false);
+  });
+});
