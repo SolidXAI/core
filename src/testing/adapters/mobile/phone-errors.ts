@@ -8,10 +8,18 @@ export const CLEAR_DATA_ON_PHONE =
   "Clearing data on an iPhone is not supported: Test Hub uses the app already installed on the phone. " +
   "Remove clearData from mobile.launch, or log out at the start of the scenario.";
 
-/** What `mobile.hideKeyboard` says on a phone when the keyboard is still shown after trying to hide it (D47). */
+/** What `mobile.hideKeyboard` says on a phone when the keyboard is still shown after every way of hiding it (D47). */
 export const KEYBOARD_STAYS_ON_PHONE =
-  "mobile.hideKeyboard: the keyboard could not be hidden on this screen. " +
-  "Tap the app's own control instead (a Done or Return key the app handles, or a button outside the keyboard).";
+  "mobile.hideKeyboard: the keyboard could not be hidden on this screen. It stayed up after the keyboard's Done key, a tap " +
+  "outside the fields and a swipe down, so this screen only ends editing on a control of its own.";
+
+/** A tap or type whose control is under a keyboard that would not go away. */
+export function keyboardBlocks(label: string): string {
+  return (
+    `The keyboard covers ${label} and could not be hidden: this screen does not end editing on the keyboard's Done ` +
+    `key, a tap outside the fields or a swipe down, and ${label} cannot be scrolled above it.`
+  );
+}
 
 const CAUSES: Array<{ when: (text: string) => boolean; hint: string }> = [
   {

@@ -52,6 +52,10 @@ export class FakeDriver implements MobileDriver {
   /** States returned by `mobile: queryAppState`, one per call, before `appState` takes over. */
   appStates: number[] = [];
   keyboardShown = false;
+  /** Where the keyboard is while it is shown; without it, a keyboard has no frame to look up. */
+  keyboardRect?: { x: number; y: number; width: number; height: number };
+  /** Which ways of hiding the keyboard work. Unset: the driver's own call does, as before. */
+  hideWith?: Set<"driver" | "tapOutside" | "swipeDown">;
   windowSize = { width: 1080, height: 2400 };
   /** Methods listed here throw when called. */
   failing = new Set<string>();
@@ -84,6 +88,10 @@ export class FakeDriver implements MobileDriver {
     this.record("$$", [selector]);
     const delay = typeof this.lookupDelayMs === "function" ? this.lookupDelayMs(selector) : this.lookupDelayMs;
     if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
+    if (selector === "-ios class chain:**/XCUIElementTypeKeyboard" && this.keyboardRect && this.keyboardShown) {
+      const { x, y, width, height } = this.keyboardRect;
+      return [new FakeElement({ location: { x, y }, size: { width, height } })];
+    }
     return [...(this.elements.get(selector) ?? [])];
   }
   // No real waiting: poll the condition a few times, then fail with the supplied message.
@@ -97,11 +105,13 @@ export class FakeDriver implements MobileDriver {
   async execute(script: string, ...args: unknown[]) {
     this.record("execute", [script, ...args]);
     if (this.failingScripts.has(script)) throw new Error(`${script} failed`);
+    if (script === "mobile: tap" && this.hideWith?.has("tapOutside")) this.keyboardShown = false;
+    if (script === "mobile: dragFromToForDuration" && this.hideWith?.has("swipeDown")) this.keyboardShown = false;
     return script === "mobile: queryAppState" ? (this.appStates.length ? this.appStates.shift() : this.appState) : undefined;
   }
   async back() { this.record("back", []); }
   async isKeyboardShown() { this.record("isKeyboardShown", []); return this.keyboardShown; }
-  async hideKeyboard() { this.record("hideKeyboard", []); this.keyboardShown = false; }
+  async hideKeyboard() { this.record("hideKeyboard", []); if (!this.hideWith || this.hideWith.has("driver")) this.keyboardShown = false; }
   async getWindowSize() { this.record("getWindowSize", []); return this.windowSize; }
   async takeScreenshot() { this.record("takeScreenshot", []); return this.screenshotBase64; }
   async getPageSource() { this.record("getPageSource", []); return this.pageSource; }

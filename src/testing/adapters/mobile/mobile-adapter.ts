@@ -467,6 +467,11 @@ export class MobileAdapter {
     return artifacts;
   }
 
+  /** Waits on the adapter's clock, so a test with a fake clock does not wait for real. */
+  pause(ms: number): Promise<void> {
+    return this.clock.sleep(ms);
+  }
+
   /** Printable form of a locator for error messages, e.g. `{ by: "accessibilityId", value: "Save" }`. */
   describeLocator(locator: unknown): string {
     return this.resolve(locator).label;

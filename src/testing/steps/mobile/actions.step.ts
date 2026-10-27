@@ -2,6 +2,7 @@ import type { MobileAdapter } from "../../adapters/mobile/mobile-adapter";
 import type { MobileElement } from "../../adapters/mobile/mobile.types";
 import type { TestContext } from "../../contracts/runtime-context.types";
 import type { OpStep } from "../../contracts/testing-metadata.types";
+import { HIDE_METHODS, hideKeyboardBy, methodsFrom, reachTarget, type HideMethod } from "../../adapters/mobile/ios-keyboard";
 import { KEYBOARD_STAYS_ON_PHONE } from "../../adapters/mobile/phone-errors";
 import { resolveMobileTarget } from "../../adapters/mobile/resolve-mobile-target";
 import { StepRegistry } from "../../core/step-registry";
@@ -78,21 +79,32 @@ export function registerActionSteps(registry: StepRegistry): void {
     await driver.back();
   });
 
-  registry.register("mobile.hideKeyboard", async (ctx: TestContext) => {
+  registry.register("mobile.hideKeyboard", async (ctx: TestContext, step: OpStep) => {
     const mobile = requireMobile(ctx, "mobile.hideKeyboard");
     const driver = mobile.getDriver();
     if (mobile.ios) {
-      // The Simulator reports a keyboard as shown even after it is hidden, so it cannot be asked first. The driver says
-      // so when it finds no key to dismiss it with, which means there was nothing to hide.
-      try {
-        await driver.hideKeyboard();
-      } catch (error: any) {
-        if (!String(error?.message ?? error).includes("dismiss the keyboard")) throw error;
+      if (!mobile.phone) {
+        // The Simulator reports a keyboard as shown even after it is hidden, so it cannot be asked first. The driver says
+        // so when it finds no key to dismiss it with, which means there was nothing to hide.
+        try {
+          await driver.hideKeyboard();
+        } catch (error: any) {
+          if (!String(error?.message ?? error).includes("dismiss the keyboard")) throw error;
+        }
+        return;
       }
-      // A phone reports its keyboard truthfully, and what hides it depends on the app: a step that "passed" with the keyboard
-      // still covering the screen would only fail later, at a tap that cannot reach its target (D47).
-      if (mobile.phone && (await driver.isKeyboardShown())) throw new Error(KEYBOARD_STAYS_ON_PHONE);
-      return;
+      // iOS has no hide-keyboard action: the keyboard goes when the app ends editing, and apps differ in what does that.
+      // A phone reports its keyboard truthfully, so each way is tried and checked, and the one that worked is returned for
+      // the recording to keep. A step that "passed" with the keyboard still covering the screen would only fail later, at a
+      // tap that cannot reach its target (D47).
+      const recorded = step.with?.method;
+      if (recorded !== undefined && !HIDE_METHODS.includes(recorded as HideMethod)) {
+        throw new Error(`"method" must be one of ${HIDE_METHODS.join(", ")} for op "mobile.hideKeyboard"`);
+      }
+      if (!(await driver.isKeyboardShown())) return { method: "none" };
+      const method = await hideKeyboardBy(mobile, methodsFrom(recorded as HideMethod | undefined));
+      if (!method) throw new Error(KEYBOARD_STAYS_ON_PHONE);
+      return { method };
     }
     // Hiding a keyboard that is not shown is an error on some devices, so check first.
     if (await driver.isKeyboardShown()) {

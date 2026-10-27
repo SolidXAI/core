@@ -6,7 +6,7 @@ import { registerMobileSteps } from "./index";
 
 const NAV_BUTTONS = "-ios class chain:**/XCUIElementTypeNavigationBar/XCUIElementTypeButton";
 
-async function setup(phone = false) {
+async function setup(phone = false, clock?: FakeClock) {
   const driver = new FakeDriver();
   const runCommand = jest.fn(async () => undefined);
   const mobile = new MobileAdapter({
@@ -20,6 +20,7 @@ async function setup(phone = false) {
     recordVideo: false,
     driverFactory: async () => driver,
     runCommand,
+    clock,
   });
   await mobile.start();
   const registry = new StepRegistry();
@@ -127,44 +128,105 @@ describe("mobile steps on iOS", () => {
   });
 });
 
+const DONE_KEY = '-ios class chain:**/XCUIElementTypeKeyboard/**/XCUIElementTypeButton[`name IN {"Done","done","Hide keyboard","Dismiss"}`]';
+const KEYBOARD = { x: 0, y: 500, width: 400, height: 300 };
+/** A screen with a back button at the top left, and a Login button just above the keyboard. */
+const SCREEN = `<XCUIElementTypeApplication x="0" y="0" width="400" height="800">
+  <XCUIElementTypeButton name="Back" x="0" y="50" width="400" height="40"/>
+  <XCUIElementTypeTextField name="User" x="20" y="200" width="360" height="40"/>
+  <XCUIElementTypeButton name="Login" x="20" y="440" width="360" height="60"/>
+</XCUIElementTypeApplication>`;
+
+async function withKeyboard(hideWith?: Array<"driver" | "tapOutside" | "swipeDown">) {
+  const made = await setup(true, new FakeClock());
+  made.driver.keyboardShown = true;
+  made.driver.keyboardRect = KEYBOARD;
+  made.driver.windowSize = { width: 400, height: 800 };
+  made.driver.pageSource = SCREEN;
+  if (hideWith) made.driver.hideWith = new Set(hideWith);
+  return made;
+}
+const dismissFails = (driver: FakeDriver) => {
+  driver.failing.add("hideKeyboard");
+  driver.failureMessages.set("hideKeyboard", "Did not know how to dismiss the keyboard. Try to dismiss it in the way supported by your application under test.");
+};
+
 describe("mobile.hideKeyboard on a real iPhone (D47)", () => {
-  const NOT_HIDDEN = "mobile.hideKeyboard: the keyboard could not be hidden on this screen. Tap the app's own control instead (a Done or Return key the app handles, or a button outside the keyboard).";
-  const cannotDismiss = (driver: FakeDriver) => {
-    driver.failing.add("hideKeyboard");
-    driver.failureMessages.set("hideKeyboard", "Did not know how to dismiss the keyboard. Try to dismiss it in the way supported by your application under test.");
-  };
+  const NOT_HIDDEN = "mobile.hideKeyboard: the keyboard could not be hidden on this screen. It stayed up after the keyboard's Done key, a tap outside the fields and a swipe down, so this screen only ends editing on a control of its own.";
 
-  it("passes when the keyboard went away", async () => {
-    const { run, driver } = await setup(true);
-    driver.keyboardShown = true;
-    await expect(run("mobile.hideKeyboard")).resolves.toBeUndefined();
+  it("uses the driver's own hide first, and says so", async () => {
+    const { run, driver } = await withKeyboard();
+    await expect(run("mobile.hideKeyboard")).resolves.toEqual({ method: "driver" });
     expect(driver.callsTo("hideKeyboard")).toHaveLength(1);
-    expect(driver.callsTo("isKeyboardShown")).toHaveLength(1);
+    expect(executes(driver)).toEqual([]);
   });
 
-  it("fails when the driver cannot dismiss it and it stays up", async () => {
-    const { run, driver } = await setup(true);
-    driver.keyboardShown = true;
-    cannotDismiss(driver);
+  it("falls back to the keyboard's Done key", async () => {
+    const { run, driver } = await withKeyboard(["tapOutside"]);
+    dismissFails(driver);
+    const done = new FakeElement();
+    done.click = async () => { driver.keyboardShown = false; };
+    driver.add(DONE_KEY, done);
+    await expect(run("mobile.hideKeyboard")).resolves.toEqual({ method: "doneKey" });
+  });
+
+  it("then to a tap outside the fields, on a point that is on no control", async () => {
+    const { run, driver } = await withKeyboard(["tapOutside"]);
+    dismissFails(driver);
+    await expect(run("mobile.hideKeyboard")).resolves.toEqual({ method: "tapOutside" });
+    const [script, args] = executes(driver)[0] as [string, { x: number; y: number }];
+    expect(script).toBe("mobile: tap");
+    // Above the keyboard (y < 500), and clear of the Back button (y 50-90) and the field (y 200-240), which span the width.
+    expect(args.y).toBeLessThan(KEYBOARD.y);
+    expect(args.y < 50 || (args.y > 90 && args.y < 200) || (args.y > 240 && args.y < 440)).toBe(true);
+  });
+
+  it("then to a swipe down from the top of the keyboard", async () => {
+    const { run, driver } = await withKeyboard(["swipeDown"]);
+    dismissFails(driver);
+    await expect(run("mobile.hideKeyboard")).resolves.toEqual({ method: "swipeDown" });
+    // The tap outside was tried first and did nothing; the drag is the last gesture.
+    const [script, args] = executes(driver).at(-1) as [string, Record<string, number>];
+    expect(script).toBe("mobile: dragFromToForDuration");
+    expect(args.fromY).toBe(KEYBOARD.y - 16);
+    expect(args.toY).toBeGreaterThan(KEYBOARD.y);
+  });
+
+  it("fails when nothing hides it", async () => {
+    const { run, driver } = await withKeyboard([]);
+    dismissFails(driver);
     await expect(run("mobile.hideKeyboard")).rejects.toThrow(NOT_HIDDEN);
   });
 
-  it("fails when the driver says nothing but the keyboard is still shown", async () => {
-    const { run, driver } = await setup(true);
-    driver.keyboardShown = true;
-    driver.hideKeyboard = async () => { /* succeeds without hiding anything */ };
-    await expect(run("mobile.hideKeyboard")).rejects.toThrow(NOT_HIDDEN);
+  it("tries the recorded method first, without the driver's call", async () => {
+    const { run, driver } = await withKeyboard(["tapOutside"]);
+    await expect(run("mobile.hideKeyboard", { method: "tapOutside" })).resolves.toEqual({ method: "tapOutside" });
+    expect(driver.callsTo("hideKeyboard")).toHaveLength(0);
   });
 
-  it("passes when there was no keyboard to dismiss", async () => {
+  it("still passes when the recorded method no longer works but another does", async () => {
+    const { run } = await withKeyboard(["driver"]);
+    await expect(run("mobile.hideKeyboard", { method: "swipeDown" })).resolves.toEqual({ method: "driver" });
+  });
+
+  it("refuses a method it does not know", async () => {
+    const { run } = await withKeyboard();
+    await expect(run("mobile.hideKeyboard", { method: "bogus" })).rejects.toThrow(
+      '"method" must be one of driver, doneKey, tapOutside, swipeDown for op "mobile.hideKeyboard"',
+    );
+  });
+
+  it("does nothing when there is no keyboard", async () => {
     const { run, driver } = await setup(true);
     driver.keyboardShown = false;
-    cannotDismiss(driver);
-    await expect(run("mobile.hideKeyboard")).resolves.toBeUndefined();
+    dismissFails(driver);
+    await expect(run("mobile.hideKeyboard")).resolves.toEqual({ method: "none" });
+    expect(driver.callsTo("hideKeyboard")).toHaveLength(0);
   });
 
   it("still fails on any other error", async () => {
-    const { run, driver } = await setup(true);
+    const { run, driver } = await setup(true, new FakeClock());
+    driver.keyboardShown = true;
     driver.failing.add("hideKeyboard");
     await expect(run("mobile.hideKeyboard")).rejects.toThrow("hideKeyboard failed");
   });
@@ -172,7 +234,7 @@ describe("mobile.hideKeyboard on a real iPhone (D47)", () => {
   it("the Simulator is unchanged: it never asks whether the keyboard is shown", async () => {
     const { run, driver } = await setup(false);
     driver.keyboardShown = true;
-    cannotDismiss(driver);
+    dismissFails(driver);
     await expect(run("mobile.hideKeyboard")).resolves.toBeUndefined();
     expect(driver.callsTo("isKeyboardShown")).toHaveLength(0);
   });

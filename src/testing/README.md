@@ -601,7 +601,7 @@ every run).
 | `mobile.swipe` | `direction` (up/down/left/right), `percent` (0.1 to 1, default 0.75), `locator` (optional) | Swipes on the element, or the screen |
 | `mobile.scrollTo` | `locator`, `direction` (down/up, default down), `maxSwipes` (default 10) | Swipes until the element shows |
 | `mobile.back` | `optional` (optional) | Presses Back |
-| `mobile.hideKeyboard` | – | Hides the keyboard if it is shown |
+| `mobile.hideKeyboard` | `method` (iPhone only, recorded by authoring: `driver`, `doneKey`, `tapOutside`, `swipeDown`) | Hides the keyboard if it is shown. On a real iPhone iOS has no hide action, so the keyboard's own Done key, a tap on a spot that is on no control, and a swipe down are tried in turn; the step passes with the first that works and fails when none does. The recorded `method` is tried first on a run |
 | `mobile.expectVisible` | `locator` | Passes when the element is displayed in time |
 | `mobile.expectHidden` | `locator` | Passes when no match is displayed in time |
 | `mobile.expectText` | `locator` and exactly one of `equals`, `contains`, `matches` (a regex) | Compares the element's text; returns it |
