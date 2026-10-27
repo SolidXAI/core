@@ -87,6 +87,11 @@ export class TestRunRequestDto {
   @IsOptional()
   @IsIn(['off', 'report', 'auto'])
   healing?: HealingPolicy;
+  
+  /** Browser window size (and phone emulation) for UI scenarios; omit for the default 1280x720 desktop window. Phone/tablet emulation sets isMobile, hasTouch, deviceScaleFactor and userAgent. */
+  @IsOptional()
+  @IsObject()
+  viewport?: { width: number; height: number; isMobile?: boolean; hasTouch?: boolean; deviceScaleFactor?: number; userAgent?: string };
 
   @IsOptional()
   @IsBoolean()

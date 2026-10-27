@@ -17,6 +17,7 @@ import {
 } from '../../testing/reporter/lifecycle-webhook-reporter';
 import { FileServiceArtifactSink } from '../../testing/reporter/file-service-artifact-sink';
 import { FILE_SERVICE, IFileService } from '../../services/file/file-service.interface';
+import { FILE_STORAGE_PATH_BUILDER, IStoragePathBuilder } from '../../services/file/storage-path-builder';
 import { TestRunJobPayload } from '../../dtos/test-run-request.dto';
 import { SecretService } from '../../services/secret.service';
 
@@ -40,6 +41,7 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
         readonly poller: PollerService,
         private readonly httpService: HttpService,
         @Inject(FILE_SERVICE) private readonly fileService: IFileService,
+        @Inject(FILE_STORAGE_PATH_BUILDER) private readonly pathBuilder: IStoragePathBuilder,
         private readonly secretService: SecretService,
     ) {
         super(mqMessageService, mqMessageQueueService, poller);
@@ -66,8 +68,9 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
 
         // Persist binary artifacts (screenshots, whole-run video) to shared storage via the
         // core FILE_SERVICE (disk by default, S3 when DEFAULT_FILE_SERVICE=s3) instead of
-        // shipping them inline / storing blobs in the DB.
-        const artifactSink = new FileServiceArtifactSink(this.fileService, { prefix: 'testing-hub' });
+        // shipping them inline / storing blobs in the DB. They go where SolidX keeps its media
+        // (the path builder resolves the configured media folder or bucket), not into the working directory.
+        const artifactSink = new FileServiceArtifactSink(this.fileService, { prefix: 'testing-hub', pathBuilder: this.pathBuilder });
 
         const reporter = new LifecycleWebhookReporter({
             webhookUrl: p.webhookUrl,
@@ -105,7 +108,7 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
                 reporter,
                 env: p.variables,
                 api: { baseUrl: p.baseUrl },
-                ui: { baseUrl: p.uiBaseUrl, headless: p.headless ?? true, capture: p.capture, recordVideo: p.recordVideo ?? true, healing: p.healing },
+                ui: { baseUrl: p.uiBaseUrl, headless: p.headless ?? true, capture: p.capture, recordVideo: p.recordVideo ?? true, healing: p.healing, viewport: p.viewport },
                 mobile: p.mobile ? toMobileAdapterOptions(p.mobile, { recordVideo: p.recordVideo, capture: p.capture }) : undefined,
                 options: { printApiLogs: p.printApiLogs ?? true },
                 failFast: p.failFast,

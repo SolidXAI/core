@@ -2,7 +2,7 @@ import type { Browser, BrowserContext, Page, ConsoleMessage, Response, Request, 
 
 import type { HealEvent } from "../../contracts/runtime-context.types";
 import type { HealingPolicy } from "../../contracts/testing-metadata.types";
-import type { AttachOptions, CaptureOptions, PlaywrightAdapterOptions } from "./ui.types";
+import type { AttachOptions, CaptureOptions, PlaywrightAdapterOptions, ViewportOptions } from "./ui.types";
 
 /** Storage state as returned by `BrowserContext.storageState()`. */
 export type StorageState = Awaited<ReturnType<BrowserContext["storageState"]>>;
@@ -53,6 +53,7 @@ export class PlaywrightAdapter {
   private readonly capture: CaptureOptions;
   private readonly recordVideo: boolean;
   private readonly healing: HealingPolicy;
+  private readonly viewport?: ViewportOptions;
   private browser?: Browser;
   private context?: BrowserContext;
   public page?: Page;
@@ -83,6 +84,7 @@ export class PlaywrightAdapter {
     this.capture = opts?.capture ?? {};
     this.recordVideo = opts?.recordVideo ?? true;
     this.healing = opts?.healing ?? "report";
+    this.viewport = sanitizeViewport(opts?.viewport);
   }
 
   /**
@@ -153,6 +155,7 @@ export class PlaywrightAdapter {
       throw new Error("PlaywrightAdapter: browser is not started");
     }
     this.context = await this.browser.newContext({
+      ...contextViewportOptions(this.viewport),
       ...(this.videoDir ? { recordVideo: { dir: this.videoDir } } : {}),
       ...(storageState ? { storageState } : {}),
     });
@@ -465,4 +468,37 @@ function shouldCaptureDetailedNetworkEntry(req: Request): boolean {
   }
 
   return resourceType === "document";
+}
+
+/** A usable viewport, or undefined (Playwright's default window) when the size is missing or nonsense. */
+export function sanitizeViewport(viewport?: ViewportOptions): ViewportOptions | undefined {
+  if (!viewport) return undefined;
+  const width = Math.trunc(Number(viewport.width));
+  const height = Math.trunc(Number(viewport.height));
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width < 200 || height < 200 || width > 7680 || height > 4320) {
+    return undefined;
+  }
+  const scale = Number(viewport.deviceScaleFactor);
+  return {
+    width,
+    height,
+    ...(viewport.isMobile ? { isMobile: true } : {}),
+    ...(viewport.hasTouch ? { hasTouch: true } : {}),
+    ...(Number.isFinite(scale) && scale > 0 && scale <= 5 ? { deviceScaleFactor: scale } : {}),
+    ...(typeof viewport.userAgent === "string" && viewport.userAgent.trim() && viewport.userAgent.length <= 400
+      ? { userAgent: viewport.userAgent.trim() }
+      : {}),
+  };
+}
+
+/** The Playwright `newContext` options a viewport stands for. */
+export function contextViewportOptions(viewport?: ViewportOptions): Record<string, unknown> {
+  if (!viewport) return {};
+  return {
+    viewport: { width: viewport.width, height: viewport.height },
+    ...(viewport.isMobile ? { isMobile: true } : {}),
+    ...(viewport.hasTouch ? { hasTouch: true } : {}),
+    ...(viewport.deviceScaleFactor ? { deviceScaleFactor: viewport.deviceScaleFactor } : {}),
+    ...(viewport.userAgent ? { userAgent: viewport.userAgent } : {}),
+  };
 }
