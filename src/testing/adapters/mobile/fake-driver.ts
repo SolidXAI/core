@@ -47,6 +47,8 @@ export class FakeDriver implements MobileDriver {
   screenshotBase64 = Buffer.from("png-bytes").toString("base64");
   recordingBase64 = Buffer.from("mp4-bytes").toString("base64");
   appState = 4;
+  /** What `getPageSource` returns. */
+  pageSource = "<hierarchy rotation=\"0\"></hierarchy>";
   /** States returned by `mobile: queryAppState`, one per call, before `appState` takes over. */
   appStates: number[] = [];
   keyboardShown = false;
@@ -102,6 +104,7 @@ export class FakeDriver implements MobileDriver {
   async hideKeyboard() { this.record("hideKeyboard", []); this.keyboardShown = false; }
   async getWindowSize() { this.record("getWindowSize", []); return this.windowSize; }
   async takeScreenshot() { this.record("takeScreenshot", []); return this.screenshotBase64; }
+  async getPageSource() { this.record("getPageSource", []); return this.pageSource; }
   async getLogs(type: string) { this.record("getLogs", [type]); const out = this.logs; this.logs = []; return out; }
   async startRecordingScreen(opts?: Record<string, unknown>) { this.record("startRecordingScreen", [opts]); }
   async stopRecordingScreen() { this.record("stopRecordingScreen", []); return this.recordingBase64; }

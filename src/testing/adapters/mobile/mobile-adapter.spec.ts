@@ -309,6 +309,36 @@ describe("MobileAdapter", () => {
     });
   });
 
+  describe("attach", () => {
+    const opts = { appPackage: "com.acme.app", appActivity: ".MainActivity", clock: new FakeClock() };
+
+    it("runs on the caller's driver without opening, recording or ending a session", async () => {
+      const driver = new FakeDriver();
+      const [button] = driver.add("~Save", new FakeElement());
+      const adapter = MobileAdapter.attach(driver, opts);
+      expect(adapter.isStarted()).toBe(true);
+      expect(await adapter.find({ by: "accessibilityId", value: "Save" })).toBe(button);
+      await adapter.stop({ keepVideo: true });
+      expect(adapter.isStarted()).toBe(false);
+      expect(driver.callsTo("startRecordingScreen")).toHaveLength(0);
+      expect(driver.callsTo("stopRecordingScreen")).toHaveLength(0);
+      expect(driver.callsTo("deleteSession")).toHaveLength(0);
+    });
+
+    it("reads the page source from the attached driver", async () => {
+      const driver = new FakeDriver();
+      driver.pageSource = "<hierarchy/>";
+      expect(await MobileAdapter.attach(driver, opts).getPageSource()).toBe("<hierarchy/>");
+    });
+
+    it("keeps the platform: an iOS adapter without simulator is a phone", () => {
+      const driver = new FakeDriver();
+      expect(MobileAdapter.attach(driver, { ...opts, platformName: "iOS" }).phone).toBe(true);
+      expect(MobileAdapter.attach(driver, { ...opts, platformName: "iOS", simulator: true }).phone).toBe(false);
+      expect(MobileAdapter.attach(driver, opts).phone).toBe(false);
+    });
+  });
+
   describe("describeLocator", () => {
     it("returns the printable label, and rejects an invalid locator", () => {
       const { adapter } = setup();
@@ -446,11 +476,29 @@ describe("MobileAdapter", () => {
       driver.logs = [{ level: "ALL", message: "10-09 09:49:37.434   363  3815 E AndroidRuntime: boom" }];
       await adapter.start();
       const artifacts = await adapter.collectFailureArtifacts();
-      expect(artifacts.map((a) => a.name)).toEqual(["console.json", "screenshot.png"]);
+      expect(artifacts.map((a) => a.name)).toEqual(["console.json", "screenshot.png", "page-source.xml"]);
       const shot = artifacts.find((a) => a.name === "screenshot.png")!;
       expect(shot.contentType).toBe("image/png");
       expect(Buffer.isBuffer(shot.data)).toBe(true);
       expect((shot.data as Buffer).toString()).toBe("png-bytes");
+    });
+
+    it("keeps the screen's element tree next to the screenshot, and carries on when it cannot be read", async () => {
+      const { adapter, driver } = setup({ capture: { console: false, screenshot: true } });
+      driver.pageSource = '<hierarchy><node text="Save"/></hierarchy>';
+      await adapter.start();
+      const source = (await adapter.collectFailureArtifacts()).find((a) => a.name === "page-source.xml")!;
+      expect(source).toMatchObject({ contentType: "application/xml", data: '<hierarchy><node text="Save"/></hierarchy>' });
+
+      driver.failing.add("getPageSource");
+      expect((await adapter.collectFailureArtifacts()).map((a) => a.name)).toEqual(["screenshot.png"]);
+    });
+
+    it("does not read the page source unless a screenshot was asked for", async () => {
+      const { adapter, driver } = setup({ capture: { console: true } });
+      await adapter.start();
+      await adapter.collectFailureArtifacts();
+      expect(driver.callsTo("getPageSource")).toHaveLength(0);
     });
 
     it("keeps only the newest 500 log entries", async () => {

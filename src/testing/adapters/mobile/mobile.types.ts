@@ -60,6 +60,8 @@ export interface MobileDriver {
   hideKeyboard(): Promise<void>;
   getWindowSize(): Promise<{ width: number; height: number }>;
   takeScreenshot(): Promise<string>;
+  /** The screen's accessibility tree as XML: what an authoring session reads to see what is on screen. */
+  getPageSource(): Promise<string>;
   getLogs(type: string): Promise<Array<{ level?: string; message?: string; timestamp?: number }>>;
   startRecordingScreen(opts?: Record<string, unknown>): Promise<unknown>;
   stopRecordingScreen(): Promise<string>;

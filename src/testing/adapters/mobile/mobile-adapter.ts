@@ -99,6 +99,8 @@ export class MobileAdapter {
   private readonly logType: "logcat" | "syslog";
   private readonly clock: MobileClock;
   private readonly healing: HealingPolicy;
+  /** The driver belongs to the caller (an authoring session): {@link stop} lets go of it but never ends its session. */
+  private attached = false;
   private heals: HealEvent[] = [];
   /** The longest a single device lookup took since the last {@link takeSlowestCallMs}, for the step report. */
   private slowestCallMs = 0;
@@ -145,6 +147,29 @@ export class MobileAdapter {
 
   isStarted(): boolean {
     return !!this.driver;
+  }
+
+  /**
+   * An adapter around a driver the caller already opened and keeps (an authoring session), so steps run through the same
+   * code as a test run without this adapter starting, recording or ending the session. `appiumUrl`, `udid` and `appSource`
+   * are only used to open a session, so they may be placeholders here.
+   */
+  static attach(driver: MobileDriver, opts: Omit<MobileAdapterOptions, "appiumUrl" | "udid" | "appSource"> & Partial<MobileAdapterOptions>): MobileAdapter {
+    const adapter = new MobileAdapter({
+      appiumUrl: "attached",
+      udid: "attached",
+      appSource: "installed",
+      ...opts,
+      recordVideo: false,
+    });
+    adapter.driver = driver;
+    adapter.attached = true;
+    return adapter;
+  }
+
+  /** The screen's accessibility tree as XML. */
+  async getPageSource(): Promise<string> {
+    return this.getDriver().getPageSource();
   }
 
   getDriver(): MobileDriver {
@@ -439,6 +464,16 @@ export class MobileAdapter {
       }
     }
 
+    // The screen's element tree, next to its screenshot: what a repair reads to see what a locator should have matched.
+    if (this.captureScreenshot) {
+      try {
+        const source = await this.driver.getPageSource();
+        if (source) artifacts.push({ name: "page-source.xml", contentType: "application/xml", data: source });
+      } catch {
+        // Best-effort.
+      }
+    }
+
     return artifacts;
   }
 
@@ -454,6 +489,10 @@ export class MobileAdapter {
 
   /** Never throws: a failure to close must not mask the run's real result. */
   async stop(opts?: { keepVideo?: boolean }): Promise<void> {
+    if (this.attached) {
+      this.driver = undefined;
+      return;
+    }
     const keepVideo = opts?.keepVideo ?? false;
     const driver = this.driver;
     try {
