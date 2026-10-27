@@ -1,25 +1,27 @@
 import type { TestContext } from "../../contracts/runtime-context.types";
 import type { OpStep } from "../../contracts/testing-metadata.types";
 import { KEYBOARD_STAYS_ON_PHONE } from "../../adapters/mobile/phone-errors";
+import { resolveMobileTarget } from "../../adapters/mobile/resolve-mobile-target";
 import { StepRegistry } from "../../core/step-registry";
 import { optionalBoolean, requireLocator, requireMobile, stepTimeout } from "./shared";
 
 export function registerActionSteps(registry: StepRegistry): void {
   registry.register("mobile.tap", async (ctx: TestContext, step: OpStep) => {
     const mobile = requireMobile(ctx, "mobile.tap");
-    const element = await mobile.findDisplayed(requireLocator(step, "mobile.tap"), stepTimeout(step));
+    requireLocator(step, "mobile.tap");
+    const element = await mobile.findDisplayed(await resolveMobileTarget(ctx, step, stepTimeout(step)), stepTimeout(step));
     await element.click();
   });
 
   registry.register("mobile.type", async (ctx: TestContext, step: OpStep) => {
     const mobile = requireMobile(ctx, "mobile.type");
-    const locator = requireLocator(step, "mobile.type");
+    requireLocator(step, "mobile.type");
     const text = step.with?.text;
     if (typeof text !== "string" && typeof text !== "number") {
       throw new Error('Missing "text" in step.with for op "mobile.type"');
     }
     const clear = optionalBoolean(step, "clear", "mobile.type") ?? true;
-    const element = await mobile.findDisplayed(locator, stepTimeout(step));
+    const element = await mobile.findDisplayed(await resolveMobileTarget(ctx, step, stepTimeout(step)), stepTimeout(step));
     if (clear) {
       await element.setValue(String(text));
     } else {
@@ -29,7 +31,8 @@ export function registerActionSteps(registry: StepRegistry): void {
 
   registry.register("mobile.clear", async (ctx: TestContext, step: OpStep) => {
     const mobile = requireMobile(ctx, "mobile.clear");
-    const element = await mobile.findDisplayed(requireLocator(step, "mobile.clear"), stepTimeout(step));
+    requireLocator(step, "mobile.clear");
+    const element = await mobile.findDisplayed(await resolveMobileTarget(ctx, step, stepTimeout(step)), stepTimeout(step));
     await element.clearValue();
   });
 

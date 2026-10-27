@@ -1,3 +1,5 @@
+import type { HealEvent } from "../../contracts/runtime-context.types";
+import type { HealingPolicy } from "../../contracts/testing-metadata.types";
 import { DEFAULT_UI_TIMEOUT_MS } from "../ui/playwright-adapter";
 import type { FailureArtifact } from "../ui/playwright-adapter";
 import { buildCapabilities } from "./capabilities";
@@ -96,6 +98,8 @@ export class MobileAdapter {
   private launchedOnce = false;
   private readonly logType: "logcat" | "syslog";
   private readonly clock: MobileClock;
+  private readonly healing: HealingPolicy;
+  private heals: HealEvent[] = [];
   /** The longest a single device lookup took since the last {@link takeSlowestCallMs}, for the step report. */
   private slowestCallMs = 0;
 
@@ -113,6 +117,7 @@ export class MobileAdapter {
     this.captureScreenshot = opts.capture?.screenshot ?? false;
     this.logType = isIos(opts) ? "syslog" : "logcat";
     this.clock = opts.clock ?? realClock;
+    this.healing = opts.healing ?? "report";
   }
 
   /** Whether this session drives an iOS device or simulator. */
@@ -225,6 +230,52 @@ export class MobileAdapter {
       if (this.clock.now() >= deadline) throw new Error(`${resolved.label} is still visible after ${timeout} ms`);
       await this.clock.sleep(Math.min(ELEMENT_POLL_MS, Math.max(0, deadline - this.clock.now())));
     }
+  }
+
+  getHealingPolicy(): HealingPolicy {
+    return this.healing;
+  }
+
+  recordHeal(heal: HealEvent): void {
+    this.heals.push(heal);
+  }
+
+  /** Heals recorded since the last {@link resetCapture}. */
+  getHeals(): HealEvent[] {
+    return [...this.heals];
+  }
+
+  /**
+   * Whether any element matches the locator within `timeoutMs` (0 asks once). A lookup that does not answer in time
+   * counts as "not there", so choosing a healed locator never waits on a stalled device.
+   */
+  async isPresent(locator: unknown, timeoutMs: number): Promise<boolean> {
+    const driver = this.getDriver();
+    const resolved = this.resolve(locator);
+    const deadline = this.clock.now() + timeoutMs;
+    for (;;) {
+      try {
+        const matches = await this.withinDeadline(deadline, timeoutMs, `looking for ${resolved.label}`, () => driver.$$(resolved.selector));
+        if (matches.length > 0) return true;
+      } catch {
+        return false;
+      }
+      if (this.clock.now() >= deadline) return false;
+      await this.clock.sleep(Math.min(ELEMENT_POLL_MS, Math.max(0, deadline - this.clock.now())));
+    }
+  }
+
+  /** How many matching elements are displayed right now, without waiting for any to appear. */
+  async countDisplayed(locator: unknown, budgetMs = 3000): Promise<number> {
+    const driver = this.getDriver();
+    const resolved = this.resolve(locator);
+    const deadline = this.clock.now() + budgetMs;
+    const matches = await this.withinDeadline(deadline, budgetMs, `looking for ${resolved.label}`, () => driver.$$(resolved.selector));
+    let shown = 0;
+    for (const element of matches) {
+      if (await this.withinDeadline(deadline, budgetMs, `checking ${resolved.label}`, () => element.isDisplayed())) shown += 1;
+    }
+    return shown;
   }
 
   /** The longest single device lookup since the last call, in ms, and starts counting again. */
@@ -348,6 +399,7 @@ export class MobileAdapter {
 
   /** Starts a clean capture window for the next scenario. Best-effort: never throws. */
   async resetCapture(): Promise<void> {
+    this.heals = [];
     if (!this.driver || !this.captureConsole) return;
     try {
       // Reading the device log drains it, so the next read only returns newer entries.

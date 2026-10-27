@@ -1,12 +1,14 @@
 import type { TestContext } from "../../contracts/runtime-context.types";
 import type { OpStep } from "../../contracts/testing-metadata.types";
+import { resolveMobileTarget } from "../../adapters/mobile/resolve-mobile-target";
 import { StepRegistry } from "../../core/step-registry";
 import { requireLocator, requireMobile, stepTimeout } from "./shared";
 
 export function registerAssertionSteps(registry: StepRegistry): void {
   registry.register("mobile.expectVisible", async (ctx: TestContext, step: OpStep) => {
     const mobile = requireMobile(ctx, "mobile.expectVisible");
-    await mobile.findDisplayed(requireLocator(step, "mobile.expectVisible"), stepTimeout(step));
+    requireLocator(step, "mobile.expectVisible");
+    await mobile.findDisplayed(await resolveMobileTarget(ctx, step, stepTimeout(step)), stepTimeout(step));
   });
 
   registry.register("mobile.expectHidden", async (ctx: TestContext, step: OpStep) => {
@@ -16,13 +18,14 @@ export function registerAssertionSteps(registry: StepRegistry): void {
 
   registry.register("mobile.getText", async (ctx: TestContext, step: OpStep) => {
     const mobile = requireMobile(ctx, "mobile.getText");
-    const element = await mobile.findDisplayed(requireLocator(step, "mobile.getText"), stepTimeout(step));
+    requireLocator(step, "mobile.getText");
+    const element = await mobile.findDisplayed(await resolveMobileTarget(ctx, step, stepTimeout(step)), stepTimeout(step));
     return element.getText();
   });
 
   registry.register("mobile.expectText", async (ctx: TestContext, step: OpStep) => {
     const mobile = requireMobile(ctx, "mobile.expectText");
-    const locator = requireLocator(step, "mobile.expectText");
+    requireLocator(step, "mobile.expectText");
     const { equals, contains, matches } = step.with ?? {};
     const given = [equals, contains, matches].filter((value) => value !== undefined);
     if (given.length !== 1) {
@@ -37,6 +40,7 @@ export function registerAssertionSteps(registry: StepRegistry): void {
       }
     }
 
+    const locator = await resolveMobileTarget(ctx, step, stepTimeout(step));
     const element = await mobile.findDisplayed(locator, stepTimeout(step));
     const actual = await element.getText();
     const label = mobile.describeLocator(locator);

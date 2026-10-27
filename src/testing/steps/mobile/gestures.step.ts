@@ -1,4 +1,5 @@
 import type { MobileAdapter } from "../../adapters/mobile/mobile-adapter";
+import { resolveMobileTarget } from "../../adapters/mobile/resolve-mobile-target";
 import type { TestContext } from "../../contracts/runtime-context.types";
 import type { OpStep } from "../../contracts/testing-metadata.types";
 import { StepRegistry } from "../../core/step-registry";
@@ -69,7 +70,7 @@ export function registerGestureSteps(registry: StepRegistry): void {
       await swipe(mobile, direction, percent);
       return;
     }
-    const element = await mobile.findDisplayed(step.with.locator, stepTimeout(step));
+    const element = await mobile.findDisplayed(await resolveMobileTarget(ctx, step, stepTimeout(step)), stepTimeout(step));
     const [location, size] = await Promise.all([element.getLocation(), element.getSize()]);
     await swipe(mobile, direction, percent, { left: location.x, top: location.y, width: size.width, height: size.height });
   });

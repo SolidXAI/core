@@ -25,6 +25,11 @@ describe("toMobileAdapterOptions", () => {
     });
   });
 
+  it("passes the run's healing policy on, and leaves it unset when the run has none", () => {
+    expect(toMobileAdapterOptions(input, { healing: "off" })).toMatchObject({ healing: "off" });
+    expect(toMobileAdapterOptions(input).healing).toBeUndefined();
+  });
+
   it("drops unknown fields, including a driver factory", () => {
     const sneaky = { ...input, driverFactory: () => undefined, somethingElse: 1 } as unknown as MobileRunOptionsInput;
     const result = toMobileAdapterOptions(sneaky) as unknown as Record<string, unknown>;

@@ -1,3 +1,5 @@
+import type { HealingPolicy } from "../../contracts/testing-metadata.types";
+
 export type MobileLocatorBy =
   | "accessibilityId"
   | "id"
@@ -149,6 +151,11 @@ export interface MobileAdapterOptions {
   runCommand?: (file: string, args: string[]) => Promise<void>;
   /** Test hook: replaces the WebdriverIO `remote()` call. */
   driverFactory?: (options: MobileRemoteOptions) => Promise<MobileDriver>;
+  /**
+   * What a step does when its locator matches nothing: `off` uses the locator only, `report` (default) tries the step's
+   * `fallbacks` and `fingerprint` and reports the heal, `auto` is `report` plus permission to write the heal back.
+   */
+  healing?: HealingPolicy;
   /** Test hook: the time source for element polling, so specs do not wait in real time. */
   clock?: MobileClock;
 }

@@ -4,14 +4,17 @@ import type { Reporter } from "../reporter/reporter.types";
 
 export class RecordingReporter implements Reporter {
   scenarioEnds: Array<{ id: string; ok: boolean }> = [];
+  /** The heals each scenario reported, by scenario id. */
+  heals: Record<string, unknown[]> = {};
   attachments: Array<{ scenarioId: string; name: string }> = [];
   runArtifacts: Array<{ name: string; bytes: number }> = [];
   runEnd?: { ok: boolean; total: number; passed: number; failed: number };
   stepEnds: Array<{ op: string; slowestCallMs?: number }> = [];
 
   onScenarioStart() {}
-  onScenarioEnd(scenario: ScenarioSpec, result: { ok: boolean }) {
+  onScenarioEnd(scenario: ScenarioSpec, result: { ok: boolean; heals?: unknown[] }) {
     this.scenarioEnds.push({ id: scenario.id, ok: result.ok });
+    if (result.heals?.length) this.heals[scenario.id] = result.heals;
   }
   onStepStart() {}
   onStepEnd(args?: { step: { op: string }; slowestCallMs?: number }) {

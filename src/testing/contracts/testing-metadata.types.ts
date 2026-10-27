@@ -66,6 +66,12 @@ export interface ScenarioSpec {
    * - `fresh`: new empty context.
    */
   session?: ScenarioSessionMode;
+  /**
+   * Mobile only. Marks the one scenario that brings the app back to its signed-out start screen from any state. A real
+   * iPhone cannot clear an app's data, so the runner runs this before a scenario that needs a fresh start. It is never run
+   * or counted as a scenario of its own.
+   */
+  reset?: boolean;
   steps: StepBlock[];
 }
 
@@ -92,6 +98,24 @@ export interface TargetFingerprint {
   text?: string;
   /** Selector scoping the search, e.g. a dialog or form. */
   within?: string;
+}
+
+/**
+ * Identity of a mobile element, recorded at authoring time and used to find it again when every locator misses. Only
+ * `accessibilityId`, `resourceId`, `text` and `label` are matched today; `kind` and `within` are kept for the reviewer.
+ */
+export interface MobileFingerprint {
+  /** Short class of the element, e.g. "Button", "EditText", "XCUIElementTypeButton". */
+  kind?: string;
+  /** The visible label the author saw. */
+  label?: string;
+  text?: string;
+  /** Content description on Android, name on iOS. */
+  accessibilityId?: string;
+  /** Android resource id without the package prefix. */
+  resourceId?: string;
+  /** Nearest ancestor with an accessibility id. */
+  within?: { by: string; value: string };
 }
 
 /**

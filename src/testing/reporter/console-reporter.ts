@@ -174,7 +174,7 @@ export class ConsoleReporter implements Reporter {
     console.log(`${status} Scenario: ${label} (${result.durationMs}ms)`);
     for (const heal of result.heals ?? []) {
       console.log(
-        `${STEP_INDENT}⚕ HEALED ${heal.stepPath ?? heal.op} via ${heal.strategy}: ${heal.from} → ${heal.to}`,
+        `${STEP_INDENT}⚕ HEALED ${heal.stepPath ?? heal.op} via ${heal.strategy}: ${healLabel(heal.from)} → ${healLabel(heal.to)}`,
       );
     }
   }
@@ -271,4 +271,11 @@ export class ConsoleReporter implements Reporter {
     console.log(`Duration: ${durationSeconds}s`);
     console.log("══════════════════════════════════");
   }
+}
+
+/** A heal's selector string, or a mobile locator written as `by=value`. */
+function healLabel(value: string | Record<string, unknown>): string {
+  if (typeof value === "string") return value;
+  const index = value.index !== undefined ? `[${String(value.index)}]` : "";
+  return `${String(value.by)}=${String(value.value)}${index}`;
 }

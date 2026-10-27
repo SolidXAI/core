@@ -1,3 +1,4 @@
+import type { HealingPolicy } from "../../contracts/testing-metadata.types";
 import type { MobileAdapterOptions, MobileRunOptionsInput } from "./mobile.types";
 import { BUNDLE_ID_RE } from "./platform";
 
@@ -9,7 +10,7 @@ const TEAM_ID_RE = /^[A-Z0-9]{10}$/;
  */
 export function toMobileAdapterOptions(
   input: MobileRunOptionsInput,
-  run: { recordVideo?: boolean; capture?: { console?: boolean; screenshotOnFailure?: boolean } } = {},
+  run: { recordVideo?: boolean; capture?: { console?: boolean; screenshotOnFailure?: boolean }; healing?: HealingPolicy } = {},
 ): MobileAdapterOptions {
   if (input.platformName !== undefined && input.platformName !== "Android" && input.platformName !== "iOS") {
     throw new Error(`platformName must be "Android" or "iOS", got "${String(input.platformName)}"`);
@@ -41,6 +42,7 @@ export function toMobileAdapterOptions(
     navigationTimeoutMs: input.navigationTimeoutMs,
     strictLocators: input.strictLocators,
     extraCapabilities: input.extraCapabilities,
+    healing: run.healing,
     recordVideo: run.recordVideo ?? true,
     capture: { console: run.capture?.console ?? true, screenshot: run.capture?.screenshotOnFailure ?? false },
   };

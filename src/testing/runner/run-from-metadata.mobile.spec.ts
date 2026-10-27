@@ -67,6 +67,68 @@ describe("runFromMetadata with mobile scenarios", () => {
     expect(reporter.runEnd).toMatchObject({ ok: true, passed: 1, failed: 0 });
   });
 
+  it("passes a step that needed its fallback, and reports the heal on scenario.end", async () => {
+    const driver = new FakeDriver();
+    const [renamed] = driver.add("~Save order", new FakeElement());
+    const { options } = mobileOptions(driver);
+    const healable: ScenarioSpec = {
+      id: "mobile-heal",
+      type: "mobile",
+      steps: [
+        { given: { op: "mobile.launch", with: { clearData: true } } },
+        { when: { op: "mobile.tap", with: { locator: save, fallbacks: [{ by: "accessibilityId", value: "Save order" }] } } },
+      ],
+    };
+    const reporter = new RecordingReporter();
+
+    await runFromMetadata({ scenarios: [healable], mobile: options, reporter });
+
+    expect(renamed.calls).toContain("click");
+    expect(reporter.scenarioEnds).toEqual([{ id: "mobile-heal", ok: true }]);
+    expect(reporter.heals["mobile-heal"]).toEqual([
+      expect.objectContaining({
+        scenarioId: "mobile-heal",
+        op: "mobile.tap",
+        stepPath: "steps[1].when",
+        field: "locator",
+        from: save,
+        to: { by: "accessibilityId", value: "Save order" },
+        strategy: "fallback",
+        policy: "report",
+      }),
+    ]);
+  });
+
+  it("does not heal when the run turns healing off, and the step fails as before", async () => {
+    const driver = new FakeDriver();
+    driver.add("~Save order", new FakeElement());
+    const { options } = mobileOptions(driver);
+    const healable: ScenarioSpec = {
+      id: "mobile-no-heal",
+      type: "mobile",
+      steps: [{ op: "mobile.tap", with: { locator: save, timeoutMs: 1000, fallbacks: [{ by: "accessibilityId", value: "Save order" }] } }],
+    };
+    const reporter = new RecordingReporter();
+    await expect(runFromMetadata({ scenarios: [healable], mobile: { ...options, healing: "off" }, reporter })).rejects.toThrow("No element matches");
+    expect(reporter.heals).toEqual({});
+  });
+
+  it("keeps one scenario's heals out of the next", async () => {
+    const driver = new FakeDriver();
+    driver.add("~Save order", new FakeElement());
+    driver.add("~Save", new FakeElement());
+    const { options } = mobileOptions(driver);
+    const healing: ScenarioSpec = {
+      id: "first",
+      type: "mobile",
+      steps: [{ op: "mobile.tap", with: { locator: { by: "accessibilityId", value: "Old" }, fallbacks: [{ by: "accessibilityId", value: "Save order" }] } }],
+    };
+    const plain: ScenarioSpec = { ...passing, id: "second" };
+    const reporter = new RecordingReporter();
+    await runFromMetadata({ scenarios: [healing, plain], mobile: options, reporter });
+    expect(Object.keys(reporter.heals)).toEqual(["first"]);
+  });
+
   it("shares one device session across scenarios", async () => {
     const driver = new FakeDriver();
     driver.add("~Save", new FakeElement());

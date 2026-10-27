@@ -51,15 +51,19 @@ export interface TestContext {
   stepPath?: string;
 }
 
-/** A UI step that passed only because a fallback or fingerprint replaced its selector. */
+/**
+ * A step that passed only because a fallback or fingerprint replaced its selector (UI) or locator (mobile). A mobile heal
+ * names which locator it replaced: the base one, or the override for the platform the run was on.
+ */
 export interface HealEvent {
   scenarioId: string;
   stepPath?: string;
   op: string;
   stepName?: string;
-  field: "selector";
-  from: string;
-  to: string;
+  field: "selector" | "locator" | "locator.android" | "locator.ios";
+  /** The selector string (UI), or the `{ by, value, index? }` locator (mobile) that missed. */
+  from: string | Record<string, unknown>;
+  to: string | Record<string, unknown>;
   strategy: "fallback" | "fingerprint";
   policy: "report" | "auto";
 }

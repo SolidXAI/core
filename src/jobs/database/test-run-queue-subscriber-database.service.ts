@@ -109,7 +109,7 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
                 env: p.variables,
                 api: { baseUrl: p.baseUrl },
                 ui: { baseUrl: p.uiBaseUrl, headless: p.headless ?? true, capture: p.capture, recordVideo: p.recordVideo ?? true, healing: p.healing, viewport: p.viewport },
-                mobile: p.mobile ? toMobileAdapterOptions(p.mobile, { recordVideo: p.recordVideo, capture: p.capture }) : undefined,
+                mobile: p.mobile ? toMobileAdapterOptions(p.mobile, { recordVideo: p.recordVideo, capture: p.capture, healing: p.healing }) : undefined,
                 options: { printApiLogs: p.printApiLogs ?? true },
                 failFast: p.failFast,
                 externalRunId: p.externalRunId,
