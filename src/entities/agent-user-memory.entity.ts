@@ -20,7 +20,7 @@ export class AgentUserMemory extends CommonEntity {
     @Column({ type: 'varchar' })
     type: 'explicit' | 'implicit';
 
-    @ManyToOne(() => AgentSession, { onDelete: 'SET NULL', nullable: false })
+    @ManyToOne(() => AgentSession, { onDelete: 'SET NULL', nullable: true })
     @JoinColumn()
-    session: AgentSession;
+    session: AgentSession | null;
 }
