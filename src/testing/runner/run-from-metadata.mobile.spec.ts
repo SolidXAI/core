@@ -44,9 +44,9 @@ describe("runFromMetadata with mobile scenarios", () => {
     } finally {
       slowest.mockRestore();
     }
-    expect(reporter.stepEnds).toEqual([
-      { op: "mobile.launch", slowestCallMs: 31_000 },
-      { op: "mobile.tap", slowestCallMs: undefined },
+    expect(reporter.stepEnds.map((e) => [e.op, e.slowestCallMs])).toEqual([
+      ["mobile.launch", 31_000],
+      ["mobile.tap", undefined],
     ]);
   });
 
@@ -188,3 +188,167 @@ describe("runFromMetadata with mobile scenarios", () => {
     expect(reporter.runEnd).toMatchObject({ ok: true, passed: 1 });
   });
 });
+
+describe("mobile session modes and the reset scenario", () => {
+  const tap = (name: string, over: Record<string, unknown> = {}) => ({
+    and: { op: "mobile.tap", with: { locator: { by: "accessibilityId", value: name }, ...over } },
+  });
+  const launch = (clearData?: boolean) => ({ given: { op: "mobile.launch", with: clearData ? { clearData: true } : {} } });
+  const scripts = (driver: FakeDriver) => driver.callsTo("execute").map((call) => String(call.args[0]));
+  const clicks = (element: FakeElement) => element.calls.filter((call) => call === "click").length;
+
+  const login: ScenarioSpec = { id: "login", type: "mobile", saveSession: true, steps: [launch(true), tap("Log in")] };
+  const cart: ScenarioSpec = { id: "cart", type: "mobile", dependsOn: ["login"], session: "restore", steps: [tap("Cart")] };
+  const unrelated: ScenarioSpec = { id: "unrelated", type: "mobile", steps: [tap("Other")] };
+
+  function android() {
+    const driver = new FakeDriver();
+    const logIn = driver.add("~Log in", new FakeElement())[0];
+    const inCart = driver.add("~Cart", new FakeElement())[0];
+    driver.add("~Other", new FakeElement());
+    return { driver, logIn, inCart, options: mobileOptions(driver).options, reporter: new RecordingReporter() };
+  }
+
+  it("restore right after its producer only relaunches: the login is not run twice", async () => {
+    const { driver, logIn, inCart, options, reporter } = android();
+    await runFromMetadata({ scenarios: [login, cart], mobile: options, reporter });
+    expect(clicks(logIn)).toBe(1);
+    expect(clicks(inCart)).toBe(1);
+    expect(scripts(driver).filter((script) => script === "mobile: clearApp")).toHaveLength(1);
+    expect(reporter.stepEnds.filter((e) => e.setup).map((e) => [e.scenarioId, e.setup, e.op])).toEqual([["cart", "restore", "mobile.launch"]]);
+  });
+
+  it("restore after another scenario touched the app clears it and logs in again, as setup of the scenario", async () => {
+    const { driver, logIn, inCart, options, reporter } = android();
+    await runFromMetadata({ scenarios: [login, unrelated, cart], mobile: options, reporter });
+    expect(clicks(logIn)).toBe(2);
+    expect(clicks(inCart)).toBe(1);
+    // The login's own launch cleared the app once; the cold restore cleared it twice more (its start, then the login's launch).
+    expect(scripts(driver).filter((script) => script === "mobile: clearApp")).toHaveLength(3);
+    const setup = reporter.stepEnds.filter((e) => e.setup);
+    expect(setup.map((e) => [e.scenarioId, e.setup, e.op])).toEqual([
+      ["cart", "reset", "mobile.launch"],
+      ["login", "restore", "mobile.launch"],
+      ["login", "restore", "mobile.tap"],
+    ]);
+    // The login steps keep their own scenario id and path, so a heal in them can be applied to the login scenario.
+    expect(setup[2]).toMatchObject({ scenarioId: "login", stepPath: "steps[1].and" });
+    expect(reporter.runEnd).toMatchObject({ ok: true, total: 3, passed: 3 });
+  });
+
+  it("fresh on an emulator clears the app's data before the scenario", async () => {
+    const { driver, options, reporter } = android();
+    await runFromMetadata({ scenarios: [{ ...unrelated, session: "fresh" }], mobile: options, reporter });
+    expect(scripts(driver)).toContain("mobile: clearApp");
+  });
+
+  describe("on a real iPhone", () => {
+    const reset: ScenarioSpec = {
+      id: "reset-app",
+      type: "mobile",
+      reset: true,
+      steps: [launch(), tap("Log out", { optional: true, timeoutMs: 100 }), { then: { op: "mobile.expectVisible", with: { locator: { by: "accessibilityId", value: "login screen" } } } }],
+    };
+    const fresh: ScenarioSpec = { id: "fresh-start", type: "mobile", session: "fresh", steps: [tap("Next")] };
+
+    function iphone() {
+      const driver = new FakeDriver();
+      driver.add("~Next", new FakeElement());
+      driver.add("~login screen", new FakeElement());
+      const { options } = mobileOptions(driver);
+      return { driver, options: { ...options, platformName: "iOS" as const }, reporter: new RecordingReporter() };
+    }
+
+    it("resets through the reset scenario instead of clearing data, and does not count it as a scenario", async () => {
+      const { driver, options, reporter } = iphone();
+      await runFromMetadata({ scenarios: [reset, fresh], mobile: options, reporter });
+
+      expect(scripts(driver).some((script) => /clearApp|removeApp|installApp/.test(script))).toBe(false);
+      expect(reporter.scenarioEnds).toEqual([{ id: "fresh-start", ok: true }]);
+      expect(reporter.runEnd).toMatchObject({ ok: true, total: 1, passed: 1 });
+      const setup = reporter.stepEnds.filter((e) => e.setup);
+      // The "Log out" button is not there in this state, so that optional step is skipped and the reset still passes.
+      expect(setup.map((e) => [e.scenarioId, e.op, e.ok])).toEqual([
+        ["fresh-start", "mobile.launch", true],
+        ["reset-app", "mobile.launch", true],
+        ["reset-app", "mobile.tap", true],
+        ["reset-app", "mobile.expectVisible", true],
+      ]);
+    });
+
+    it("taps the optional step when its element is there", async () => {
+      const { driver, options, reporter } = iphone();
+      const [logOut] = driver.add("~Log out", new FakeElement());
+      await runFromMetadata({ scenarios: [reset, fresh], mobile: options, reporter });
+      expect(clicks(logOut)).toBe(1);
+    });
+
+    it("fails the scenario, with what to add, when the file has no reset scenario", async () => {
+      const { options, reporter } = iphone();
+      await expect(runFromMetadata({ scenarios: [fresh], mobile: options, reporter })).rejects.toThrow('Add a scenario with "reset": true');
+      expect(reporter.scenarioEnds).toEqual([{ id: "fresh-start", ok: false }]);
+    });
+
+    it("names the reset scenario and the step when the reset itself fails", async () => {
+      const { driver, options, reporter } = iphone();
+      driver.elements.delete("~login screen");
+      const broken: ScenarioSpec = { ...reset, steps: [launch(), { then: { op: "mobile.expectVisible", with: { locator: { by: "accessibilityId", value: "login screen" }, timeoutMs: 500 } } }] };
+      await expect(runFromMetadata({ scenarios: [broken, fresh], mobile: options, reporter })).rejects.toThrow(
+        'Setup "reset" (scenario "reset-app") failed at steps[1].then: No element matches',
+      );
+      expect(reporter.scenarioEnds).toEqual([{ id: "fresh-start", ok: false }]);
+    });
+  });
+
+  it("runs a file that has none of the new fields exactly as before: no setup, one shared session", async () => {
+    const { driver, options, reporter } = android();
+    await runFromMetadata({ scenarios: [unrelated, { ...unrelated, id: "again" }], mobile: options, reporter });
+    expect(reporter.stepEnds.filter((e) => e.setup)).toEqual([]);
+    expect(scripts(driver)).toEqual([]);
+  });
+});
+
+describe("optional mobile steps", () => {
+  const optionalTap = (over: Record<string, unknown>): ScenarioSpec => ({
+    id: "opt",
+    type: "mobile",
+    steps: [{ when: { op: "mobile.tap", with: { locator: { by: "accessibilityId", value: "Maybe" }, optional: true, ...over } } }],
+  });
+
+  it("passes without doing anything when the element is not there", async () => {
+    const driver = new FakeDriver();
+    const { options } = mobileOptions(driver);
+    const reporter = new RecordingReporter();
+    await runFromMetadata({ scenarios: [optionalTap({ timeoutMs: 100 })], mobile: options, reporter });
+    expect(reporter.scenarioEnds).toEqual([{ id: "opt", ok: true }]);
+  });
+
+  it("taps the element when it is there", async () => {
+    const driver = new FakeDriver();
+    const [maybe] = driver.add("~Maybe", new FakeElement());
+    await runFromMetadata({ scenarios: [optionalTap({})], mobile: mobileOptions(driver).options, reporter: new RecordingReporter() });
+    expect(maybe.calls).toContain("click");
+  });
+
+  it("still fails on anything other than a missing element, such as a locator that is not valid", async () => {
+    const driver = new FakeDriver();
+    const { options } = mobileOptions(driver);
+    await expect(
+      runFromMetadata({ scenarios: [optionalTap({ locator: "Maybe" })], mobile: options, reporter: new RecordingReporter() }),
+    ).rejects.toThrow("locator must be an object");
+  });
+
+  it("does not heal: an optional step looks only for its own locator", async () => {
+    const driver = new FakeDriver();
+    driver.add("~Other name", new FakeElement());
+    const { options } = mobileOptions(driver);
+    const reporter = new RecordingReporter();
+    await runFromMetadata({
+      scenarios: [optionalTap({ timeoutMs: 100, fallbacks: [{ by: "accessibilityId", value: "Other name" }] })],
+      mobile: options,
+      reporter,
+    });
+    expect(reporter.heals).toEqual({});
+  });
+});
+

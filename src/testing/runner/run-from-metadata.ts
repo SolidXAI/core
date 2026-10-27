@@ -9,9 +9,10 @@ import { createDefaultStepRegistry } from "../runtime/default-registry";
 import { SimpleResourceStore } from "../core/resource-store";
 import { RandomDataRegistry } from "../core/random-data";
 import { SpecRegistry } from "../core/spec-registry";
-import { TestingEngine } from "../core/testing-engine";
+import { TestingEngine, type ScenarioSetup } from "../core/testing-engine";
 import { filterScenarios } from "./scenario-filter";
 import { collectSecretKeys } from "../core/interpolation";
+import { planMobileSetup, splitResetScenario, type MobileSessionState } from "./mobile-session";
 import { ensureMobileStarted, ensureUiStarted, mobileScenarioProblem, scenarioNeedsMobile, scenarioNeedsUi } from "./lifecycle";
 import { ensureChromiumInstalled } from "../adapters/ui/browser-provisioner";
 import { ConsoleReporter } from "../reporter/console-reporter";
@@ -144,7 +145,10 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
   const registry = createDefaultStepRegistry();
 
   const engine = new TestingEngine(registry, opts.defaults);
-  const allScenarios = opts.scenarios ?? opts.metadata?.testing?.scenarios ?? [];
+  // The reset scenario is setup, not a scenario: it is never selected, run on its own, or counted.
+  const { reset: resetScenario, rest: allScenarios } = splitResetScenario(
+    opts.scenarios ?? opts.metadata?.testing?.scenarios ?? [],
+  );
   const selected = expandWithDependencies(
     allScenarios,
     filterScenarios(allScenarios, {
@@ -188,6 +192,7 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
   let runError: unknown;
   const outcomes = new Map<string, "passed" | "failed" | "skipped">();
   const savedSessions = new Map<string, StorageState>();
+  const mobileState: MobileSessionState = {};
 
   reporter.onRunStart?.({
     total: scenarios.length,
@@ -211,7 +216,10 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
     // One query for the whole run, after onRunStart so a failure here still reports
     // run.end. Keys that do not resolve are not fatal — they surface at the step that
     // references them, where the reporter can name the token and locate the failure.
-    const secretsByScenario = await resolveSecretsByScenario(scenarios, opts.resolveSecrets);
+    const secretsByScenario = await resolveSecretsByScenario(
+      resetScenario ? [...scenarios, resetScenario] : scenarios,
+      opts.resolveSecrets,
+    );
 
     for (const scenario of scenarios) {
       if (dependencyMode) {
@@ -239,18 +247,47 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
           }
         }
       }
+      let setup: ScenarioSetup[] = [];
       if (scenarioNeedsMobile(scenario)) {
         await ensureMobileStarted(ctxBase, mobileStarted);
+        if (dependencyMode && mobile) {
+          try {
+            setup = planMobileSetup({
+              scenario,
+              phone: mobile.phone,
+              byId: scenarioById,
+              reset: resetScenario,
+              state: mobileState,
+              secretsOf: (id) => secretsByScenario.get(id),
+            });
+          } catch (error) {
+            reporter.onScenarioStart(scenario);
+            reporter.onScenarioEnd(scenario, { ok: false, error, durationMs: 0 });
+            failed += 1;
+            runError = error;
+            outcomes.set(scenario.id, "failed");
+            continue;
+          }
+        }
+        // What the app is left in is only known for a producer that passes; anything else may have changed it.
+        mobileState.loggedInBy = undefined;
       }
       try {
-        await engine.runScenario(scenario, {
-          ...ctxBase,
-          secrets: secretsByScenario.get(scenario.id),
-        });
+        await engine.runScenario(
+          scenario,
+          {
+            ...ctxBase,
+            secrets: secretsByScenario.get(scenario.id),
+          },
+          setup,
+        );
         passed += 1;
         outcomes.set(scenario.id, "passed");
         if (scenario.saveSession && uiStarted.value) {
           savedSessions.set(scenario.id, await ui.storageState());
+        }
+        if (scenario.saveSession && scenarioNeedsMobile(scenario)) {
+          mobileState.loggedInBy = scenario.id;
         }
       } catch (error) {
         failed += 1;

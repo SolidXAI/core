@@ -36,6 +36,8 @@ export interface Reporter {
     step: OpStep;
     /** Position in the scenario file, e.g. `steps[3].when`. */
     stepPath?: string;
+    /** Set for a step that runs as setup for the scenario ("reset", "login"), not as one of its own. */
+    setup?: string;
   }): void;
   onStepEnd(args: {
     scenarioId: string;
@@ -47,6 +49,7 @@ export interface Reporter {
     stepPath?: string;
     /** Mobile only: the longest single device lookup in the step, when it was slow enough to matter (a stalled device). */
     slowestCallMs?: number;
+    setup?: string;
   }): void;
   onSpecResult?(args: {
     scenarioId: string;

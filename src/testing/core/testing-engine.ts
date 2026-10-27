@@ -21,6 +21,19 @@ export function stepPathFor(block: StepBlock, blockIndex: number, stepIndex: num
   return base;
 }
 
+/**
+ * Steps that run before a scenario's own, as part of that scenario's report: bringing a phone back to its start screen,
+ * or logging in again, so the scenario does not depend on what ran before it. They keep the scenario they come from
+ * (`scenario.id`, and `steps[n]` paths inside it), so a heal found in them can be applied to that scenario's file.
+ */
+export interface ScenarioSetup {
+  /** What the steps are for, reported with each one: "reset", "login". */
+  kind: string;
+  scenario: ScenarioSpec;
+  /** Resolved secret values for the steps' `${secret:...}` tokens. */
+  secrets?: Record<string, any>;
+}
+
 /** A device lookup slower than this is reported with its step. */
 const SLOW_CALL_REPORT_MS = 2000;
 
@@ -39,6 +52,7 @@ export class TestingEngine {
   async runScenario(
     scenario: ScenarioSpec,
     ctxBase: Omit<TestContext, "scenarioId" | "scenarioType" | "params">,
+    setup: ScenarioSetup[] = [],
   ): Promise<void> {
     const retries = scenario.retries ?? this.defaults?.retries ?? 0;
     const maxAttempts = Math.max(0, retries) + 1;
@@ -66,6 +80,9 @@ export class TestingEngine {
 
       try {
         const execute = async () => {
+          for (const part of setup) {
+            await this.runSetup(part, ctx);
+          }
           for (const [blockIndex, block] of scenario.steps.entries()) {
             const normalized = normalizeBlock(block);
             for (const [stepIndex, step] of normalized.steps.entries()) {
@@ -142,6 +159,30 @@ export class TestingEngine {
     }
   }
 
+  /** Runs one setup part's steps in the part's own scenario context, and names the part when one of them fails. */
+  private async runSetup(part: ScenarioSetup, ctx: TestContext): Promise<void> {
+    const partCtx: TestContext = {
+      ...ctx,
+      scenarioId: part.scenario.id,
+      scenarioType: part.scenario.type,
+      params: part.scenario.params ?? {},
+      secrets: part.secrets,
+    };
+    for (const [blockIndex, block] of part.scenario.steps.entries()) {
+      const normalized = normalizeBlock(block);
+      for (const [stepIndex, step] of normalized.steps.entries()) {
+        const stepPath = stepPathFor(block, blockIndex, stepIndex);
+        try {
+          await this.runStep(normalized.phase, step, partCtx, stepPath, part.kind);
+        } catch (err: any) {
+          const failure = new Error(`Setup "${part.kind}" (scenario "${part.scenario.id}") failed at ${stepPath}: ${err?.message ?? err}`);
+          (failure as Error & { cause?: unknown }).cause = err;
+          throw failure;
+        }
+      }
+    }
+  }
+
   // Interpolates the step, except the `with` fields its op takes as written (StepOptions.rawWith).
   private resolveStep(step: OpStep, ctx: TestContext): OpStep {
     const raw = this.registry
@@ -166,6 +207,7 @@ export class TestingEngine {
     step: OpStep,
     ctx: TestContext,
     stepPath?: string,
+    setup?: string,
   ): Promise<unknown> {
     const reporter = ctx.reporter;
     const stepStart = Date.now();
@@ -174,7 +216,7 @@ export class TestingEngine {
     let result: unknown;
 
     ctx.stepPath = stepPath;
-    reporter.onStepStart({ scenarioId: ctx.scenarioId, phase, step, stepPath });
+    reporter.onStepStart({ scenarioId: ctx.scenarioId, phase, step, stepPath, ...(setup ? { setup } : {}) });
 
     try {
       resolvedStep = this.resolveStep(step, ctx);
@@ -209,6 +251,7 @@ export class TestingEngine {
         durationMs,
         stepPath,
         ...(slowestCallMs >= SLOW_CALL_REPORT_MS ? { slowestCallMs } : {}),
+        ...(setup ? { setup } : {}),
       });
     }
   }

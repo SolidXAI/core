@@ -9,7 +9,7 @@ export class RecordingReporter implements Reporter {
   attachments: Array<{ scenarioId: string; name: string }> = [];
   runArtifacts: Array<{ name: string; bytes: number }> = [];
   runEnd?: { ok: boolean; total: number; passed: number; failed: number };
-  stepEnds: Array<{ op: string; slowestCallMs?: number }> = [];
+  stepEnds: Array<{ scenarioId?: string; op: string; stepPath?: string; setup?: string; ok?: boolean; slowestCallMs?: number }> = [];
 
   onScenarioStart() {}
   onScenarioEnd(scenario: ScenarioSpec, result: { ok: boolean; heals?: unknown[] }) {
@@ -17,8 +17,10 @@ export class RecordingReporter implements Reporter {
     if (result.heals?.length) this.heals[scenario.id] = result.heals;
   }
   onStepStart() {}
-  onStepEnd(args?: { step: { op: string }; slowestCallMs?: number }) {
-    if (args) this.stepEnds.push({ op: args.step.op, slowestCallMs: args.slowestCallMs });
+  onStepEnd(args?: { scenarioId?: string; step: { op: string }; stepPath?: string; setup?: string; ok?: boolean; slowestCallMs?: number }) {
+    if (args) {
+      this.stepEnds.push({ scenarioId: args.scenarioId, op: args.step.op, stepPath: args.stepPath, setup: args.setup, ok: args.ok, slowestCallMs: args.slowestCallMs });
+    }
   }
   attach(args: { scenarioId: string; name: string }) {
     this.attachments.push({ scenarioId: args.scenarioId, name: args.name });

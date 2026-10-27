@@ -580,19 +580,27 @@ step's `timeoutMs`) overrides the wait. `locator` is an object:
 
 Add `"index": 1` (0-based) to pick one match. A locator that matches more than one element **fails the
 step** unless it has an `index`. An `"android": { "by": ..., "value": ... }` block replaces `by`/`value`
-on Android; `"ios"` is reserved and ignored.
+on Android, and `"ios"` does the same on iOS.
+
+A step waits by looking for the element about every half second and goes on as soon as it is there, so
+`timeoutMs` is the longest it will wait, not how long it waits. Each lookup is also held to the step's
+timeout: if the device does not answer a lookup in time (a busy phone can leave one unanswered for tens of
+seconds), the step fails with "The device did not answer while looking for ..." rather than running past
+its timeout. On Android the runner sets `appium:settings[waitForIdleTimeout]` to 500 ms; give a device a
+different value with `extraCapabilities` (Test Hub's "Default Appium capabilities" setting does this for
+every run).
 
 | Op | `with` | Does |
 |---|---|---|
-| `mobile.launch` | `clearData` (optional, default false) | Stops the app, optionally wipes its data, starts it |
+| `mobile.launch` | `clearData` (optional, default false), `grantPermissions` (optional, default true) | Stops the app, optionally wipes its data, starts it. A real iPhone cannot clear an app's data, so `clearData` fails there (see "The reset scenario") |
 | `mobile.reset` | – | `mobile.launch` with `clearData: true` |
 | `mobile.terminate` | – | Stops the app |
-| `mobile.tap` | `locator` | Taps the element |
-| `mobile.type` | `locator`, `text`, `clear` (default true) | Sets the text; `clear: false` appends |
+| `mobile.tap` | `locator`, `optional` (optional) | Taps the element |
+| `mobile.type` | `locator`, `text`, `clear` (default true), `optional` (optional) | Sets the text; `clear: false` appends |
 | `mobile.clear` | `locator` | Clears the field |
 | `mobile.swipe` | `direction` (up/down/left/right), `percent` (0.1 to 1, default 0.75), `locator` (optional) | Swipes on the element, or the screen |
 | `mobile.scrollTo` | `locator`, `direction` (down/up, default down), `maxSwipes` (default 10) | Swipes until the element shows |
-| `mobile.back` | – | Presses Back |
+| `mobile.back` | `optional` (optional) | Presses Back |
 | `mobile.hideKeyboard` | – | Hides the keyboard if it is shown |
 | `mobile.expectVisible` | `locator` | Passes when the element is displayed in time |
 | `mobile.expectHidden` | `locator` | Passes when no match is displayed in time |
@@ -601,6 +609,68 @@ on Android; `"ios"` is reserved and ignored.
 
 `api.*`, `assert.*`, `util.*` and `test.spec` ops can be mixed in, for example to check the backend after a
 tap. `ui.*` ops cannot be used in a mobile scenario.
+
+#### Optional steps
+`mobile.tap`, `mobile.type` and `mobile.back` accept `"optional": true`. The step looks for its element for
+`timeoutMs` (default 3 seconds) and, if it is not there, passes without doing anything. An optional step only
+passes over a missing element: any other failure still fails it, and it never heals. It is meant for a reset,
+which has to work from any state (a "Log out" button only exists when someone is logged in).
+
+#### Healing: `fallbacks` and `fingerprint`
+A step with a `locator` can carry other ways to find the same element, written when the scenario was authored:
+
+```json
+{ "op": "mobile.tap", "with": {
+    "locator": { "by": "accessibilityId", "value": "Save" },
+    "fallbacks": [{ "by": "text", "value": "Save" }],
+    "fingerprint": { "kind": "Button", "accessibilityId": "save-button", "label": "Save" }
+} }
+```
+
+If the locator matches nothing within 2.5 seconds, the runner tries each fallback, then the fingerprint
+(`accessibilityId`, `resourceId`, `text`, `label`, in that order). The first one that matches **exactly one
+displayed element** is used, the step carries on, and the heal is reported on `scenario.end` with the locator
+it replaced (`from`), the one that worked (`to`), and which locator that was in `field`: `locator`, or
+`locator.android` / `locator.ios` when the run used that platform's override. The run's `healing` setting
+controls it: `off` uses the locator only, `report` (the default) heals and reports, `auto` is `report` plus
+permission to write the heal back to the scenario file.
+
+`tap`, `type`, `clear`, `getText`, `expectVisible`, `expectText` and `swipe` on an element heal.
+`expectHidden` does not (swapping a locator that should match nothing would hide a regression), and neither
+does `scrollTo`.
+
+#### Sessions and the reset scenario
+A mobile run shares one device session, so by default each scenario carries on in the app as the last one left
+it. The scenario fields `dependsOn`, `saveSession` and `session` work for mobile too; what they mean here is
+about the app, not a browser:
+
+- `"session": "shared"` (default): carry on in the app as it is.
+- `"session": "fresh"`: start from scratch. On a device that can clear an app's data, the runner launches the
+  app with its data cleared. On a real iPhone it relaunches the app and runs the file's reset scenario.
+- `"session": "restore"`: start logged in as the scenario it depends on left the app. If that scenario
+  (`saveSession: true`) has just passed and nothing has touched the app since, the app is only relaunched.
+  Otherwise the app starts from scratch and that scenario's steps run again (and, for a scenario that was
+  itself restored, the ones before it).
+
+These steps run as setup inside the scenario that needs them. They are reported with the step event's `setup`
+field (`"reset"` or `"restore"`) and keep the id and `steps[n]` paths of the scenario they come from.
+
+**The reset scenario.** A real iPhone cannot clear an app's data, so a file for an iPhone declares one scenario
+with `"reset": true` that brings the app back to its signed-out start screen from any state. It is never run
+as a scenario of its own, selected, or counted; it cannot use `dependsOn`, `saveSession` or `session`, and no
+scenario can depend on it. Use `optional` steps for what only applies in some states:
+
+```json
+{ "id": "reset-app", "type": "mobile", "reset": true, "steps": [
+  { "given": { "op": "mobile.launch" } },
+  { "and": { "op": "mobile.tap", "with": { "locator": { "by": "accessibilityId", "value": "open menu" }, "optional": true } } },
+  { "and": { "op": "mobile.tap", "with": { "locator": { "by": "accessibilityId", "value": "menu item log out" }, "optional": true } } },
+  { "then": { "op": "mobile.expectVisible", "with": { "locator": { "by": "accessibilityId", "value": "login screen" } } } }
+] }
+```
+
+If a scenario asks for a fresh start on an iPhone and the file has no reset scenario, it fails and says what to
+add. If a reset step fails, the scenario fails with `Setup "reset" (scenario "<id>") failed at <path>: ...`.
 
 Example:
 ```json

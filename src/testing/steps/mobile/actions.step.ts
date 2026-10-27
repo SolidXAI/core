@@ -1,15 +1,37 @@
+import type { MobileAdapter } from "../../adapters/mobile/mobile-adapter";
+import type { MobileElement } from "../../adapters/mobile/mobile.types";
 import type { TestContext } from "../../contracts/runtime-context.types";
 import type { OpStep } from "../../contracts/testing-metadata.types";
 import { KEYBOARD_STAYS_ON_PHONE } from "../../adapters/mobile/phone-errors";
 import { resolveMobileTarget } from "../../adapters/mobile/resolve-mobile-target";
 import { StepRegistry } from "../../core/step-registry";
-import { optionalBoolean, requireLocator, requireMobile, stepTimeout } from "./shared";
+import { isNotFound, OPTIONAL_SKIPPED, OPTIONAL_TIMEOUT_MS, optionalBoolean, requireLocator, requireMobile, stepTimeout } from "./shared";
+
+/**
+ * The element of a step. An optional step (`with.optional`) looks for a short time with its own locator only, and passes,
+ * doing nothing, when the element is not there: a reset has to work from any state, and a "Log out" button only exists
+ * when someone is logged in. An optional step never heals, because swapping in a different element could do the wrong
+ * thing. Returns undefined for a skipped step.
+ */
+async function targetOf(ctx: TestContext, mobile: MobileAdapter, step: OpStep, op: string): Promise<MobileElement | undefined> {
+  const optional = optionalBoolean(step, "optional", op) === true;
+  if (!optional) {
+    return mobile.findDisplayed(await resolveMobileTarget(ctx, step, stepTimeout(step)), stepTimeout(step));
+  }
+  try {
+    return await mobile.findDisplayed(requireLocator(step, op), stepTimeout(step) ?? OPTIONAL_TIMEOUT_MS);
+  } catch (error) {
+    if (isNotFound(error)) return undefined;
+    throw error;
+  }
+}
 
 export function registerActionSteps(registry: StepRegistry): void {
   registry.register("mobile.tap", async (ctx: TestContext, step: OpStep) => {
     const mobile = requireMobile(ctx, "mobile.tap");
     requireLocator(step, "mobile.tap");
-    const element = await mobile.findDisplayed(await resolveMobileTarget(ctx, step, stepTimeout(step)), stepTimeout(step));
+    const element = await targetOf(ctx, mobile, step, "mobile.tap");
+    if (!element) return OPTIONAL_SKIPPED;
     await element.click();
   });
 
@@ -21,7 +43,8 @@ export function registerActionSteps(registry: StepRegistry): void {
       throw new Error('Missing "text" in step.with for op "mobile.type"');
     }
     const clear = optionalBoolean(step, "clear", "mobile.type") ?? true;
-    const element = await mobile.findDisplayed(await resolveMobileTarget(ctx, step, stepTimeout(step)), stepTimeout(step));
+    const element = await targetOf(ctx, mobile, step, "mobile.type");
+    if (!element) return OPTIONAL_SKIPPED;
     if (clear) {
       await element.setValue(String(text));
     } else {
@@ -36,14 +59,17 @@ export function registerActionSteps(registry: StepRegistry): void {
     await element.clearValue();
   });
 
-  registry.register("mobile.back", async (ctx: TestContext) => {
+  registry.register("mobile.back", async (ctx: TestContext, step: OpStep) => {
     const mobile = requireMobile(ctx, "mobile.back");
+    const optional = optionalBoolean(step, "optional", "mobile.back") === true;
     const driver = mobile.getDriver();
     if (mobile.ios) {
       // iOS has no system back. The driver taps the navigation bar's back button, and does nothing, successfully, when
       // there is none, which would hide a failing scenario; the root screen of an app can have a bar with no button (D35).
       const buttons = await driver.$$("-ios class chain:**/XCUIElementTypeNavigationBar/XCUIElementTypeButton");
       if (buttons.length === 0) {
+        // An optional back, in a reset, has nothing to do on a screen that is already as far back as it goes.
+        if (optional) return OPTIONAL_SKIPPED;
         throw new Error(
           "mobile.back: this screen has no back button on iOS. Tap the screen's own back control instead.",
         );

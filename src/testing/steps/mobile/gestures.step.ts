@@ -3,7 +3,7 @@ import { resolveMobileTarget } from "../../adapters/mobile/resolve-mobile-target
 import type { TestContext } from "../../contracts/runtime-context.types";
 import type { OpStep } from "../../contracts/testing-metadata.types";
 import { StepRegistry } from "../../core/step-registry";
-import { requireLocator, requireMobile, stepTimeout } from "./shared";
+import { isNotFound, requireLocator, requireMobile, stepTimeout } from "./shared";
 import { swipeLine } from "./swipe-line";
 
 const DIRECTIONS = ["up", "down", "left", "right"] as const;
@@ -56,10 +56,6 @@ async function swipe(
   await driver.execute("mobile: swipeGesture", { ...bounds, direction, percent });
 }
 
-function isNotFound(error: unknown): boolean {
-  const message = String((error as Error)?.message ?? error);
-  return message.includes("No element matches") || message.includes("is not displayed after");
-}
 
 export function registerGestureSteps(registry: StepRegistry): void {
   registry.register("mobile.swipe", async (ctx: TestContext, step: OpStep) => {

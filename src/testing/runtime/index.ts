@@ -19,6 +19,8 @@ export const CAPABILITIES = [
   "selfHealing",
   "mobileSelfHealing",
   "mobileRuntime",
+  "mobileSessionModes",
+  "mobileReset",
   "expectAriaSnapshot",
   "dependsOn",
   "saveSession",

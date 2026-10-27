@@ -159,6 +159,7 @@ export class LifecycleWebhookReporter extends ConsoleReporter {
     durationMs: number;
     stepPath?: string;
     slowestCallMs?: number;
+    setup?: string;
   }): void {
     super.onStepEnd(args);
     this.currentSteps.push({
@@ -167,6 +168,7 @@ export class LifecycleWebhookReporter extends ConsoleReporter {
       name: args.step.name,
       ...(args.stepPath ? { stepPath: args.stepPath } : {}),
       ...(args.slowestCallMs ? { slowestCallMs: args.slowestCallMs } : {}),
+      ...(args.setup ? { setup: args.setup } : {}),
       ok: args.ok,
       durationMs: args.durationMs,
       error: args.error ? formatError(args.error) : undefined,

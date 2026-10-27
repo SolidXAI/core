@@ -31,3 +31,15 @@ export function optionalBoolean(step: OpStep, key: string, op: string): boolean 
   }
   return value;
 }
+
+/** How long an optional step looks for its element before it counts as not there. */
+export const OPTIONAL_TIMEOUT_MS = 3000;
+
+/** The step's element is missing or never shown, as opposed to the device not answering or a bad locator. */
+export function isNotFound(error: unknown): boolean {
+  const message = String((error as Error)?.message ?? error);
+  return message.includes("No element matches") || message.includes("is not displayed after");
+}
+
+/** What an optional step returns when its element was not there. */
+export const OPTIONAL_SKIPPED = { skipped: "optional-not-found" } as const;

@@ -39,6 +39,8 @@ export interface StepResultData {
   stepPath?: string;
   /** Mobile only: the longest single device lookup in the step, reported when it was slow (a stalled device). */
   slowestCallMs?: number;
+  /** Set for a step that ran as setup for the scenario ("reset", "login"), not as one of its own. */
+  setup?: string;
   ok: boolean;
   durationMs: number;
   error?: string;
