@@ -14,7 +14,7 @@
   "scripts": {
     "build": "nest build && tsc-alias && npm run copy-resources",
     "copy-resources": "copyfiles -u 1 \"resources/**/*\" dist/resources",
-    "build:testing-runtime": "npx --yes esbuild@0.28.2 src/testing/runtime/index.ts --bundle --platform=node --target=node18 --format=cjs --external:playwright --external:playwright-core --legal-comments=none --outfile=dist/testing-runtime/testing-runtime.cjs",
+    "build:testing-runtime": "npx --yes esbuild@0.28.2 src/testing/runtime/index.ts --bundle --platform=node --target=node18 --format=cjs --external:playwright --external:playwright-core --external:typescript --legal-comments=none --outfile=dist/testing-runtime/testing-runtime.cjs",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
