@@ -21,6 +21,9 @@ export function stepPathFor(block: StepBlock, blockIndex: number, stepIndex: num
   return base;
 }
 
+/** A device lookup slower than this is reported with its step. */
+const SLOW_CALL_REPORT_MS = 2000;
+
 export class TestingEngine {
   private readonly registry: StepRegistry;
   private readonly defaults?: { timeoutMs?: number; retries?: number };
@@ -195,6 +198,8 @@ export class TestingEngine {
       throw err;
     } finally {
       const durationMs = Date.now() - stepStart;
+      // Taken for every mobile step so the figure never carries over; only a slow one is worth reporting.
+      const slowestCallMs = ctx.mobile?.takeSlowestCallMs() ?? 0;
       reporter.onStepEnd({
         scenarioId: ctx.scenarioId,
         phase,
@@ -203,6 +208,7 @@ export class TestingEngine {
         error: stepError,
         durationMs,
         stepPath,
+        ...(slowestCallMs >= SLOW_CALL_REPORT_MS ? { slowestCallMs } : {}),
       });
     }
   }

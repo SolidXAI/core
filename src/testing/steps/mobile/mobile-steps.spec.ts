@@ -1,4 +1,4 @@
-import { FakeDriver, FakeElement } from "../../adapters/mobile/fake-driver";
+import { FakeClock, FakeDriver, FakeElement } from "../../adapters/mobile/fake-driver";
 import { MobileAdapter } from "../../adapters/mobile/mobile-adapter";
 import type { TestContext } from "../../contracts/runtime-context.types";
 import type { OpStep } from "../../contracts/testing-metadata.types";
@@ -34,6 +34,7 @@ async function setup(started = true) {
     appActivity: ".MainActivity",
     recordVideo: false,
     driverFactory: async () => driver,
+    clock: new FakeClock(),
   });
   if (started) await mobile.start();
   const registry = new StepRegistry();
@@ -103,7 +104,7 @@ describe("mobile steps", () => {
       const { run, driver } = await setup();
       const [button] = driver.add("~Save", new FakeElement());
       await run("mobile.tap", { locator: save });
-      expect(button.calls.some((call) => call.startsWith("waitForDisplayed"))).toBe(true);
+      expect(button.displayChecks).toBe(1);
       expect(button.calls).toContain("click");
     });
 

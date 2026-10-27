@@ -8,12 +8,7 @@ import { appIdArg, BUNDLE_ID_RE, isIos } from "./platform";
 import { CLEAR_DATA_ON_PHONE, withPhoneHint } from "./phone-errors";
 import { toSyslogConsoleEntries } from "./syslog";
 import type { ResolvedLocator } from "./locator";
-import type {
-  MobileAdapterOptions,
-  MobileDriver,
-  MobileElement,
-  MobileRemoteOptions,
-} from "./mobile.types";
+import type { MobileAdapterOptions, MobileDriver, MobileElement, MobileRemoteOptions, MobileClock } from "./mobile.types";
 
 /** Keep the device log bounded, like the UI adapter's console buffer. */
 const MAX_LOGCAT_ENTRIES = 500;
@@ -47,6 +42,11 @@ function defaultRunCommand(file: string, args: string[]): Promise<void> {
 }
 
 const ELEMENT_POLL_MS = 500;
+
+const realClock: MobileClock = {
+  now: () => Date.now(),
+  sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+};
 
 /** App states from `mobile: queryAppState`, the same numbers on both platforms. 4 means running in the foreground. */
 const APP_STATE_FOREGROUND = 4;
@@ -95,6 +95,9 @@ export class MobileAdapter {
   /** The first launch of a session grants permissions on a simulator even without a reset (D28). */
   private launchedOnce = false;
   private readonly logType: "logcat" | "syslog";
+  private readonly clock: MobileClock;
+  /** The longest a single device lookup took since the last {@link takeSlowestCallMs}, for the step report. */
+  private slowestCallMs = 0;
 
   /** Set when screen recording could not start; the run continues without a video. */
   public recordingError?: string;
@@ -109,6 +112,7 @@ export class MobileAdapter {
     this.captureConsole = opts.capture?.console ?? false;
     this.captureScreenshot = opts.capture?.screenshot ?? false;
     this.logType = isIos(opts) ? "syslog" : "logcat";
+    this.clock = opts.clock ?? realClock;
   }
 
   /** Whether this session drives an iOS device or simulator. */
@@ -192,21 +196,14 @@ export class MobileAdapter {
   async find(locator: unknown, stepTimeoutMs?: number): Promise<MobileElement> {
     const resolved = this.resolve(locator);
     const timeout = this.resolveTimeout(stepTimeoutMs);
-    return this.findResolved(resolved, timeout);
+    return this.findResolved(resolved, timeout, false);
   }
 
-  /** Like {@link find}, then waits for the element to be displayed within the same overall timeout. */
+  /** Like {@link find}, but the element must also be displayed, checked in the same poll within the same timeout. */
   async findDisplayed(locator: unknown, stepTimeoutMs?: number): Promise<MobileElement> {
     const resolved = this.resolve(locator);
     const timeout = this.resolveTimeout(stepTimeoutMs);
-    const startedAt = Date.now();
-    const element = await this.findResolved(resolved, timeout);
-    const remaining = Math.max(1, timeout - (Date.now() - startedAt));
-    await element.waitForDisplayed({
-      timeout: remaining,
-      timeoutMsg: `${resolved.label} is not displayed after ${timeout} ms`,
-    });
-    return element;
+    return this.findResolved(resolved, timeout, true);
   }
 
   /** Waits until no element matching the locator is displayed. Ignores `index`: any visible match counts. */
@@ -214,16 +211,27 @@ export class MobileAdapter {
     const driver = this.getDriver();
     const resolved = this.resolve(locator);
     const timeout = this.resolveTimeout(stepTimeoutMs);
-    await driver.waitUntil(
-      async () => {
-        const matches = await driver.$$(resolved.selector);
-        for (const element of matches) {
-          if (await element.isDisplayed()) return false;
+    const deadline = this.clock.now() + timeout;
+    for (;;) {
+      const matches = await this.withinDeadline(deadline, timeout, `looking for ${resolved.label}`, () => driver.$$(resolved.selector));
+      let shown = false;
+      for (const element of matches) {
+        if (await this.withinDeadline(deadline, timeout, `checking ${resolved.label}`, () => element.isDisplayed())) {
+          shown = true;
+          break;
         }
-        return true;
-      },
-      { timeout, timeoutMsg: `${resolved.label} is still visible after ${timeout} ms`, interval: ELEMENT_POLL_MS },
-    );
+      }
+      if (!shown) return;
+      if (this.clock.now() >= deadline) throw new Error(`${resolved.label} is still visible after ${timeout} ms`);
+      await this.clock.sleep(Math.min(ELEMENT_POLL_MS, Math.max(0, deadline - this.clock.now())));
+    }
+  }
+
+  /** The longest single device lookup since the last call, in ms, and starts counting again. */
+  takeSlowestCallMs(): number {
+    const slowest = this.slowestCallMs;
+    this.slowestCallMs = 0;
+    return slowest;
   }
 
   /**
@@ -426,18 +434,33 @@ export class MobileAdapter {
     return resolveLocator(locator, { appPackage: this.opts.appPackage, platform: this.opts.platformName });
   }
 
-  private async findResolved(resolved: ResolvedLocator, timeout: number): Promise<MobileElement> {
+  /**
+   * Polls with one lookup per tick (every lookup is a round trip to the device) and returns as soon as the element is
+   * there, and displayed when asked, so a step waits only as long as the app needs. The failure messages are the ones
+   * the steps and the agent have always matched on.
+   */
+  private async findResolved(resolved: ResolvedLocator, timeout: number, displayed: boolean): Promise<MobileElement> {
     const driver = this.getDriver();
-    await driver.waitUntil(async () => (await driver.$$(resolved.selector)).length > 0, {
-      timeout,
-      timeoutMsg: `No element matches ${resolved.label} after ${timeout} ms`,
-      interval: ELEMENT_POLL_MS,
-    });
-
-    const matches = await driver.$$(resolved.selector);
-    if (matches.length === 0) {
-      throw new Error(`No element matches ${resolved.label} after ${timeout} ms`);
+    const deadline = this.clock.now() + timeout;
+    for (;;) {
+      const matches = await this.withinDeadline(deadline, timeout, `looking for ${resolved.label}`, () => driver.$$(resolved.selector));
+      if (matches.length > 0) {
+        const element = this.pickMatch(resolved, matches);
+        if (!displayed) return element;
+        if (await this.withinDeadline(deadline, timeout, `checking ${resolved.label}`, () => element.isDisplayed())) return element;
+      }
+      if (this.clock.now() >= deadline) {
+        throw new Error(
+          matches.length > 0
+            ? `${resolved.label} is not displayed after ${timeout} ms`
+            : `No element matches ${resolved.label} after ${timeout} ms`,
+        );
+      }
+      await this.clock.sleep(Math.min(ELEMENT_POLL_MS, Math.max(0, deadline - this.clock.now())));
     }
+  }
+
+  private pickMatch(resolved: ResolvedLocator, matches: MobileElement[]): MobileElement {
     if (resolved.index !== undefined) {
       if (resolved.index >= matches.length) {
         throw new Error(`Locator ${resolved.label} has no match at index ${resolved.index} (found ${matches.length})`);
@@ -448,5 +471,31 @@ export class MobileAdapter {
       throw new Error(`Locator ${resolved.label} matched ${matches.length} elements; make it unique or add "index"`);
     }
     return matches[0];
+  }
+
+  /**
+   * Runs one device call that has to answer before `deadline`. UiAutomator2 can leave a request unanswered for tens of
+   * seconds while the app's UI is busy. Without a limit that one call outlives the step's timeout, and the step then
+   * reports an element as missing that was there. The slowest call is kept for the step report.
+   */
+  private async withinDeadline<T>(deadline: number, timeout: number, what: string, call: () => Promise<T>): Promise<T> {
+    const budget = Math.max(1, deadline - this.clock.now());
+    const startedAt = Date.now();
+    let timer: NodeJS.Timeout | undefined;
+    const expired = new Promise<never>((_, reject) => {
+      timer = setTimeout(
+        () => reject(new Error(`The device did not answer while ${what} within the ${timeout} ms timeout; the app's UI may be busy`)),
+        budget,
+      );
+    });
+    const pending = call();
+    // If the deadline wins, the call may still fail later; nobody is left to hear it.
+    pending.catch(() => undefined);
+    try {
+      return await Promise.race([pending, expired]);
+    } finally {
+      clearTimeout(timer);
+      this.slowestCallMs = Math.max(this.slowestCallMs, Date.now() - startedAt);
+    }
   }
 }

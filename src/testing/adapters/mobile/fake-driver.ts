@@ -1,6 +1,6 @@
 // Test helper: an in-memory stand-in for the WebdriverIO driver, so mobile adapter and step tests
 // run without Appium or a device. Not used at runtime.
-import type { MobileDriver, MobileElement } from "./mobile.types";
+import type { MobileClock, MobileDriver, MobileElement } from "./mobile.types";
 
 export class FakeElement implements MobileElement {
   calls: string[] = [];
@@ -21,7 +21,15 @@ export class FakeElement implements MobileElement {
   async addValue(value: string) { this.calls.push(`addValue:${value}`); this.text += value; }
   async clearValue() { this.calls.push("clearValue"); this.text = ""; }
   async getText() { this.calls.push("getText"); return this.text; }
-  async isDisplayed() { return this.displayed; }
+  /** How many times the display state was read; a poll should read it once, not once per helper. */
+  displayChecks = 0;
+  /** Real milliseconds a display check takes, to stand in for a stalled device. */
+  isDisplayedDelayMs = 0;
+  async isDisplayed() {
+    this.displayChecks += 1;
+    if (this.isDisplayedDelayMs) await new Promise((resolve) => setTimeout(resolve, this.isDisplayedDelayMs));
+    return this.displayed;
+  }
   async getLocation() { return this.location; }
   async getSize() { return this.size; }
   async waitForDisplayed(opts?: { timeout?: number; timeoutMsg?: string }) {
@@ -68,8 +76,12 @@ export class FakeDriver implements MobileDriver {
     this.record("$", [selector]);
     return this.elements.get(selector)?.[0] ?? new FakeElement({ displayed: false });
   }
+  /** Real milliseconds a lookup takes, from a number or per selector, to stand in for a stalled device. */
+  lookupDelayMs: number | ((selector: string) => number) = 0;
   async $$(selector: string) {
     this.record("$$", [selector]);
+    const delay = typeof this.lookupDelayMs === "function" ? this.lookupDelayMs(selector) : this.lookupDelayMs;
+    if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
     return [...(this.elements.get(selector) ?? [])];
   }
   // No real waiting: poll the condition a few times, then fail with the supplied message.
@@ -94,4 +106,15 @@ export class FakeDriver implements MobileDriver {
   async startRecordingScreen(opts?: Record<string, unknown>) { this.record("startRecordingScreen", [opts]); }
   async stopRecordingScreen() { this.record("stopRecordingScreen", []); return this.recordingBase64; }
   async deleteSession() { this.record("deleteSession", []); }
+}
+
+/** A clock that moves only when the adapter sleeps, so polling for a missing element takes no real time. */
+export class FakeClock implements MobileClock {
+  sleeps: number[] = [];
+  private current = 0;
+  now() { return this.current; }
+  async sleep(ms: number) {
+    this.sleeps.push(ms);
+    this.current += ms;
+  }
 }

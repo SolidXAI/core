@@ -45,6 +45,8 @@ export interface Reporter {
     error?: unknown;
     durationMs: number;
     stepPath?: string;
+    /** Mobile only: the longest single device lookup in the step, when it was slow enough to matter (a stalled device). */
+    slowestCallMs?: number;
   }): void;
   onSpecResult?(args: {
     scenarioId: string;

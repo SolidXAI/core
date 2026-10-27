@@ -1,4 +1,5 @@
-import { FakeDriver, FakeElement } from "../adapters/mobile/fake-driver";
+import { FakeClock, FakeDriver, FakeElement } from "../adapters/mobile/fake-driver";
+import { MobileAdapter } from "../adapters/mobile/mobile-adapter";
 import type { MobileAdapterOptions } from "../adapters/mobile/mobile.types";
 import type { ScenarioSpec } from "../contracts/testing-metadata.types";
 import { RecordingReporter } from "./recording-reporter";
@@ -14,6 +15,7 @@ function mobileOptions(driver: FakeDriver) {
     appActivity: ".MainActivity",
     capture: { console: true },
     driverFactory: factory,
+    clock: new FakeClock(),
   };
   return { options, factory };
 }
@@ -31,6 +33,23 @@ const failing: ScenarioSpec = {
 };
 
 describe("runFromMetadata with mobile scenarios", () => {
+  it("reports a step's slowest device call only when it was slow, and counts afresh for each step", async () => {
+    const driver = new FakeDriver();
+    driver.add("~Save", new FakeElement());
+    const { options } = mobileOptions(driver);
+    const reporter = new RecordingReporter();
+    const slowest = jest.spyOn(MobileAdapter.prototype, "takeSlowestCallMs").mockReturnValueOnce(31_000).mockReturnValueOnce(120);
+    try {
+      await runFromMetadata({ scenarios: [passing], mobile: options, reporter });
+    } finally {
+      slowest.mockRestore();
+    }
+    expect(reporter.stepEnds).toEqual([
+      { op: "mobile.launch", slowestCallMs: 31_000 },
+      { op: "mobile.tap", slowestCallMs: undefined },
+    ]);
+  });
+
   it("runs a mobile scenario on one session and discards the recording when it passes", async () => {
     const driver = new FakeDriver();
     const [button] = driver.add("~Save", new FakeElement());

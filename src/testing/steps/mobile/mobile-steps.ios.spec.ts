@@ -1,4 +1,4 @@
-import { FakeDriver, FakeElement } from "../../adapters/mobile/fake-driver";
+import { FakeClock, FakeDriver, FakeElement } from "../../adapters/mobile/fake-driver";
 import { MobileAdapter } from "../../adapters/mobile/mobile-adapter";
 import type { TestContext } from "../../contracts/runtime-context.types";
 import { StepRegistry } from "../../core/step-registry";

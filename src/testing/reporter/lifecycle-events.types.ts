@@ -37,6 +37,8 @@ export interface StepResultData {
   name?: string;
   /** Position in the scenario file, e.g. `steps[3].when`. */
   stepPath?: string;
+  /** Mobile only: the longest single device lookup in the step, reported when it was slow (a stalled device). */
+  slowestCallMs?: number;
   ok: boolean;
   durationMs: number;
   error?: string;

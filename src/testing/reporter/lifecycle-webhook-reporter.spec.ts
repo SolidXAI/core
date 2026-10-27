@@ -44,6 +44,20 @@ describe("LifecycleWebhookReporter", () => {
     expect(end.data).toMatchObject({ status: "passed", heals: [heal], steps: [{ stepPath: "steps[1].when" }] });
   });
 
+  it("keeps a mobile step's slowest device call on the reported step", async () => {
+    const sent = await capture((r) => {
+      r.onRunStart({ total: 1, startedAt: new Date().toISOString(), scenarioIds: ["a"] });
+      r.onScenarioStart(scenario("a"));
+      r.onStepEnd({ scenarioId: "a", phase: "when", step: { op: "mobile.tap" }, ok: true, durationMs: 31_500, slowestCallMs: 31_000 });
+      r.onStepEnd({ scenarioId: "a", phase: "then", step: { op: "mobile.expectVisible" }, ok: true, durationMs: 40 });
+      r.onScenarioEnd(scenario("a"), { ok: true, durationMs: 31_600 });
+    });
+    const end = sent.find((e) => e.event === "scenario.end")!;
+    const steps = (end.data as any).steps;
+    expect(steps[0]).toMatchObject({ operation: "mobile.tap", slowestCallMs: 31_000 });
+    expect(steps[1]).not.toHaveProperty("slowestCallMs");
+  });
+
   it("reports a skipped scenario as a non-passing scenario.end and counts it on run.end", async () => {
     const sent = await capture((r) => {
       r.onRunStart({ total: 2, startedAt: new Date().toISOString(), scenarioIds: ["a", "b"] });

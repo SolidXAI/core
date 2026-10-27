@@ -1,5 +1,5 @@
 import { DEFAULT_UI_TIMEOUT_MS } from "../ui/playwright-adapter";
-import { FakeDriver, FakeElement } from "./fake-driver";
+import { FakeClock, FakeDriver, FakeElement } from "./fake-driver";
 import { MobileAdapter } from "./mobile-adapter";
 import type { MobileAdapterOptions, MobileRemoteOptions } from "./mobile.types";
 
@@ -13,6 +13,7 @@ function setup(overrides: Partial<MobileAdapterOptions> = {}) {
     appPackage: "com.acme.app",
     appActivity: ".MainActivity",
     driverFactory: factory,
+    clock: new FakeClock(),
     ...overrides,
   });
   return { driver, factory, adapter };
@@ -188,7 +189,46 @@ describe("MobileAdapter", () => {
       const [element] = driver.add("~Hello", new FakeElement());
       await adapter.start();
       await adapter.findDisplayed({ by: "accessibilityId", value: "Hello" });
-      expect(element.calls.some((call) => call.startsWith("waitForDisplayed"))).toBe(true);
+      expect(element.displayChecks).toBe(1);
+    });
+
+    it("looks the element up once per poll, with no second lookup after a match", async () => {
+      const { adapter, driver } = setup();
+      driver.add("~Hello", new FakeElement());
+      await adapter.start();
+      await adapter.findDisplayed({ by: "accessibilityId", value: "Hello" });
+      expect(driver.callsTo("$$")).toHaveLength(1);
+      expect(driver.callsTo("waitUntil")).toHaveLength(0);
+    });
+
+    it("returns as soon as the element appears, not after the whole timeout", async () => {
+      const clock = new FakeClock();
+      const { adapter, driver } = setup({ clock });
+      await adapter.start();
+      const appearsAfter = 2; // polls
+      const realLookup = driver.$$.bind(driver);
+      driver.$$ = async (selector: string) => {
+        if (driver.callsTo("$$").length >= appearsAfter) driver.add("~Late", new FakeElement());
+        return realLookup(selector);
+      };
+      await adapter.findDisplayed({ by: "accessibilityId", value: "Late" }, 30_000);
+      expect(clock.sleeps.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(1500);
+    });
+
+    it("keeps polling while the element is there but not yet displayed", async () => {
+      const clock = new FakeClock();
+      const { adapter, driver } = setup({ clock });
+      const [element] = driver.add("~Slow", new FakeElement({ displayed: false }));
+      await adapter.start();
+      // The element is shown after the adapter has slept once, i.e. on the second poll.
+      const sleep = clock.sleep.bind(clock);
+      clock.sleep = async (ms: number) => {
+        await sleep(ms);
+        element.displayed = true;
+      };
+      await expect(adapter.findDisplayed({ by: "accessibilityId", value: "Slow" }, 5000)).resolves.toBe(element);
+      expect(element.displayChecks).toBe(2);
+      expect(driver.callsTo("$$")).toHaveLength(2);
     });
 
     it("fails with a displayed-specific message", async () => {
@@ -215,6 +255,57 @@ describe("MobileAdapter", () => {
       await expect(adapter.waitHidden({ by: "accessibilityId", value: "Shown" }, 1500)).rejects.toThrow(
         '{ by: "accessibilityId", value: "Shown" } is still visible after 1500 ms',
       );
+    });
+  });
+
+  describe("a device that stops answering", () => {
+    const hello = { by: "accessibilityId", value: "Hello" };
+    // Real time on purpose: the point is a call that really is slow compared with the step's timeout.
+    const realClock = { now: () => Date.now(), sleep: (ms: number) => new Promise<void>((r) => setTimeout(r, ms)) };
+
+    it("fails the step at its timeout instead of waiting for the stalled lookup", async () => {
+      const { adapter, driver } = setup({ clock: realClock });
+      driver.add("~Hello", new FakeElement());
+      driver.lookupDelayMs = 1500;
+      await adapter.start();
+      const startedAt = Date.now();
+      await expect(adapter.findDisplayed(hello, 100)).rejects.toThrow(
+        'The device did not answer while looking for { by: "accessibilityId", value: "Hello" } within the 100 ms timeout',
+      );
+      // Well short of the stall: the step ended at its own deadline, give or take a busy machine.
+      expect(Date.now() - startedAt).toBeLessThan(1000);
+    });
+
+    it("applies the same limit to a stalled display check and to waitHidden", async () => {
+      const { adapter, driver } = setup({ clock: realClock });
+      const [element] = driver.add("~Hello", new FakeElement());
+      element.isDisplayedDelayMs = 1500;
+      await adapter.start();
+      await expect(adapter.findDisplayed(hello, 100)).rejects.toThrow("The device did not answer while checking");
+      await expect(adapter.waitHidden(hello, 100)).rejects.toThrow("The device did not answer");
+    });
+
+    it("does not report an unhandled rejection when the abandoned call fails later", async () => {
+      const { adapter, driver } = setup({ clock: realClock });
+      driver.lookupDelayMs = 200;
+      driver.failing.add("$$");
+      await adapter.start();
+      const unhandled = jest.fn();
+      process.on("unhandledRejection", unhandled);
+      await expect(adapter.find(hello, 50)).rejects.toThrow();
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      process.off("unhandledRejection", unhandled);
+      expect(unhandled).not.toHaveBeenCalled();
+    });
+
+    it("reports the slowest lookup once, then starts counting again", async () => {
+      const { adapter, driver } = setup({ clock: realClock });
+      driver.add("~Hello", new FakeElement());
+      driver.lookupDelayMs = 120;
+      await adapter.start();
+      await adapter.find(hello);
+      expect(adapter.takeSlowestCallMs()).toBeGreaterThanOrEqual(100);
+      expect(adapter.takeSlowestCallMs()).toBe(0);
     });
   });
 

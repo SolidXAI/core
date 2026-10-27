@@ -149,4 +149,11 @@ export interface MobileAdapterOptions {
   runCommand?: (file: string, args: string[]) => Promise<void>;
   /** Test hook: replaces the WebdriverIO `remote()` call. */
   driverFactory?: (options: MobileRemoteOptions) => Promise<MobileDriver>;
+  /** Test hook: the time source for element polling, so specs do not wait in real time. */
+  clock?: MobileClock;
+}
+
+export interface MobileClock {
+  now(): number;
+  sleep(ms: number): Promise<void>;
 }

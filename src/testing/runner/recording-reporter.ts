@@ -7,13 +7,16 @@ export class RecordingReporter implements Reporter {
   attachments: Array<{ scenarioId: string; name: string }> = [];
   runArtifacts: Array<{ name: string; bytes: number }> = [];
   runEnd?: { ok: boolean; total: number; passed: number; failed: number };
+  stepEnds: Array<{ op: string; slowestCallMs?: number }> = [];
 
   onScenarioStart() {}
   onScenarioEnd(scenario: ScenarioSpec, result: { ok: boolean }) {
     this.scenarioEnds.push({ id: scenario.id, ok: result.ok });
   }
   onStepStart() {}
-  onStepEnd() {}
+  onStepEnd(args?: { step: { op: string }; slowestCallMs?: number }) {
+    if (args) this.stepEnds.push({ op: args.step.op, slowestCallMs: args.slowestCallMs });
+  }
   attach(args: { scenarioId: string; name: string }) {
     this.attachments.push({ scenarioId: args.scenarioId, name: args.name });
   }
