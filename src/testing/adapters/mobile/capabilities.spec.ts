@@ -18,7 +18,13 @@ describe("buildCapabilities", () => {
       "appium:udid": "emulator-5554",
       "appium:newCommandTimeout": 120,
       "appium:autoGrantPermissions": true,
+      "appium:settings[waitForIdleTimeout]": 500,
     });
+  });
+
+  it("lets extra capabilities change the idle wait, for a device that needs another value", () => {
+    const caps = buildCapabilities({ ...base, extraCapabilities: { "appium:settings[waitForIdleTimeout]": 0 } });
+    expect(caps["appium:settings[waitForIdleTimeout]"]).toBe(0);
   });
 
   it("installed: opens the app by id, keeps its data and restarts it", () => {

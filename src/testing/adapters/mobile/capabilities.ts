@@ -22,6 +22,10 @@ function androidCapabilities(o: MobileAdapterOptions): Record<string, unknown> {
     "appium:udid": o.udid,
     "appium:newCommandTimeout": 120,
     "appium:autoGrantPermissions": true,
+    // UiAutomator2 waits up to 10 s for the UI to go idle before every lookup, and keyboards, autofill and animations
+    // keep some screens busy for all of it. 500 ms still lets the app apply a tap before the next one (0 let a tap
+    // land before the previous one had taken effect), and our own polling does the real waiting.
+    "appium:settings[waitForIdleTimeout]": 500,
   };
 
   if (o.appSource === "upload") {
