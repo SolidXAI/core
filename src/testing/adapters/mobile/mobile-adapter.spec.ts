@@ -476,28 +476,18 @@ describe("MobileAdapter", () => {
       driver.logs = [{ level: "ALL", message: "10-09 09:49:37.434   363  3815 E AndroidRuntime: boom" }];
       await adapter.start();
       const artifacts = await adapter.collectFailureArtifacts();
-      expect(artifacts.map((a) => a.name)).toEqual(["console.json", "screenshot.png", "page-source.xml"]);
+      expect(artifacts.map((a) => a.name)).toEqual(["console.json", "screenshot.png"]);
       const shot = artifacts.find((a) => a.name === "screenshot.png")!;
       expect(shot.contentType).toBe("image/png");
       expect(Buffer.isBuffer(shot.data)).toBe(true);
       expect((shot.data as Buffer).toString()).toBe("png-bytes");
     });
 
-    it("keeps the screen's element tree next to the screenshot, and carries on when it cannot be read", async () => {
-      const { adapter, driver } = setup({ capture: { console: false, screenshot: true } });
-      driver.pageSource = '<hierarchy><node text="Save"/></hierarchy>';
+    it("does not read the page source for a failure: Test Hub has nowhere to show one, and files an unknown text attachment as an API log", async () => {
+      const { adapter, driver } = setup({ capture: { console: true, screenshot: true } });
       await adapter.start();
-      const source = (await adapter.collectFailureArtifacts()).find((a) => a.name === "page-source.xml")!;
-      expect(source).toMatchObject({ contentType: "application/xml", data: '<hierarchy><node text="Save"/></hierarchy>' });
-
-      driver.failing.add("getPageSource");
-      expect((await adapter.collectFailureArtifacts()).map((a) => a.name)).toEqual(["screenshot.png"]);
-    });
-
-    it("does not read the page source unless a screenshot was asked for", async () => {
-      const { adapter, driver } = setup({ capture: { console: true } });
-      await adapter.start();
-      await adapter.collectFailureArtifacts();
+      const names = (await adapter.collectFailureArtifacts()).map((a) => a.name);
+      expect(names).not.toContain("page-source.xml");
       expect(driver.callsTo("getPageSource")).toHaveLength(0);
     });
 

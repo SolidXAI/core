@@ -464,16 +464,6 @@ export class MobileAdapter {
       }
     }
 
-    // The screen's element tree, next to its screenshot: what a repair reads to see what a locator should have matched.
-    if (this.captureScreenshot) {
-      try {
-        const source = await this.driver.getPageSource();
-        if (source) artifacts.push({ name: "page-source.xml", contentType: "application/xml", data: source });
-      } catch {
-        // Best-effort.
-      }
-    }
-
     return artifacts;
   }
 
