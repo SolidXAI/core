@@ -121,6 +121,37 @@ describe("mobile step executor", () => {
   });
 });
 
+describe("clearing an iOS app's data", () => {
+  const launch = { op: "mobile.launch", with: { clearData: true, grantPermissions: false } };
+  const scripts = (driver: FakeDriver) => driver.callsTo("execute").map((call) => [call.args[0], call.args[1]]);
+
+  it("reinstalls the build it was given", async () => {
+    const { driver, executor } = setup({ platformName: "iOS", simulator: true, appPath: "/builds/My Demo App.app" });
+    const result = await executor.runStep(launch);
+    expect(result.ok).toBe(true);
+    expect(scripts(driver)).toEqual(
+      expect.arrayContaining([
+        ["mobile: removeApp", { bundleId: "com.acme.app" }],
+        ["mobile: installApp", { app: "/builds/My Demo App.app" }],
+      ]),
+    );
+  });
+
+  it("says what is missing when it was given no build", async () => {
+    const { driver, executor } = setup({ platformName: "iOS", simulator: true });
+    const result = await executor.runStep(launch);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("Clearing data needs a build to reinstall");
+    expect(scripts(driver).map(([script]) => script)).not.toContain("mobile: removeApp");
+  });
+
+  it("does not need a build on Android, which clears the data in place", async () => {
+    const { driver, executor } = setup();
+    expect((await executor.runStep({ op: "mobile.launch", with: { clearData: true } })).ok).toBe(true);
+    expect(scripts(driver).map(([script]) => script)).toContain("mobile: clearApp");
+  });
+});
+
 describe("runtime manifest", () => {
   it("lists every mobile op and the mobile capabilities", () => {
     expect(listOps().filter((op) => op.startsWith("mobile."))).toEqual([

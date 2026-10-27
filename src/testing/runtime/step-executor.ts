@@ -237,6 +237,11 @@ export interface MobileStepExecutorOptions {
   appPackage: string;
   /** Needed on Android to start the app; unused by the steps themselves. */
   appActivity?: string;
+  /**
+   * The build on this machine (an APK, or the Simulator `.app`). A launch that clears data on iOS removes the app and installs
+   * this build again, so without it that launch fails.
+   */
+  appPath?: string;
   /** iOS: the app's executable name, to pick its lines out of the device log. */
   appProcessName?: string;
   /** iOS: the device is a Simulator. An iOS device that is not a Simulator is a real iPhone, which cannot clear app data. */
@@ -274,6 +279,7 @@ export function createMobileStepExecutor(opts: MobileStepExecutorOptions): Mobil
     platformName: opts.platformName,
     appPackage: opts.appPackage,
     appActivity: opts.appActivity,
+    appPath: opts.appPath,
     appProcessName: opts.appProcessName,
     simulator: opts.simulator,
     defaultTimeoutMs: opts.defaultTimeoutMs,
