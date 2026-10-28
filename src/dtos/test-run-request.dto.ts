@@ -6,6 +6,7 @@ import {
   IsString,
 } from 'class-validator';
 
+import type { MobileRunOptionsInput } from '../testing/adapters/mobile/mobile.types';
 import type {
   ScenarioSpec,
   ScenarioType,
@@ -117,6 +118,11 @@ export class TestRunRequestDto {
   @IsOptional()
   @IsObject()
   capture?: CaptureOptionsInput;
+
+  /** Device and app for mobile scenarios (Appium). Required when a scenario is a mobile scenario. */
+  @IsOptional()
+  @IsObject()
+  mobile?: MobileRunOptionsInput;
 
   @IsOptional()
   @IsBoolean()
