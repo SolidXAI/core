@@ -20,7 +20,11 @@ async function targetOf(ctx: TestContext, mobile: MobileAdapter, step: OpStep, o
     return mobile.findDisplayed(await resolveMobileTarget(ctx, step, stepTimeout(step)), stepTimeout(step));
   }
   try {
-    return await mobile.findDisplayed(requireLocator(step, op), stepTimeout(step) ?? OPTIONAL_TIMEOUT_MS);
+    // Each check may take as long as an ordinary step's wait to answer: "not there" is a normal answer here, and a slow phone's
+    // late one must not be read as a device that is not answering.
+    return await mobile.findDisplayed(requireLocator(step, op), stepTimeout(step) ?? OPTIONAL_TIMEOUT_MS, {
+      answerWithinMs: mobile.resolveTimeout(),
+    });
   } catch (error) {
     if (isNotFound(error)) return undefined;
     throw error;

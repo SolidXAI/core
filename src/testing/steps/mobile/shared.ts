@@ -32,7 +32,10 @@ export function optionalBoolean(step: OpStep, key: string, op: string): boolean 
   return value;
 }
 
-/** How long an optional step looks for its element before it counts as not there. */
+/**
+ * How long an optional step keeps re-checking after its element is not there, so a screen that is still drawing can settle.
+ * Each check may take as long as a step's timeout to answer.
+ */
 export const OPTIONAL_TIMEOUT_MS = 3000;
 
 /** The step's element is missing or never shown, as opposed to the device not answering or a bad locator. */

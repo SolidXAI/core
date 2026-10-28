@@ -612,8 +612,10 @@ tap. `ui.*` ops cannot be used in a mobile scenario.
 
 #### Optional steps
 `mobile.tap`, `mobile.type` and `mobile.back` accept `"optional": true`. The step looks for its element for
-`timeoutMs` (default 3 seconds) and, if it is not there, passes without doing anything. An optional step only
-passes over a missing element: any other failure still fails it, and it never heals. It is meant for a reset,
+`timeoutMs` (default 3 seconds) and, if it is not there, passes without doing anything. That time is how long it
+keeps re-checking, so a screen that is still drawing can settle; each individual check may take as long as an ordinary
+step's wait (`defaultTimeoutMs`, 30 s) to answer, so a slow phone's late "not there" still skips the step. An optional
+step only passes over a missing element: any other failure still fails it, and it never heals. It is meant for a reset,
 which has to work from any state (a "Log out" button only exists when someone is logged in).
 
 #### Healing: `fallbacks` and `fingerprint`

@@ -88,7 +88,7 @@ export function registerGestureSteps(registry: StepRegistry): void {
     for (let attempt = 0; attempt <= maxSwipes; attempt += 1) {
       try {
         // A short wait per attempt: the element is either on screen already or it is not.
-        await mobile.findDisplayed(locator, 1000);
+        await mobile.findDisplayed(locator, 1000, { answerWithinMs: mobile.resolveTimeout() });
         return;
       } catch (error) {
         if (!isNotFound(error)) throw error;

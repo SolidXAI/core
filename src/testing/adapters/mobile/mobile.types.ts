@@ -46,6 +46,15 @@ export interface MobileElement {
   waitForDisplayed(opts?: { timeout?: number; timeoutMsg?: string; reverse?: boolean }): Promise<unknown>;
 }
 
+/** What a lookup may wait for, beyond the step's own timeout. */
+export interface FindOptions {
+  /**
+   * How long one device call may take to answer, when that should be longer than the time spent looking. Left out, a call
+   * has to answer within the lookup's own timeout.
+   */
+  answerWithinMs?: number;
+}
+
 /** The part of the WebdriverIO browser object that the mobile adapter and steps use. */
 export interface MobileDriver {
   $(selector: string): Promise<MobileElement>;

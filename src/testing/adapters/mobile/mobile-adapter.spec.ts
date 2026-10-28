@@ -298,6 +298,72 @@ describe("MobileAdapter", () => {
       expect(unhandled).not.toHaveBeenCalled();
     });
 
+    describe("when 'not there' is a normal answer (answerWithinMs)", () => {
+      it("waits for a slow device's answer instead of calling it unanswered", async () => {
+        const { adapter, driver } = setup({ clock: realClock });
+        driver.lookupDelayMs = 400; // slower than the 100 ms the step keeps looking for
+        await adapter.start();
+        const startedAt = Date.now();
+        await expect(adapter.findDisplayed(hello, 100, { answerWithinMs: 2000 })).rejects.toThrow("No element matches");
+        expect(Date.now() - startedAt).toBeLessThan(1500);
+      });
+
+      it("still finds an element a slow device reports late", async () => {
+        const { adapter, driver } = setup({ clock: realClock });
+        const [element] = driver.add("~Hello", new FakeElement());
+        driver.lookupDelayMs = 400;
+        await adapter.start();
+        await expect(adapter.findDisplayed(hello, 100, { answerWithinMs: 2000 })).resolves.toBe(element);
+      });
+
+      it("reports a late 'not displayed' as not displayed, not as unanswered", async () => {
+        const { adapter, driver } = setup({ clock: realClock });
+        const [element] = driver.add("~Hello", new FakeElement({ displayed: false }));
+        element.isDisplayedDelayMs = 400;
+        await adapter.start();
+        await expect(adapter.findDisplayed(hello, 100, { answerWithinMs: 2000 })).rejects.toThrow("is not displayed after 100 ms");
+      });
+
+      it("still gives up on a device that never answers, at the answer limit", async () => {
+        const { adapter, driver } = setup({ clock: realClock });
+        driver.add("~Hello", new FakeElement());
+        driver.lookupDelayMs = 1500;
+        await adapter.start();
+        const startedAt = Date.now();
+        await expect(adapter.findDisplayed(hello, 100, { answerWithinMs: 300 })).rejects.toThrow(
+          "The device did not answer while looking for",
+        );
+        expect(Date.now() - startedAt).toBeLessThan(1000);
+      });
+
+      it("keeps re-checking for the settle window when the device is fast", async () => {
+        const { adapter, driver } = setup(); // fake clock: polling takes no real time
+        await adapter.start();
+        await expect(adapter.findDisplayed(hello, 3000, { answerWithinMs: 30000 })).rejects.toThrow("No element matches");
+        expect(driver.callsTo("$$").length).toBeGreaterThan(3);
+      });
+
+      it("finds an element that shows up while it is still re-checking", async () => {
+        const { adapter, driver } = setup();
+        await adapter.start();
+        const element = new FakeElement();
+        const lookup = driver.$$.bind(driver);
+        driver.$$ = async (selector: string) => {
+          if (driver.callsTo("$$").length >= 2) driver.elements.set("~Hello", [element]);
+          return lookup(selector);
+        };
+        await expect(adapter.findDisplayed(hello, 3000, { answerWithinMs: 30000 })).resolves.toBe(element);
+      });
+
+      it("leaves an ordinary lookup as it was: the call is cut off at the step's timeout", async () => {
+        const { adapter, driver } = setup({ clock: realClock });
+        driver.add("~Hello", new FakeElement());
+        driver.lookupDelayMs = 400;
+        await adapter.start();
+        await expect(adapter.findDisplayed(hello, 100)).rejects.toThrow("The device did not answer while looking for");
+      });
+    });
+
     it("reports the slowest lookup once, then starts counting again", async () => {
       const { adapter, driver } = setup({ clock: realClock });
       driver.add("~Hello", new FakeElement());

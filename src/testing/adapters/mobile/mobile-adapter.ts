@@ -10,7 +10,7 @@ import { appIdArg, BUNDLE_ID_RE, isIos } from "./platform";
 import { CLEAR_DATA_ON_PHONE, withPhoneHint } from "./phone-errors";
 import { toSyslogConsoleEntries } from "./syslog";
 import type { ResolvedLocator } from "./locator";
-import type { MobileAdapterOptions, MobileDriver, MobileElement, MobileRemoteOptions, MobileClock } from "./mobile.types";
+import type { FindOptions, MobileAdapterOptions, MobileDriver, MobileElement, MobileRemoteOptions, MobileClock } from "./mobile.types";
 
 /** Keep the device log bounded, like the UI adapter's console buffer. */
 const MAX_LOGCAT_ENTRIES = 500;
@@ -223,17 +223,17 @@ export class MobileAdapter {
    * Finds one element. Waits until at least one element matches; with strict locators (the default)
    * a locator that matches several elements fails unless it has an `index` (D6).
    */
-  async find(locator: unknown, stepTimeoutMs?: number): Promise<MobileElement> {
+  async find(locator: unknown, stepTimeoutMs?: number, opts?: FindOptions): Promise<MobileElement> {
     const resolved = this.resolve(locator);
     const timeout = this.resolveTimeout(stepTimeoutMs);
-    return this.findResolved(resolved, timeout, false);
+    return this.findResolved(resolved, timeout, false, opts?.answerWithinMs);
   }
 
   /** Like {@link find}, but the element must also be displayed, checked in the same poll within the same timeout. */
-  async findDisplayed(locator: unknown, stepTimeoutMs?: number): Promise<MobileElement> {
+  async findDisplayed(locator: unknown, stepTimeoutMs?: number, opts?: FindOptions): Promise<MobileElement> {
     const resolved = this.resolve(locator);
     const timeout = this.resolveTimeout(stepTimeoutMs);
-    return this.findResolved(resolved, timeout, true);
+    return this.findResolved(resolved, timeout, true, opts?.answerWithinMs);
   }
 
   /** Waits until no element matching the locator is displayed. Ignores `index`: any visible match counts. */
@@ -525,15 +525,19 @@ export class MobileAdapter {
    * there, and displayed when asked, so a step waits only as long as the app needs. The failure messages are the ones
    * the steps and the agent have always matched on.
    */
-  private async findResolved(resolved: ResolvedLocator, timeout: number, displayed: boolean): Promise<MobileElement> {
+  private async findResolved(resolved: ResolvedLocator, timeout: number, displayed: boolean, answerWithinMs?: number): Promise<MobileElement> {
     const driver = this.getDriver();
     const deadline = this.clock.now() + timeout;
+    // `timeout` is how long to keep looking. A caller that expects "not there" to be a normal answer (an optional step) also
+    // gives each call this long to answer, so a slow device's late "not there" is not mistaken for a device that is not answering.
+    const callDeadline = () => (answerWithinMs === undefined ? deadline : Math.max(deadline, this.clock.now() + answerWithinMs));
+    const callLimit = answerWithinMs ?? timeout;
     for (;;) {
-      const matches = await this.withinDeadline(deadline, timeout, `looking for ${resolved.label}`, () => driver.$$(resolved.selector));
+      const matches = await this.withinDeadline(callDeadline(), callLimit, `looking for ${resolved.label}`, () => driver.$$(resolved.selector));
       if (matches.length > 0) {
         const element = this.pickMatch(resolved, matches);
         if (!displayed) return element;
-        if (await this.withinDeadline(deadline, timeout, `checking ${resolved.label}`, () => element.isDisplayed())) return element;
+        if (await this.withinDeadline(callDeadline(), callLimit, `checking ${resolved.label}`, () => element.isDisplayed())) return element;
       }
       if (this.clock.now() >= deadline) {
         throw new Error(

@@ -3,6 +3,7 @@ import { MobileAdapter } from "../../adapters/mobile/mobile-adapter";
 import type { TestContext } from "../../contracts/runtime-context.types";
 import type { OpStep } from "../../contracts/testing-metadata.types";
 import { StepRegistry } from "../../core/step-registry";
+import type { MobileClock } from "../../adapters/mobile/mobile.types";
 import { registerMobileSteps } from "./index";
 
 const ALL_OPS = [
@@ -24,7 +25,7 @@ const ALL_OPS = [
 
 const save = { by: "accessibilityId", value: "Save" };
 
-async function setup(started = true) {
+async function setup(started = true, clock: MobileClock = new FakeClock(), defaultTimeoutMs?: number) {
   const driver = new FakeDriver();
   const mobile = new MobileAdapter({
     appiumUrl: "http://localhost:4723",
@@ -34,7 +35,8 @@ async function setup(started = true) {
     appActivity: ".MainActivity",
     recordVideo: false,
     driverFactory: async () => driver,
-    clock: new FakeClock(),
+    clock,
+    defaultTimeoutMs,
   });
   if (started) await mobile.start();
   const registry = new StepRegistry();
@@ -346,5 +348,39 @@ describe("mobile steps", () => {
         expect(driver.callsTo("$$")).toHaveLength(0);
       });
     });
+  });
+});
+
+describe("optional steps on a slow device", () => {
+  // Real time: the point is a device that answers later than the step keeps looking for.
+  const realClock: MobileClock = { now: () => Date.now(), sleep: (ms) => new Promise<void>((r) => setTimeout(r, ms)) };
+  const maybe = { by: "accessibilityId", value: "Maybe" };
+
+  it("skips an element that is not there even when the device is slower than the optional wait to say so", async () => {
+    const { run, driver } = await setup(true, realClock);
+    driver.lookupDelayMs = 400;
+    await expect(run("mobile.tap", { locator: maybe, optional: true, timeoutMs: 100 })).resolves.toEqual({ skipped: "optional-not-found" });
+  });
+
+  it("taps an element a slow device reports late", async () => {
+    const { run, driver } = await setup(true, realClock);
+    const [element] = driver.add("~Maybe", new FakeElement());
+    driver.lookupDelayMs = 400;
+    await run("mobile.tap", { locator: maybe, optional: true, timeoutMs: 100 });
+    expect(element.calls).toContain("click");
+  });
+
+  it("still fails when the device does not answer at all", async () => {
+    const { run, driver } = await setup(true, realClock, 300);
+    driver.lookupDelayMs = 1500;
+    await expect(run("mobile.tap", { locator: maybe, optional: true, timeoutMs: 100 })).rejects.toThrow("The device did not answer");
+  });
+
+  it("scrollTo takes a slow device's answer that the element is already on screen", async () => {
+    const { run, driver } = await setup(true, realClock);
+    driver.add("~Target", new FakeElement());
+    driver.lookupDelayMs = 1500; // slower than scrollTo's 1 s look per attempt
+    await run("mobile.scrollTo", { locator: { by: "accessibilityId", value: "Target" } });
+    expect(executes(driver)).toHaveLength(0);
   });
 });
