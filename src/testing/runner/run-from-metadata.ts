@@ -289,6 +289,13 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
         if (scenario.saveSession && scenarioNeedsMobile(scenario)) {
           mobileState.loggedInBy = scenario.id;
         }
+        if (scenarioNeedsMobile(scenario)) {
+          // Where the app was last brought to a restore source's state. A scenario that sets no session leaves this as it was:
+          // the next restore checks the device before it trusts it.
+          if (scenario.saveSession) mobileState.mayBeIn = scenario.id;
+          else if (scenario.session === "restore") mobileState.mayBeIn = sessionSourceFor(scenario, scenarioById);
+          else if (scenario.session === "fresh") mobileState.mayBeIn = undefined;
+        }
       } catch (error) {
         failed += 1;
         outcomes.set(scenario.id, "failed");

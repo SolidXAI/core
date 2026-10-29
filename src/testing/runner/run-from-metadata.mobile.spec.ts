@@ -352,3 +352,125 @@ describe("optional mobile steps", () => {
   });
 });
 
+
+describe("a restore that checks the app is still logged in before replaying the login", () => {
+  const tap = (name: string) => ({ and: { op: "mobile.tap", with: { locator: { by: "accessibilityId", value: name } } } });
+  const sees = (name: string) => ({ then: { op: "mobile.expectVisible", with: { locator: { by: "accessibilityId", value: name } } } });
+  const launch = (clearData?: boolean) => ({ given: { op: "mobile.launch", with: clearData ? { clearData: true } : {} } });
+  const scripts = (driver: FakeDriver) => driver.callsTo("execute").map((call) => String(call.args[0]));
+  const clicks = (element: FakeElement) => element.calls.filter((call) => call === "click").length;
+  const restores = (login: ScenarioSpec, id: string, steps: any[]): ScenarioSpec => ({
+    id, type: "mobile", dependsOn: [login.id], session: "restore", steps,
+  });
+
+  const login = (clearData: boolean, check = true): ScenarioSpec => ({
+    id: "login", type: "mobile", saveSession: true,
+    steps: [launch(clearData), tap("Log in"), ...(check ? [sees("Channels")] : [])],
+  });
+
+  /** A fake app that shows Channels once logged in, and hides it again when "Log out" is tapped. */
+  function app() {
+    const driver = new FakeDriver();
+    const channels = driver.add("~Channels", new FakeElement())[0];
+    const logIn = driver.add("~Log in", new FakeElement())[0];
+    const logOut = driver.add("~Log out", new FakeElement())[0];
+    for (const name of ["Cart", "Saved", "Other"]) driver.add(`~${name}`, new FakeElement());
+    channels.displayed = false; // nobody is logged in until the login scenario says so
+    const press = logIn.click.bind(logIn);
+    logIn.click = async () => { await press(); channels.displayed = true; };
+    const out = logOut.click.bind(logOut);
+    logOut.click = async () => { await out(); channels.displayed = false; };
+    return { driver, logIn, channels, reporter: new RecordingReporter() };
+  }
+  /** The setup steps of a run, in order. Steps replayed from another scenario are reported under that scenario's id. */
+  const setupOf = (reporter: RecordingReporter, scenarioId?: string) =>
+    reporter.stepEnds.filter((e) => e.setup && (!scenarioId || e.scenarioId === scenarioId)).map((e) => [e.scenarioId, e.setup, e.op]);
+
+  it("relaunches and carries on when the app is still logged in, so the login runs once", async () => {
+    const { driver, logIn, reporter } = app();
+    const scenarios = [login(true), restores(login(true), "cart", [launch(), tap("Cart")]), restores(login(true), "saved", [launch(), tap("Saved")])];
+    await runFromMetadata({ scenarios, mobile: mobileOptions(driver).options, reporter });
+    expect(clicks(logIn)).toBe(1);
+    expect(scripts(driver).filter((script) => script === "mobile: clearApp")).toHaveLength(1);
+    // The second restore found the channel list, so it is a relaunch and nothing more.
+    expect(setupOf(reporter, "saved")).toEqual([["saved", "restore", "mobile.launch"]]);
+    expect(reporter.runEnd).toMatchObject({ ok: true, total: 3, passed: 3 });
+  });
+
+  it("replays the login when an earlier scenario logged the app out", async () => {
+    const { driver, logIn, reporter } = app();
+    const scenarios = [
+      login(true),
+      restores(login(true), "log-out", [launch(), tap("Log out")]),
+      restores(login(true), "saved", [launch(), tap("Saved")]),
+    ];
+    await runFromMetadata({ scenarios, mobile: mobileOptions(driver).options, reporter });
+    expect(clicks(logIn)).toBe(2);
+    // The log-out scenario only relaunched. Then "saved" relaunched, found no channel list, started the app from scratch and ran
+    // the login's steps again, as before.
+    expect(setupOf(reporter)).toEqual([
+      ["log-out", "restore", "mobile.launch"],
+      ["saved", "restore", "mobile.launch"],
+      ["saved", "reset", "mobile.launch"],
+      ["login", "restore", "mobile.launch"],
+      ["login", "restore", "mobile.tap"],
+      ["login", "restore", "mobile.expectVisible"],
+    ]);
+    expect(reporter.runEnd).toMatchObject({ ok: true, total: 3, passed: 3 });
+  });
+
+  it("does not look when the login ends on no check: it replays as it always did", async () => {
+    const { driver, logIn, reporter } = app();
+    const scenarios = [login(true, false), restores(login(true, false), "cart", [launch(), tap("Cart")]), restores(login(true, false), "saved", [launch(), tap("Saved")])];
+    await runFromMetadata({ scenarios, mobile: mobileOptions(driver).options, reporter });
+    expect(clicks(logIn)).toBe(2);
+    expect(setupOf(reporter, "saved")[0]).toEqual(["saved", "reset", "mobile.launch"]);
+  });
+
+  it("does not trust the app after a scenario that starts fresh", async () => {
+    const { driver, logIn, reporter } = app();
+    const fresh: ScenarioSpec = { id: "fresh", type: "mobile", session: "fresh", steps: [launch(), tap("Other")] };
+    const scenarios = [login(true), fresh, restores(login(true), "saved", [launch(), tap("Saved")])];
+    await runFromMetadata({ scenarios, mobile: mobileOptions(driver).options, reporter });
+    expect(clicks(logIn)).toBe(2);
+    // No relaunch-and-look: it goes straight to the clean start and the login.
+    expect(setupOf(reporter, "saved")[0]).toEqual(["saved", "reset", "mobile.launch"]);
+  });
+
+  describe("on a real iPhone", () => {
+    const reset: ScenarioSpec = {
+      id: "reset-app", type: "mobile", reset: true,
+      steps: [launch(), tap("Log out"), sees("login screen")],
+    };
+    function iphone() {
+      const made = app();
+      made.driver.add("~login screen", new FakeElement()); // the signed-out screen the reset ends on
+      const { options } = mobileOptions(made.driver);
+      return { ...made, options: { ...options, platformName: "iOS" as const } };
+    }
+    const phoneLogin: ScenarioSpec = { id: "login", type: "mobile", saveSession: true, steps: [launch(), tap("Log in"), sees("Channels")] };
+
+    it("skips both the reset scenario and the login when the app is still logged in", async () => {
+      const { logIn, options, reporter } = iphone();
+      const scenarios = [phoneLogin, restores(phoneLogin, "cart", [launch(), tap("Cart")]), restores(phoneLogin, "saved", [launch(), tap("Saved")]), reset];
+      await runFromMetadata({ scenarios, mobile: options, reporter });
+      expect(clicks(logIn)).toBe(1);
+      expect(setupOf(reporter, "saved")).toEqual([["saved", "restore", "mobile.launch"]]);
+    });
+
+    it("runs the reset scenario and the login when it is not", async () => {
+      const { logIn, options, reporter } = iphone();
+      const scenarios = [
+        phoneLogin,
+        restores(phoneLogin, "log-out", [launch(), tap("Log out")]),
+        restores(phoneLogin, "saved", [launch(), tap("Saved")]),
+        reset,
+      ];
+      await runFromMetadata({ scenarios, mobile: options, reporter });
+      expect(clicks(logIn)).toBeGreaterThanOrEqual(2);
+      // Relaunch, no channel list, then the reset scenario brings the app back to its start before the login runs again.
+      expect(setupOf(reporter).filter(([, kind]) => kind === "reset").map(([id]) => id)).toEqual(["saved", "reset-app", "reset-app", "reset-app"]);
+      expect(reporter.runEnd).toMatchObject({ ok: true });
+    });
+  });
+});

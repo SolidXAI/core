@@ -1,6 +1,13 @@
 import type { ScenarioSpec } from "../contracts/testing-metadata.types";
 import type { ScenarioSetup } from "../core/testing-engine";
+import { normalizeBlock } from "../core/normalize-steps";
 import { sessionSourceFor } from "./scenario-graph";
+
+/**
+ * How long a restore looks for the screen its source scenario ended on, after relaunching the app. Long enough for the app to
+ * draw its first screen; a lookup that stalls counts as "not there", which only costs a replay of the login.
+ */
+export const RESTORE_PROBE_MS = 5000;
 
 export const NO_RESET_SCENARIO =
   'This iPhone application has no reset scenario. Add a scenario with "reset": true that brings the app to its signed-out start screen from any state.';
@@ -9,6 +16,24 @@ export const NO_RESET_SCENARIO =
 export interface MobileSessionState {
   /** The scenario that passed with `saveSession` and left the app logged in, until another scenario touches the app. */
   loggedInBy?: string;
+  /**
+   * The restore source whose state the app was last brought to in this run. Only a hint, because scenarios in between may have
+   * changed the app: it is checked on the device before it is trusted.
+   */
+  mayBeIn?: string;
+}
+
+/** The locator of a scenario's last `mobile.expectVisible`, which is the screen it leaves the app on. Undefined when it has none. */
+export function probeFor(source: ScenarioSpec | undefined): { locator: unknown } | undefined {
+  let locator: unknown;
+  for (const block of source?.steps ?? []) {
+    for (const step of normalizeBlock(block).steps) {
+      if (step.op === "mobile.expectVisible" && step.with?.locator !== undefined) locator = step.with.locator;
+    }
+  }
+  // A locator with a ${...} token needs the scenario's own values to resolve, which a probe does not have.
+  if (locator === undefined || JSON.stringify(locator).includes("${")) return undefined;
+  return { locator };
 }
 
 /**
@@ -98,6 +123,12 @@ export function planMobileSetup(args: {
   if (source) {
     for (const dependency of restoreChain(source, byId)) {
       parts.push({ kind: "restore", scenario: dependency, secrets: secretsOf(dependency.id) });
+    }
+    // The app was last brought to the source's state, so it may still be there: relaunch it and look for the screen the source
+    // ends on. Found, the steps above are not needed; not found, they run as they always did.
+    const probe = state.mayBeIn === source ? probeFor(byId.get(source)) : undefined;
+    if (probe) {
+      return [{ ...launchPart(scenario, "restore", false), probe: { ...probe, timeoutMs: RESTORE_PROBE_MS }, orElse: parts }];
     }
   }
   return parts;

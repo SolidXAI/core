@@ -652,8 +652,11 @@ about the app, not a browser:
   app with its data cleared. On a real iPhone it relaunches the app and runs the file's reset scenario.
 - `"session": "restore"`: start logged in as the scenario it depends on left the app. If that scenario
   (`saveSession: true`) has just passed and nothing has touched the app since, the app is only relaunched.
-  Otherwise the app starts from scratch and that scenario's steps run again (and, for a scenario that was
-  itself restored, the ones before it).
+  Otherwise, when the app was last brought to that scenario's state, it is relaunched and the scenario's last
+  `mobile.expectVisible` is looked for (up to 5 seconds): found, the scenario carries on and the login is not
+  run again; not found (something logged out, or the app crashed), or when that scenario ends on no check, the
+  app starts from scratch and that scenario's steps run again (and, for a scenario that was itself restored,
+  the ones before it). End a login scenario on a check of the logged-in screen to let restores skip it.
 
 These steps run as setup inside the scenario that needs them. They are reported with the step event's `setup`
 field (`"reset"` or `"restore"`) and keep the id and `steps[n]` paths of the scenario they come from.

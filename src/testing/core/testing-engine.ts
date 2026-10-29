@@ -32,6 +32,12 @@ export interface ScenarioSetup {
   scenario: ScenarioSpec;
   /** Resolved secret values for the steps' `${secret:...}` tokens. */
   secrets?: Record<string, any>;
+  /**
+   * After the steps have run, look for this element on the device. When it shows within `timeoutMs` the setup is over; when it
+   * does not, `orElse` runs in its place. It is how a restore avoids replaying a login the app is still in.
+   */
+  probe?: { locator: unknown; timeoutMs: number };
+  orElse?: ScenarioSetup[];
 }
 
 /** A device lookup slower than this is reported with its step. */
@@ -82,6 +88,12 @@ export class TestingEngine {
         const execute = async () => {
           for (const part of setup) {
             await this.runSetup(part, ctx);
+            // A probe is a question, not a step: a missing element is an answer, and is not reported as a failure.
+            if (part.probe) {
+              // Showing is what counts, as for an expectVisible. Any failure to find it, or to get an answer in time, is a "no".
+              const there = await ctx.mobile?.findDisplayed(part.probe.locator, part.probe.timeoutMs).then(() => true, () => false);
+              if (!there) for (const fallback of part.orElse ?? []) await this.runSetup(fallback, ctx);
+            }
           }
           for (const [blockIndex, block] of scenario.steps.entries()) {
             const normalized = normalizeBlock(block);
