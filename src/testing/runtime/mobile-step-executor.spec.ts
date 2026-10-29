@@ -165,12 +165,13 @@ describe("runtime manifest", () => {
       "mobile.launch",
       "mobile.reset",
       "mobile.scrollTo",
+      "mobile.submit",
       "mobile.swipe",
       "mobile.tap",
       "mobile.terminate",
       "mobile.type",
     ]);
     expect(CAPABILITIES).toEqual(expect.arrayContaining(["mobileRuntime", "mobileSelfHealing", "mobileSessionModes", "mobileReset"]));
-    expect(RUNTIME_VERSION).toBe("1.2.0");
+    expect(RUNTIME_VERSION).toBe("1.3.0");
   });
 });

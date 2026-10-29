@@ -41,6 +41,19 @@ async function clearOfKeyboard(mobile: MobileAdapter, element: MobileElement, st
   return reach.kind === "point" ? { x: reach.x, y: reach.y } : undefined;
 }
 
+/** The actions a keyboard's action key can carry, and what that key is called on iOS. */
+const SUBMIT_KEYS: Record<string, string[]> = {
+  search: ["Search", "search"],
+  go: ["Go", "go"],
+  send: ["Send", "send"],
+  done: ["Done", "done"],
+  next: ["Next", "next"],
+  enter: ["Return", "return"],
+};
+const SUBMIT_ACTIONS = Object.keys(SUBMIT_KEYS);
+/** With no action named, whichever action key the keyboard shows: it only ever shows one. */
+const ANY_SUBMIT_KEY = ["Return", "return", "Search", "search", "Go", "go", "Send", "send", "Done", "done", "Join", "join", "Next", "next"];
+
 export function registerActionSteps(registry: StepRegistry): void {
   registry.register("mobile.tap", async (ctx: TestContext, step: OpStep) => {
     const mobile = requireMobile(ctx, "mobile.tap");
@@ -99,6 +112,33 @@ export function registerActionSteps(registry: StepRegistry): void {
       }
     }
     await driver.back();
+  });
+
+  // Typing "\n" does not submit: the field takes it as a character. A React Native input submits on the keyboard's editor action
+  // (not on the Enter key event), and an iOS keyboard on its action key, so each platform presses what a person would.
+  registry.register("mobile.submit", async (ctx: TestContext, step: OpStep) => {
+    const mobile = requireMobile(ctx, "mobile.submit");
+    const action = step.with?.action;
+    if (action !== undefined && !SUBMIT_ACTIONS.includes(action as string)) {
+      throw new Error(`"action" must be one of ${SUBMIT_ACTIONS.join(", ")} for op "mobile.submit"`);
+    }
+    const driver = mobile.getDriver();
+    if (!mobile.ios) {
+      if (action === "enter") await driver.execute("mobile: pressKey", { keycode: 66 });
+      else await driver.execute("mobile: performEditorAction", { action: (action as string | undefined) ?? "done" });
+      return;
+    }
+    const names = action ? SUBMIT_KEYS[action as string] : ANY_SUBMIT_KEY;
+    const selector = `-ios class chain:**/XCUIElementTypeKeyboard/**/XCUIElementTypeButton[\`name IN {${names.map((n) => `"${n}"`).join(",")}}\`]`;
+    for (const key of await driver.$$(selector)) {
+      if (await key.isDisplayed()) {
+        await key.click();
+        return;
+      }
+    }
+    throw new Error(
+      `mobile.submit: the keyboard has no ${names.slice(0, action ? 1 : 3).join(" / ")} key. Is a text field focused, and is its keyboard showing?`,
+    );
   });
 
   registry.register("mobile.hideKeyboard", async (ctx: TestContext, step: OpStep) => {

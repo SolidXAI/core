@@ -602,6 +602,7 @@ every run).
 | `mobile.scrollTo` | `locator`, `direction` (down/up, default down), `maxSwipes` (default 10) | Swipes until the element shows |
 | `mobile.back` | `optional` (optional) | Presses Back |
 | `mobile.hideKeyboard` | `method` (iPhone only, recorded by authoring: `driver`, `doneKey`, `tapOutside`, `swipeDown`) | Hides the keyboard if it is shown. On a real iPhone iOS has no hide action, so the keyboard's own Done key, a tap on a spot that is on no control, and a swipe down are tried in turn; the step passes with the first that works and fails when none does. The recorded `method` is tried first on a run |
+| `mobile.submit` | `action` (optional: `search`, `go`, `send`, `done`, `next`, `enter`) | Presses the keyboard's action key on the field that has focus, e.g. to run a search. Typing `\n` does not submit, because the field takes it as a character. Android performs the editor action (`done` when none is named; `enter` presses the Enter key); iOS taps the keyboard's own key. No locator, never heals |
 | `mobile.expectVisible` | `locator` | Passes when the element is displayed in time |
 | `mobile.expectHidden` | `locator` | Passes when no match is displayed in time |
 | `mobile.expectText` | `locator` and exactly one of `equals`, `contains`, `matches` (a regex) | Compares the element's text; returns it |

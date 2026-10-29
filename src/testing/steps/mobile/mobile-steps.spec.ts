@@ -17,6 +17,7 @@ const ALL_OPS = [
   "mobile.scrollTo",
   "mobile.back",
   "mobile.hideKeyboard",
+  "mobile.submit",
   "mobile.expectVisible",
   "mobile.expectHidden",
   "mobile.expectText",
@@ -382,5 +383,33 @@ describe("optional steps on a slow device", () => {
     driver.lookupDelayMs = 1500; // slower than scrollTo's 1 s look per attempt
     await run("mobile.scrollTo", { locator: { by: "accessibilityId", value: "Target" } });
     expect(executes(driver)).toHaveLength(0);
+  });
+});
+
+describe("mobile.submit on Android", () => {
+  it("performs the editor action the field asked for", async () => {
+    const { run, driver } = await setup();
+    await run("mobile.submit", { action: "search" });
+    expect(executes(driver)).toEqual([["mobile: performEditorAction", { action: "search" }]]);
+  });
+
+  it("performs 'done' when no action is named", async () => {
+    const { run, driver } = await setup();
+    await run("mobile.submit");
+    expect(executes(driver)).toEqual([["mobile: performEditorAction", { action: "done" }]]);
+  });
+
+  it("presses the Enter key for a native field that listens for the key itself", async () => {
+    const { run, driver } = await setup();
+    await run("mobile.submit", { action: "enter" });
+    expect(executes(driver)).toEqual([["mobile: pressKey", { keycode: 66 }]]);
+  });
+
+  it("refuses an action it does not know", async () => {
+    const { run, driver } = await setup();
+    await expect(run("mobile.submit", { action: "bogus" })).rejects.toThrow(
+      '"action" must be one of search, go, send, done, next, enter for op "mobile.submit"',
+    );
+    expect(executes(driver)).toEqual([]);
   });
 });

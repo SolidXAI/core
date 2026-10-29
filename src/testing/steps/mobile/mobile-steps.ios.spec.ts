@@ -323,3 +323,42 @@ describe("a control under the iPhone keyboard", () => {
     expect(driver.callsTo("$$").some((call) => String(call.args[0]).includes("XCUIElementTypeKeyboard"))).toBe(false);
   });
 });
+
+describe("mobile.submit on iOS", () => {
+  const keyAt = (names: string) => `-ios class chain:**/XCUIElementTypeKeyboard/**/XCUIElementTypeButton[\`name IN {${names}}\`]`;
+  const ANY = '"Return","return","Search","search","Go","go","Send","send","Done","done","Join","join","Next","next"';
+
+  it("taps the keyboard's Search key", async () => {
+    const { run, driver } = await setup(true);
+    const [key] = driver.add(keyAt('"Search","search"'), new FakeElement());
+    await run("mobile.submit", { action: "search" });
+    expect(key.calls).toContain("click");
+  });
+
+  it("taps whichever action key the keyboard shows when no action is named", async () => {
+    const { run, driver } = await setup(false);
+    const [key] = driver.add(keyAt(ANY), new FakeElement());
+    await run("mobile.submit");
+    expect(key.calls).toContain("click");
+  });
+
+  it("names the missing key when the keyboard has another one", async () => {
+    const { run, driver } = await setup(true);
+    driver.add(keyAt('"Search","search"'), new FakeElement());
+    await expect(run("mobile.submit", { action: "go" })).rejects.toThrow("the keyboard has no Go key");
+  });
+
+  it("says so when no keyboard is showing", async () => {
+    const { run } = await setup(true);
+    await expect(run("mobile.submit", { action: "search" })).rejects.toThrow(
+      "Is a text field focused, and is its keyboard showing?",
+    );
+  });
+
+  it("does not tap a key that is not displayed", async () => {
+    const { run, driver } = await setup(true);
+    const [key] = driver.add(keyAt('"Search","search"'), new FakeElement({ displayed: false }));
+    await expect(run("mobile.submit", { action: "search" })).rejects.toThrow("the keyboard has no Search key");
+    expect(key.calls).not.toContain("click");
+  });
+});
