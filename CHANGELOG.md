@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.1.22-beta.0] - 2026-10-29
+
+### Added
+
+- upgrade SolidX AgentHub Embed SDK to version 5 with improved error handling and agent identification
+- add SolidX Agent Hub configuration settings
+
+### Fixed
+
+- prefer 'from' address from message payload, fallback to configured value (#206)
+- update sessionId and agentSession properties to allow null values
+- prevent duplicate ID columns in generated views (#203)
+- update environment variable names and change setting levels for solid-core module
+
+### Other
+
+- fix settings provider collision (#194)
+
 ## [0.1.21] - 2026-10-26
 
 ### Added
