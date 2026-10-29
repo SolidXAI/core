@@ -3,10 +3,13 @@
  * tool or of the phone, which says what went wrong but not what to do.
  */
 
-/** What `mobile.launch {clearData: true}` says on a phone (D41): there is no build to reinstall, so there is no reset. */
-export const CLEAR_DATA_ON_PHONE =
-  "Clearing data on an iPhone is not supported: Test Hub uses the app already installed on the phone. " +
-  "Remove clearData from mobile.launch, or log out at the start of the scenario.";
+/**
+ * What `mobile.launch {clearData: true}` says on an iOS device with no build to reinstall. iOS has no "clear data": the app is
+ * removed and installed again, which needs the build. A Simulator takes the zipped `.app`, an iPhone the `.ipa` (D41).
+ */
+export const CLEAR_DATA_NEEDS_BUILD =
+  "Clearing data on iOS needs a build to reinstall, and there is none for this device. Upload the build for this device " +
+  "(a Simulator .zip, or an iPhone .ipa), or start the scenario from the file's reset scenario.";
 
 /** What `mobile.hideKeyboard` says on a phone when the keyboard is still shown after every way of hiding it (D47). */
 export const KEYBOARD_STAYS_ON_PHONE =

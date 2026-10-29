@@ -13,7 +13,16 @@ import { TestingEngine, type ScenarioSetup } from "../core/testing-engine";
 import { filterScenarios } from "./scenario-filter";
 import { collectSecretKeys } from "../core/interpolation";
 import { planMobileSetup, splitResetScenario, type MobileSessionState } from "./mobile-session";
-import { ensureMobileStarted, ensureUiStarted, mobileScenarioProblem, scenarioNeedsMobile, scenarioNeedsUi } from "./lifecycle";
+import {
+  cleanStartProblem,
+  ensureMobileStarted,
+  ensureUiStarted,
+  mobileScenarioProblem,
+  scenarioNeedsMobile,
+  scenarioNeedsUi,
+  startsWithCleanApp,
+  withoutLeadingClear,
+} from "./lifecycle";
 import { ensureChromiumInstalled } from "../adapters/ui/browser-provisioner";
 import { ConsoleReporter } from "../reporter/console-reporter";
 import type { PlaywrightAdapter as UiAdapter, StorageState } from "../adapters/ui/playwright-adapter";
@@ -212,6 +221,10 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
         );
       }
     }
+    // An iOS device with no build cannot clear an app's data: say so now, naming the scenarios, not at their first step.
+    const noReinstall = !!mobile && !mobile.canReinstall;
+    const cleanProblem = cleanStartProblem(scenarios, { noReinstall }, resetScenario);
+    if (cleanProblem) throw new Error(cleanProblem);
 
     // One query for the whole run, after onRunStart so a failure here still reports
     // run.end. Keys that do not resolve are not fatal — they surface at the step that
@@ -248,13 +261,16 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
         }
       }
       let setup: ScenarioSetup[] = [];
+      // On an iOS device that cannot clear data, a scenario that starts clean is started by the reset scenario instead, and its
+      // own first step only relaunches the app.
+      const cleanFirst = !!mobile && !mobile.canReinstall && scenarioNeedsMobile(scenario) && startsWithCleanApp(scenario);
       if (scenarioNeedsMobile(scenario)) {
         await ensureMobileStarted(ctxBase, mobileStarted);
-        if (dependencyMode && mobile) {
+        if ((dependencyMode || cleanFirst) && mobile) {
           try {
             setup = planMobileSetup({
-              scenario,
-              phone: mobile.phone,
+              scenario: cleanFirst && (scenario.session ?? "shared") === "shared" ? { ...scenario, session: "fresh" } : scenario,
+              noReinstall: !mobile.canReinstall,
               byId: scenarioById,
               reset: resetScenario,
               state: mobileState,
@@ -274,7 +290,7 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
       }
       try {
         await engine.runScenario(
-          scenario,
+          cleanFirst ? withoutLeadingClear(scenario) : scenario,
           {
             ...ctxBase,
             secrets: secretsByScenario.get(scenario.id),

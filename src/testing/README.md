@@ -592,7 +592,7 @@ every run).
 
 | Op | `with` | Does |
 |---|---|---|
-| `mobile.launch` | `clearData` (optional, default false), `grantPermissions` (optional, default true) | Stops the app, optionally wipes its data, starts it. A real iPhone cannot clear an app's data, so `clearData` fails there (see "The reset scenario") |
+| `mobile.launch` | `clearData` (optional, default false), `grantPermissions` (optional, default true) | Stops the app, optionally wipes its data, starts it. Android clears an installed app in place. iOS has no "clear data": it removes the app and installs the uploaded build again (the Simulator's `.app`, an iPhone's `.ipa`), so `clearData` fails on an iOS device that has no build (see "The reset scenario") |
 | `mobile.reset` | – | `mobile.launch` with `clearData: true` |
 | `mobile.terminate` | – | Stops the app |
 | `mobile.tap` | `locator`, `optional` (optional) | Taps the element |
@@ -649,7 +649,8 @@ about the app, not a browser:
 
 - `"session": "shared"` (default): carry on in the app as it is.
 - `"session": "fresh"`: start from scratch. On a device that can clear an app's data, the runner launches the
-  app with its data cleared. On a real iPhone it relaunches the app and runs the file's reset scenario.
+  app with its data cleared. On an iOS device with no build to reinstall it relaunches the app and runs the file's
+  reset scenario.
 - `"session": "restore"`: start logged in as the scenario it depends on left the app. If that scenario
   (`saveSession: true`) has just passed and nothing has touched the app since, the app is only relaunched.
   Otherwise, when the app was last brought to that scenario's state, it is relaunched and the scenario's last
@@ -661,8 +662,12 @@ about the app, not a browser:
 These steps run as setup inside the scenario that needs them. They are reported with the step event's `setup`
 field (`"reset"` or `"restore"`) and keep the id and `steps[n]` paths of the scenario they come from.
 
-**The reset scenario.** A real iPhone cannot clear an app's data, so a file for an iPhone declares one scenario
-with `"reset": true` that brings the app back to its signed-out start screen from any state. It is never run
+**The reset scenario.** An iOS device with no build to reinstall (an iPhone without an uploaded `.ipa`, or a Simulator
+with only an installed app) cannot clear an app's data, so the file declares one scenario with `"reset": true`
+that brings the app back to its signed-out start screen from any state. A scenario whose first step is
+`mobile.launch` with `clearData` (or `mobile.reset`) then starts through it, and that first step only relaunches the
+app. A run on such a device ends before it starts, naming the scenarios, when the file has no reset scenario, or when
+a scenario clears the data partway through. With a build to reinstall none of this applies. It is never run
 as a scenario of its own, selected, or counted; it cannot use `dependsOn`, `saveSession` or `session`, and no
 scenario can depend on it. Use `optional` steps for what only applies in some states:
 

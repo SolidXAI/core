@@ -141,7 +141,7 @@ describe("clearing an iOS app's data", () => {
     const { driver, executor } = setup({ platformName: "iOS", simulator: true });
     const result = await executor.runStep(launch);
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("Clearing data needs a build to reinstall");
+    expect(result.error).toContain("Clearing data on iOS needs a build to reinstall");
     expect(scripts(driver).map(([script]) => script)).not.toContain("mobile: removeApp");
   });
 
@@ -172,6 +172,6 @@ describe("runtime manifest", () => {
       "mobile.type",
     ]);
     expect(CAPABILITIES).toEqual(expect.arrayContaining(["mobileRuntime", "mobileSelfHealing", "mobileSessionModes", "mobileReset"]));
-    expect(RUNTIME_VERSION).toBe("1.3.0");
+    expect(RUNTIME_VERSION).toBe("1.4.0");
   });
 });

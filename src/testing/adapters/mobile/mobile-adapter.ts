@@ -7,7 +7,7 @@ import { execFile } from "node:child_process";
 import { resolveLocator } from "./locator";
 import { toConsoleEntries } from "./logcat";
 import { appIdArg, BUNDLE_ID_RE, isIos } from "./platform";
-import { CLEAR_DATA_ON_PHONE, withPhoneHint } from "./phone-errors";
+import { CLEAR_DATA_NEEDS_BUILD, withPhoneHint } from "./phone-errors";
 import { toSyslogConsoleEntries } from "./syslog";
 import type { ResolvedLocator } from "./locator";
 import type { FindOptions, MobileAdapterOptions, MobileDriver, MobileElement, MobileRemoteOptions, MobileClock } from "./mobile.types";
@@ -143,6 +143,14 @@ export class MobileAdapter {
     return typeof stepTimeoutMs === "number" && Number.isFinite(stepTimeoutMs)
       ? stepTimeoutMs
       : this.navigationTimeoutMs;
+  }
+
+  /**
+   * Whether `clearData` can work: always on Android, which clears an installed app in place; on iOS only with a build to install
+   * again (the Simulator's `.app`, or an iPhone's `.ipa`).
+   */
+  get canReinstall(): boolean {
+    return !this.ios || !!this.opts.appPath;
   }
 
   isStarted(): boolean {
@@ -317,8 +325,8 @@ export class MobileAdapter {
    * On Android, permissions are granted again after a wipe, because clearing data revokes them.
    */
   async launch(opts: { clearData?: boolean; timeoutMs?: number; grantPermissions?: boolean } = {}): Promise<void> {
-    // A phone's app is installed once, by hand, so there is no build to reinstall from: refuse before touching the app (D41).
-    if (opts.clearData && this.phone) throw new Error(CLEAR_DATA_ON_PHONE);
+    // iOS clears an app's data by installing it again. Without a build there is nothing to install: refuse before touching it (D41).
+    if (opts.clearData && this.ios && !this.canReinstall) throw new Error(CLEAR_DATA_NEEDS_BUILD);
     const driver = this.getDriver();
     const appId = this.opts.appPackage;
     const idArg = appIdArg(this.opts);
@@ -385,7 +393,7 @@ export class MobileAdapter {
     const driver = this.getDriver();
     const appPath = this.opts.appPath;
     if (!appPath) {
-      throw new Error("Clearing data needs a build to reinstall. Upload the build on the application.");
+      throw new Error(CLEAR_DATA_NEEDS_BUILD);
     }
     try {
       await driver.execute("mobile: removeApp", { bundleId: this.opts.appPackage });

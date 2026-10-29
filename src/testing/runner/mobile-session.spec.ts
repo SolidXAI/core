@@ -48,7 +48,7 @@ describe("planMobileSetup", () => {
   const plan = (target: ScenarioSpec, over: { phone?: boolean; reset?: ScenarioSpec; loggedInBy?: string } = {}) =>
     planMobileSetup({
       scenario: target,
-      phone: over.phone ?? false,
+      noReinstall: over.phone ?? false,
       byId,
       reset: "reset" in over ? over.reset : reset,
       state: { loggedInBy: over.loggedInBy },

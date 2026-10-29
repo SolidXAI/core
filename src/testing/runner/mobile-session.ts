@@ -10,7 +10,7 @@ import { sessionSourceFor } from "./scenario-graph";
 export const RESTORE_PROBE_MS = 5000;
 
 export const NO_RESET_SCENARIO =
-  'This iPhone application has no reset scenario. Add a scenario with "reset": true that brings the app to its signed-out start screen from any state.';
+  'This iOS device has no build to reinstall, and the file has no reset scenario. Upload the build for this device (a Simulator .zip, or an iPhone .ipa), or add a scenario with "reset": true that brings the app to its signed-out start screen from any state.';
 
 /** What the app was last left in by a scenario of this run. */
 export interface MobileSessionState {
@@ -98,13 +98,14 @@ function launchPart(scenario: ScenarioSpec, kind: "reset" | "restore", clearData
  */
 export function planMobileSetup(args: {
   scenario: ScenarioSpec;
-  phone: boolean;
+  /** The device cannot clear the app's data: an iOS device with no build to reinstall. A reset scenario stands in. */
+  noReinstall: boolean;
   byId: Map<string, ScenarioSpec>;
   reset?: ScenarioSpec;
   state: MobileSessionState;
   secretsOf: (scenarioId: string) => Record<string, any> | undefined;
 }): ScenarioSetup[] {
-  const { scenario, phone, byId, reset, state, secretsOf } = args;
+  const { scenario, noReinstall, byId, reset, state, secretsOf } = args;
   const mode = scenario.session ?? "shared";
   if (mode === "shared") return [];
 
@@ -112,7 +113,7 @@ export function planMobileSetup(args: {
   if (source && state.loggedInBy === source) return [launchPart(scenario, "restore", false)];
 
   const parts: ScenarioSetup[] = [];
-  if (phone) {
+  if (noReinstall) {
     if (!reset) throw new Error(NO_RESET_SCENARIO);
     // The reset starts from the app in front, even if the reset scenario forgot to launch it.
     parts.push(launchPart(scenario, "reset", false));

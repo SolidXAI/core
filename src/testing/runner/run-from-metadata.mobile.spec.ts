@@ -283,10 +283,13 @@ describe("mobile session modes and the reset scenario", () => {
       expect(clicks(logOut)).toBe(1);
     });
 
-    it("fails the scenario, with what to add, when the file has no reset scenario", async () => {
+    it("fails the run before it starts, with what to add, when the file has no reset scenario", async () => {
       const { options, reporter } = iphone();
-      await expect(runFromMetadata({ scenarios: [fresh], mobile: options, reporter })).rejects.toThrow('Add a scenario with "reset": true');
-      expect(reporter.scenarioEnds).toEqual([{ id: "fresh-start", ok: false }]);
+      await expect(runFromMetadata({ scenarios: [fresh], mobile: options, reporter })).rejects.toThrow(
+        'Scenario "fresh-start" starts with a clean app, but there is no build to reinstall on this iOS device and the file has no reset scenario.',
+      );
+      expect(reporter.scenarioEnds).toEqual([]);
+      expect(reporter.runEnd).toMatchObject({ ok: false });
     });
 
     it("names the reset scenario and the step when the reset itself fails", async () => {
@@ -472,5 +475,78 @@ describe("a restore that checks the app is still logged in before replaying the 
       expect(setupOf(reporter).filter(([, kind]) => kind === "reset").map(([id]) => id)).toEqual(["saved", "reset-app", "reset-app", "reset-app"]);
       expect(reporter.runEnd).toMatchObject({ ok: true });
     });
+  });
+});
+
+describe("clean starts on iOS with and without a build to reinstall", () => {
+  const tap = (name: string) => ({ and: { op: "mobile.tap", with: { locator: { by: "accessibilityId", value: name } } } });
+  const launch = (clearData?: boolean) => ({ given: { op: "mobile.launch", with: clearData ? { clearData: true } : {} } });
+  const scripts = (driver: FakeDriver) => driver.callsTo("execute").map((call) => String(call.args[0]));
+  const reinstalled = (driver: FakeDriver) => scripts(driver).some((script) => /removeApp|installApp/.test(script));
+  const reset: ScenarioSpec = {
+    id: "reset-app", type: "mobile", reset: true,
+    steps: [launch(), tap("Log out"), { then: { op: "mobile.expectVisible", with: { locator: { by: "accessibilityId", value: "login screen" } } } }],
+  };
+  // Starts clean the plain way: no session field, just a clearData launch first.
+  const startsClean: ScenarioSpec = { id: "starts-clean", type: "mobile", steps: [launch(true), tap("Next")] };
+
+  function device(over: Partial<MobileAdapterOptions>) {
+    const driver = new FakeDriver();
+    driver.add("~Next", new FakeElement());
+    driver.add("~Log out", new FakeElement());
+    driver.add("~login screen", new FakeElement());
+    const { options } = mobileOptions(driver);
+    return { driver, options: { ...options, platformName: "iOS" as const, ...over }, reporter: new RecordingReporter() };
+  }
+  const phone = { simulator: false };
+  const simulator = { simulator: true, udid: "1674E718-0EBA-4568-9644-F18E0DDF7705" };
+
+  for (const [name, kind] of [["an iPhone", phone], ["a Simulator", simulator]] as const) {
+    it(`${name} with no build starts a clean scenario through the reset scenario, and its first step only relaunches`, async () => {
+      const { driver, options, reporter } = device({ ...kind, appPath: undefined });
+      await runFromMetadata({ scenarios: [reset, startsClean], mobile: options, reporter });
+      expect(reinstalled(driver)).toBe(false);
+      expect(scripts(driver)).not.toContain("mobile: clearApp");
+      expect(reporter.runEnd).toMatchObject({ ok: true, total: 1, passed: 1 });
+      const setup = reporter.stepEnds.filter((e) => e.setup).map((e) => [e.scenarioId, e.op]);
+      expect(setup).toEqual([
+        ["starts-clean", "mobile.launch"], ["reset-app", "mobile.launch"], ["reset-app", "mobile.tap"], ["reset-app", "mobile.expectVisible"],
+      ]);
+    });
+
+    it(`${name} with no build and no reset scenario fails before anything starts, naming the scenario`, async () => {
+      const { driver, options, reporter } = device({ ...kind, appPath: undefined });
+      await expect(runFromMetadata({ scenarios: [startsClean], mobile: options, reporter })).rejects.toThrow(
+        'Scenario "starts-clean" starts with a clean app, but there is no build to reinstall on this iOS device and the file has no reset scenario.',
+      );
+      expect(scripts(driver)).toEqual([]);
+      expect(reporter.runEnd).toMatchObject({ ok: false });
+    });
+
+    it(`${name} with no build refuses a clearData partway through, even with a reset scenario`, async () => {
+      const { options, reporter } = device({ ...kind, appPath: undefined });
+      const midway: ScenarioSpec = { id: "midway", type: "mobile", steps: [launch(), tap("Next"), { and: { op: "mobile.reset" } }] };
+      await expect(runFromMetadata({ scenarios: [reset, midway], mobile: options, reporter })).rejects.toThrow(
+        'Scenario "midway" clears the app\'s data partway through',
+      );
+    });
+
+    it(`${name} with a build reinstalls it for a clean start and needs no reset scenario`, async () => {
+      const { driver, options, reporter } = device({ ...kind, appPath: "/builds/MyApp.ipa", appSource: kind === phone ? "installed" : "upload" });
+      await runFromMetadata({ scenarios: [startsClean], mobile: options, reporter });
+      expect(scripts(driver)).toEqual(expect.arrayContaining(["mobile: removeApp", "mobile: installApp"]));
+      expect(reporter.runEnd).toMatchObject({ ok: true, passed: 1 });
+      expect(reporter.stepEnds.filter((e) => e.setup)).toEqual([]);
+    });
+  }
+
+  it("Android keeps clearing an installed app in place, with no build and no reset scenario", async () => {
+    const driver = new FakeDriver();
+    driver.add("~Next", new FakeElement());
+    const reporter = new RecordingReporter();
+    await runFromMetadata({ scenarios: [startsClean], mobile: mobileOptions(driver).options, reporter });
+    expect(scripts(driver)).toContain("mobile: clearApp");
+    expect(reinstalled(driver)).toBe(false);
+    expect(reporter.runEnd).toMatchObject({ ok: true, passed: 1 });
   });
 });

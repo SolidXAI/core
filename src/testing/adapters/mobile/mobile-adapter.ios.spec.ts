@@ -84,7 +84,7 @@ describe("MobileAdapter on iOS", () => {
       const { adapter } = setup({ appSource: "installed", appPath: undefined });
       await adapter.start();
       await expect(adapter.launch({ clearData: true })).rejects.toThrow(
-        "Clearing data needs a build to reinstall. Upload the build on the application.",
+        "Clearing data on iOS needs a build to reinstall, and there is none for this device. Upload the build for this device (a Simulator .zip, or an iPhone .ipa), or start the scenario from the file's reset scenario.",
       );
     });
 
@@ -207,14 +207,23 @@ describe("MobileAdapter on a real iPhone", () => {
     expect(setup({ platformName: undefined, simulator: undefined }).adapter.phone).toBe(false);
   });
 
-  it("clearData is refused before anything is sent to the phone (D41)", async () => {
+  it("clearData without an .ipa is refused before anything is sent to the phone (D41)", async () => {
     const { adapter, driver } = setup(phoneOptions);
     await adapter.start();
+    expect(adapter.canReinstall).toBe(false);
     const before = driver.callsTo("execute").length;
-    await expect(adapter.launch({ clearData: true })).rejects.toThrow(
-      "Clearing data on an iPhone is not supported: Test Hub uses the app already installed on the phone. Remove clearData from mobile.launch, or log out at the start of the scenario.",
-    );
+    await expect(adapter.launch({ clearData: true })).rejects.toThrow("Clearing data on iOS needs a build to reinstall, and there is none for this device. Upload the build for this device (a Simulator .zip, or an iPhone .ipa), or start the scenario from the file's reset scenario.");
     expect(driver.callsTo("execute")).toHaveLength(before);
+  });
+
+  it("clearData with an uploaded .ipa removes the app and installs the build again", async () => {
+    const { adapter, driver } = setup({ ...phoneOptions, appPath: "/builds/MyApp.ipa" });
+    await adapter.start();
+    expect(adapter.canReinstall).toBe(true);
+    await adapter.launch({ clearData: true });
+    const scripts = driver.callsTo("execute").map((call) => call.args[0]);
+    expect(scripts).toContain("mobile: removeApp");
+    expect(driver.callsTo("execute").find((call) => call.args[0] === "mobile: installApp")?.args[1]).toEqual({ app: "/builds/MyApp.ipa" });
   });
 
   it("a launch without clearData starts the installed app and never runs simctl", async () => {
