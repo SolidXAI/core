@@ -122,13 +122,10 @@ export class SMTPEMailService implements IMail {
     }
 
     async sendEmailSynchronously(message: QueueMessage<any>) {
-        let from;
-        const { to, subject, body, attachments = [], cc, bcc } = message.payload;
+        const { to, subject, body, attachments = [], cc, bcc, from: payloadFrom } = message.payload;
 
-        const envFrom = this.settingService.getConfigValue<SolidCoreSetting>("smtpMailFrom");
-        if (envFrom) {
-            from = envFrom;
-        }
+        // Prefer the from address passed by the caller, fall back to the configured one.
+        const from = payloadFrom || this.settingService.getConfigValue<SolidCoreSetting>("smtpMailFrom");
 
         // if any of the required fields are missing, throw an error.
         if (!from || !to || !subject || !body) {
