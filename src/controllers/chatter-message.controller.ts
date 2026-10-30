@@ -6,6 +6,7 @@ import { CreateChatterMessageDto } from '../dtos/create-chatter-message.dto';
 import { UpdateChatterMessageDto } from '../dtos/update-chatter-message.dto';
 import { PostChatterMessageDto } from '../dtos/post-chatter-message.dto';
 import { UpdateChatterNoteMessageDto } from '../dtos/update-chatter-note-message.dto';
+import { ImportChatterFromOdooDto } from '../dtos/import-chatter-from-odoo.dto';
 import { SolidRequestContextDecorator } from 'src/decorators/solid-request-context.decorator';
 import { SolidRequestContextDto } from 'src/dtos/solid-request-context.dto';
 import { Public } from 'src/decorators/public.decorator';
@@ -126,6 +127,12 @@ export class ChatterMessageController {
     @UploadedFiles() files: Array<Express.Multer.File>,
   ) {
     return this.service.postMessage(postDto, files);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Post('importFromOdoo')
+  async importFromOdoo(@Body() dto: ImportChatterFromOdooDto) {
+    return this.service.importFromOdoo(dto);
   }
 
   @ApiBearerAuth("jwt")

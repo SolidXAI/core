@@ -42,7 +42,7 @@ export interface MediaStorageProvider<T> {
   delete(entity: T, mediaFieldMetadata: FieldMetadata): Promise<void>;
   deleteByMediaRecord(media: Media): Promise<void>;
   retrieve(entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
-  storeStreams(streamPairs: [Readable, string][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
+  storeStreams(streamPairs: [Readable, string, { mimeType?: string; originalFileName?: string }?][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
   // delete(file: string): Promise<void>;
 }
 

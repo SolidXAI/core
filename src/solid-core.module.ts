@@ -135,6 +135,8 @@ import { TestQueuePublisher } from "./jobs/rabbitmq/test-queue-publisher.service
 import { TestQueueSubscriber } from "./jobs/rabbitmq/test-queue-subscriber.service";
 import { ChatterQueuePublisherRabbitmq } from "./jobs/rabbitmq/chatter-queue-publisher.service";
 import { ChatterQueueSubscriberRabbitmq } from "./jobs/rabbitmq/chatter-queue-subscriber.service";
+import { OdooChatterImportQueuePublisherRabbitmq } from "./jobs/rabbitmq/odoo-chatter-import-queue-publisher.service";
+import { OdooChatterImportQueueSubscriberRabbitmq } from "./jobs/rabbitmq/odoo-chatter-import-queue-subscriber.service";
 import { ChatterQueuePublisherDatabase } from "./jobs/database/chatter-queue-publisher-database.service";
 import { ChatterQueueSubscriberDatabase } from "./jobs/database/chatter-queue-subscriber-database.service";
 import { ChatterMentionNotificationEmailQueueHandler } from "./jobs/chatter-mention-notification-email-queue-handler.service";
@@ -913,6 +915,8 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
 
     ChatterQueuePublisherRabbitmq,
     ChatterQueueSubscriberRabbitmq,
+    OdooChatterImportQueuePublisherRabbitmq,
+    OdooChatterImportQueueSubscriberRabbitmq,
     ChatterQueuePublisherDatabase,
     ChatterQueueSubscriberDatabase,
     ChatterMentionNotificationEmailQueueHandler,
