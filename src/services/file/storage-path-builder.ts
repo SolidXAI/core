@@ -1,6 +1,5 @@
 import { Injectable, Provider } from '@nestjs/common';
-import * as path from 'path';
-import { DEFAULT_MEDIA_FILE_STORAGE_DIR } from '../settings/default-settings-provider.service';
+import { resolveDiskMediaPath } from './media-storage-paths';
 
 export const FILE_STORAGE_PATH_BUILDER = Symbol('FILE_STORAGE_PATH_BUILDER');
 
@@ -10,17 +9,8 @@ export interface IStoragePathBuilder {
 
 @Injectable()
 export class DiskStoragePathBuilder implements IStoragePathBuilder {
-  private readonly base: string;
-
-  constructor() {
-    this.base = process.env.AB_MEDIA_FILE_STORAGE_DIR || DEFAULT_MEDIA_FILE_STORAGE_DIR;
-  }
-
   build(fileName: string): string {
-    if (path.isAbsolute(fileName) || fileName.startsWith(`${this.base}/`)) {
-      return fileName;
-    }
-    return `${this.base}/${fileName}`;
+    return resolveDiskMediaPath(fileName);
   }
 }
 

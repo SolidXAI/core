@@ -33,6 +33,8 @@ export const ERROR_MESSAGES = {
 
     INVALID_CREDENTIALS: 'Invalid credentials',
     LOGIN_FAILED: 'Login Failed',
+    LOGIN_DENIED_BY_EXTENSION: 'Login was denied by an external verification check.',
+    LOGIN_EXTENSION_UNAVAILABLE: 'An external verification check is temporarily unavailable. Please try again.',
     OLD_PASSWORD_INCORRECT: 'You have specified an incorrect old password.',
     INVALID_NEW_PASSWORD: 'Invalid new password.',
     PASSWORDS_DO_NOT_MATCH: 'New passwords are not matching.',
@@ -69,7 +71,7 @@ export const ERROR_MESSAGES = {
     // CRUD service errors
     RELATION_TYPE_NOT_SUPPORTED: 'Relation type not supported in CRUD service.',
     NO_SOFT_DELETED_RECORD_FOUND: 'No soft-deleted record found with the given ID.',
-    CONFLICTING_RECORD_ON_UNARCHIVE: 'Another record is conflicting with the record you are attempting to Un-Archive, either delete or change the other record so as to avoid this conflict.',
+    CONFLICTING_RECORD_ON_UNARCHIVE: 'A record with the same details already exists. Update or delete the active record before restoring this one.',
     NO_SOFT_DELETED_RECORDS_FOUND: 'No matching soft-deleted records found.',
     EMPTY_PATH_PARTS: 'Path parts cannot be empty',
 

@@ -34,6 +34,15 @@ import solidCoreMetadata from './seed-data/solid-core-metadata.json';
 import { SystemFieldsSeederService } from './system-fields-seeder.service';
 // import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 import { ActionMetadata } from '../entities/action-metadata.entity';
+import { AgentRegistry } from '../entities/agent-registry.entity';
+import { AgentHubTag } from '../entities/agent-hub-tag.entity';
+import { AgentSkill } from '../entities/agent-skill.entity';
+import { AgentSkillRegistry } from '../entities/agent-skill-registry.entity';
+import { AgentTool } from '../entities/agent-tool.entity';
+import { AgentToolRegistry } from '../entities/agent-tool-registry.entity';
+import { AgentSecret } from '../entities/agent-secret.entity';
+import { AgentRole } from '../entities/agent-role.entity';
+import { Secret } from '../entities/secret.entity';
 import { MenuItemMetadata } from '../entities/menu-item-metadata.entity';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
 import { RoleMetadata } from '../entities/role-metadata.entity';
@@ -41,6 +50,7 @@ import { User } from '../entities/user.entity';
 import { MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL } from '../dtos/create-menu-item-metadata.dto';
 import { DEFAULT_SA_PASSWORD } from '../dtos/create-user.dto';
 import { SignUpDto } from '../dtos/sign-up.dto';
+import { SignupIntent } from '../enums/signup-intent.enum';
 import {
     ADMIN_ROLE_NAME,
     ALLOWED_TO_EXPORT_ROLE_NAME,
@@ -86,6 +96,33 @@ import { EventDetails, EventType, ModuleMetadataSeederEventPayload } from 'src/i
  * - View/action preload + in-memory no-op detection so unchanged rows skip save() entirely.
  * - Menu entity no-op detection, though menu relation lookups are still mostly serial and remain a future candidate.
  */
+
+/**
+ * A user entry in seed metadata.
+ *
+ * The array is genuinely mixed: core seeds `sa` (a technical user), while an app's
+ * module metadata can seed its own users - an "Operations User" and the like, which
+ * are app users and belong on the extension entity. One intent for the whole list
+ * cannot express that, so each entry declares its own.
+ *
+ * Extends SignUpDto with an index signature because a flagged entry carries the
+ * extension model's own fields (`userType`, relation keys) straight through to the
+ * provider.
+ */
+type SeedUserSpec = SignUpDto & {
+    /**
+     * Seed through the registered IExtensionUserCreationProvider, producing the app's
+     * extension entity instead of a base `User`. Absent means a base `User`, so
+     * existing metadata is unaffected.
+     *
+     * `roles` is ignored on a flagged entry - the provider derives them from the
+     * extension fields, as it does on the model's own CRUD form.
+     */
+    isExtensionUser?: boolean;
+    isAllowedToGenerateApiKeys?: boolean;
+    [key: string]: any;
+};
+
 @Injectable()
 export class ModuleMetadataSeederService {
     private readonly adminPermissionExclusionPrefixes = [
@@ -273,6 +310,17 @@ export class ModuleMetadataSeederService {
                         this.logger.log(`Seeding Views`);
                         const viewCounts = await this.timeOperation('seed-views', () => this.seedViews(overallMetadata), { moduleName: moduleMetadata.name, component: 'views' });
                         console.log(`${this.formatSeedResult(moduleMetadata.name, 'Views', viewCounts)}`);
+
+                        currentStep = 'seedSecrets';
+                        const secretCounts = await this.timeOperation('seed-secrets', () => this.seedSecrets(overallMetadata), { moduleName: moduleMetadata.name, component: 'secrets' });
+                        console.log(`${this.formatSeedResult(moduleMetadata.name, 'Secrets', secretCounts)}`);
+
+                        currentStep = 'seedAgentHubRegistries';
+                        let agentHubCounts = { pruned: 0, upserted: 0 };
+                        if (process.env.AGENT_HUB_ENABLED === 'true') {
+                            agentHubCounts = await this.timeOperation('seed-agenthub-registries', () => this.seedAgentHubRegistries(overallMetadata), { moduleName: moduleMetadata.name, component: 'agenthub-registries' });
+                        }
+                        console.log(`${this.formatSeedResult(moduleMetadata.name, 'AgentHub Registries', agentHubCounts)}`);
 
                         currentStep = 'seedActions';
                         this.logger.log(`Seeding Actions`);
@@ -756,9 +804,221 @@ export class ModuleMetadataSeederService {
         return { pruned, upserted: views.length };
     }
 
+    private async seedAgentHubRegistries(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
+        const agents = this.getSeedArray<any>(overallMetadata?.agenthubAgents);
+        const tools = this.getSeedArray<any>(overallMetadata?.agenthubTools);
+        const skills = this.getSeedArray<any>(overallMetadata?.agenthubSkills);
+        const tags = this.getSeedArray<any>(overallMetadata?.agenthubTags);
+        if (!agents.length && !tools.length && !skills.length && !tags.length) {
+            return { pruned: 0, upserted: 0 };
+        }
+        const moduleName = overallMetadata?.moduleMetadata?.name;
+        const module = await this.getModuleByUserKeyCached(moduleName);
+        if (!module) {
+            throw new Error(`Cannot seed AgentHub registries: module ${moduleName} was not found.`);
+        }
+
+        const tagCount = await this.seedAgentHubTags(tags, module);
+        const skillCount = await this.seedAgentHubSkills(skills, module);
+        const toolCount = await this.seedAgentHubTools(tools, module);
+        const agentCount = await this.seedAgentHubAgents(agents, module);
+        return { pruned: 0, upserted: tagCount + skillCount + toolCount + agentCount };
+    }
+
+    private async seedSecrets(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
+        const secrets = this.getSeedArray<any>(overallMetadata?.secrets);
+        if (!secrets.length) return { pruned: 0, upserted: 0 };
+        const moduleName = overallMetadata?.moduleMetadata?.name;
+        const module = await this.getModuleByUserKeyCached(moduleName);
+        if (!module) throw new Error(`Cannot seed secrets: module ${moduleName} was not found.`);
+        const repo = this.dataSource.getRepository(Secret);
+        let upserted = 0;
+        for (const record of secrets) {
+            const recordModule = await this.getAgentHubSeedModule(record, module);
+            const { value: _ignoredValue, moduleUserKey: _moduleUserKey, ...data } = record;
+            const existing = await repo.findOne({ where: { key: record.key }, relations: { module: true }, withDeleted: true });
+            if (existing) {
+                await repo.save({ ...existing, ...data, key: existing.key, value: existing.value, module: recordModule });
+            } else {
+                await repo.save(repo.create({ ...data, value: '', module: recordModule }));
+            }
+            upserted++;
+        }
+        return { pruned: 0, upserted };
+    }
+
+    private async seedAgentHubTags(tags: any[], defaultModule: ModuleMetadata): Promise<number> {
+        const repo = this.dataSource.getRepository(AgentHubTag);
+        let upserted = 0;
+        for (const record of tags) {
+            const recordModule = await this.getAgentHubSeedModule(record, defaultModule);
+            const existing = await repo.findOne({ where: { name: record.name }, relations: { module: true }, withDeleted: true });
+            if (existing) {
+                if (!existing.module) {
+                    await repo.update(existing.id, { module: recordModule });
+                    upserted++;
+                }
+                continue;
+            }
+            const { moduleUserKey, ...data } = record;
+            await repo.save(repo.create({ ...data, module: recordModule }));
+            upserted++;
+        }
+        return upserted;
+    }
+
+    private async seedAgentHubAgents(agents: any[], defaultModule: ModuleMetadata): Promise<number> {
+        const repo = this.dataSource.getRepository(AgentRegistry);
+        const skillRepo = this.dataSource.getRepository(AgentSkillRegistry);
+        const toolRepo = this.dataSource.getRepository(AgentToolRegistry);
+        const agentSkillRepo = this.dataSource.getRepository(AgentSkill);
+        const agentToolRepo = this.dataSource.getRepository(AgentTool);
+        const roleRepo = this.dataSource.getRepository(RoleMetadata);
+        const agentRoleRepo = this.dataSource.getRepository(AgentRole);
+        const secretRepo = this.dataSource.getRepository(Secret);
+        const agentSecretRepo = this.dataSource.getRepository(AgentSecret);
+        let upserted = 0;
+        for (const record of agents) {
+            const recordModule = await this.getAgentHubSeedModule(record, defaultModule);
+            const existing = await repo.findOne({ where: { name: record.name }, relations: { module: true, tags: true }, withDeleted: true });
+            if (existing?.deletedAt) continue;
+            const { tags: tagNames = [], moduleUserKey, agentSkills = [], agentTools = [], agentRoles = [], agentSecrets = [], ...data } = record;
+            const tags = await this.getAgentHubSeedTags(tagNames, record.name);
+            let agent = existing;
+            if (existing) {
+                await agentSkillRepo.delete({ agentRegistry: { id: existing.id } });
+                await agentToolRepo.delete({ agentRegistry: { id: existing.id } });
+                await agentRoleRepo.delete({ agentRegistry: { id: existing.id } });
+                await agentSecretRepo.delete({ agentRegistry: { id: existing.id } });
+                agent = await repo.save({ ...existing, ...data, name: existing.name, module: recordModule, tags });
+                upserted++;
+            } else {
+                agent = await repo.save(repo.create({ ...data, module: recordModule, tags } as AgentRegistry));
+                upserted++;
+            }
+
+            for (const link of agentSkills) {
+                const skill = await skillRepo.findOneBy({ name: link.name });
+                if (!skill) throw new Error(`Cannot link agent ${record.name}: skill ${link.name} was not found.`);
+                await agentSkillRepo.save(agentSkillRepo.create({
+                    agentRegistry: agent,
+                    agentSkillRegistry: skill,
+                    alwaysInclude: link.alwaysInclude ?? true,
+                }));
+                upserted++;
+            }
+            for (const link of agentTools) {
+                const tool = await toolRepo.findOneBy({ name: link.name });
+                if (!tool) throw new Error(`Cannot link agent ${record.name}: tool ${link.name} was not found.`);
+                await agentToolRepo.save(agentToolRepo.create({
+                    agentRegistry: agent,
+                    agentToolRegistry: tool,
+                    requiresApproval: link.requiresApproval ?? false,
+                }));
+                upserted++;
+            }
+
+            for (const link of agentRoles) {
+                const roleName = typeof link === 'string' ? link : link.roleMetadataUserKey ?? link.name;
+                if (!roleName) throw new Error(`Cannot link agent ${record.name}: role name is missing.`);
+                const role = await roleRepo.findOneBy({ name: roleName });
+                if (!role) throw new Error(`Cannot link agent ${record.name}: role ${roleName} was not found.`);
+                const agentRoleKey = typeof link === 'string' ? undefined : link.agentRoleKey;
+                await agentRoleRepo.save(agentRoleRepo.create({ agentRegistry: agent, roleMetadata: role, agentRoleKey }));
+                upserted++;
+            }
+
+            for (const link of agentSecrets) {
+                const secretKey = typeof link === 'string' ? link : link.key;
+                const secret = await secretRepo.findOneBy({ key: secretKey });
+                if (!secret) throw new Error(`Cannot link agent ${record.name}: secret ${secretKey} was not found.`);
+                const envVarName = typeof link === 'string' ? undefined : link.envVarName;
+                await agentSecretRepo.save(agentSecretRepo.create({ agentRegistry: agent, secret, envVarName }));
+                upserted++;
+            }
+        }
+        return upserted;
+    }
+
+    private async seedAgentHubTools(tools: any[], defaultModule: ModuleMetadata): Promise<number> {
+        const repo = this.dataSource.getRepository(AgentToolRegistry);
+        let upserted = 0;
+        for (const record of tools) {
+            const recordModule = await this.getAgentHubSeedModule(record, defaultModule);
+            const existing = await repo.findOne({ where: { name: record.name }, relations: { module: true, tags: true }, withDeleted: true });
+            const { tags: tagNames = [], moduleUserKey, ...data } = record;
+            const toolSourcePath = path.resolve(process.cwd(), 'src', recordModule.name, 'agent-hub', 'tools', `${record.name}.py`);
+            try {
+                data.sourceCode = await fs.promises.readFile(toolSourcePath, 'utf8');
+            } catch (error: any) {
+                if (error?.code !== 'ENOENT' || typeof data.sourceCode !== 'string') {
+                    throw new Error(`Tool source file not found or unreadable for ${record.name}: ${toolSourcePath}`);
+                }
+            }
+            const tags = await this.getAgentHubSeedTags(tagNames, record.name);
+            if (existing) {
+                if (typeof data.sourceCode === 'string' && !data.checksum) {
+                    data.checksum = createHash('sha256').update(data.sourceCode).digest('hex');
+                }
+                await repo.save({ ...existing, ...data, name: existing.name, module: recordModule, tags });
+                upserted++;
+                continue;
+            }
+            if (typeof data.sourceCode === 'string' && !data.checksum) {
+                data.checksum = createHash('sha256').update(data.sourceCode).digest('hex');
+            }
+            await repo.save(repo.create({ ...data, module: recordModule, tags }));
+            upserted++;
+        }
+        return upserted;
+    }
+
+    private async seedAgentHubSkills(skills: any[], defaultModule: ModuleMetadata): Promise<number> {
+        const repo = this.dataSource.getRepository(AgentSkillRegistry);
+        let upserted = 0;
+        for (const record of skills) {
+            const recordModule = await this.getAgentHubSeedModule(record, defaultModule);
+            const existing = await repo.findOne({ where: { name: record.name }, relations: { module: true, tags: true }, withDeleted: true });
+            const { tags: tagNames = [], moduleUserKey, ...data } = record;
+            const tags = await this.getAgentHubSeedTags(tagNames, record.name);
+            if (existing) {
+                await repo.save({ ...existing, ...data, name: existing.name, module: recordModule, tags });
+                upserted++;
+                continue;
+            }
+            await repo.save(repo.create({ ...data, module: recordModule, tags }));
+            upserted++;
+        }
+        return upserted;
+    }
+
+    private async getAgentHubSeedTags(names: unknown, recordName: string): Promise<AgentHubTag[]> {
+        if (!Array.isArray(names) || names.some((name) => typeof name !== 'string')) {
+            throw new Error(`Invalid tags for AgentHub registry ${recordName}: expected an array of tag names.`);
+        }
+        const repo = this.dataSource.getRepository(AgentHubTag);
+        const tags: AgentHubTag[] = [];
+        for (const name of new Set(names)) {
+            const tag = await repo.findOneBy({ name });
+            if (!tag) throw new Error(`Cannot link AgentHub registry ${recordName}: tag ${name} was not found.`);
+            tags.push(tag);
+        }
+        return tags;
+    }
+
+    private async getAgentHubSeedModule(record: any, defaultModule: ModuleMetadata): Promise<ModuleMetadata> {
+        const module = record.moduleUserKey && record.moduleUserKey !== defaultModule.name
+            ? await this.getModuleByUserKeyCached(record.moduleUserKey)
+            : defaultModule;
+        if (!module) {
+            throw new Error(`Cannot seed AgentHub registry ${record.name}: module ${record.moduleUserKey} was not found.`);
+        }
+        return module;
+    }
+
     // Ok
     private async seedUsers(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
-        const users = this.getSeedArray<SignUpDto>(overallMetadata?.users);
+        const users = this.getSeedArray<SeedUserSpec>(overallMetadata?.users);
         // usersDetail = users;
         await this.timeOperation('handle-users', () => this.handleSeedUsers(users), {
             moduleName: overallMetadata?.moduleMetadata?.name,
@@ -1078,6 +1338,9 @@ export class ModuleMetadataSeederService {
 
         for (let i = 0; i < emailTemplates.length; i++) {
             const emailTemplate = emailTemplates[i];
+            // Resolve the optional module relation through CRUDService's standard
+            // many-to-one user-key convention. Older seed files remain valid.
+            (emailTemplate as any).moduleUserKey = moduleName;
             // this.logger.log(`Found ${emailTemplate.name} email template`);
 
             // We need to load the actual template contents. 
@@ -1154,6 +1417,9 @@ export class ModuleMetadataSeederService {
 
         for (let i = 0; i < smsTemplates.length; i++) {
             const smsTemplate = smsTemplates[i];
+            // Resolve the optional module relation through CRUDService's standard
+            // many-to-one user-key convention. Older seed files remain valid.
+            (smsTemplate as any).moduleUserKey = moduleName;
             // this.logger.log(`Found ${smsTemplate.name} sms template`);
 
             // We need to load the actual template contents. 
@@ -1543,13 +1809,13 @@ export class ModuleMetadataSeederService {
     }
 
     // OK
-    private async handleSeedUsers(users: SignUpDto[]) {
+    private async handleSeedUsers(users: SeedUserSpec[]) {
         if (!users) {
             return;
         }
 
         for (let l = 0; l < users.length; l++) {
-            const user: SignUpDto = users[l];
+            const user: SeedUserSpec = users[l];
             const isSystemAdminUser = user.username === 'sa';
             let exisitingUser = await this.timeOperation('user-find-by-username', () => this.userService.findOneByUsername(user.username), {
                 component: 'users',
@@ -1561,10 +1827,15 @@ export class ModuleMetadataSeederService {
                     user.password = DEFAULT_SA_PASSWORD;
                 }
                 if (isSystemAdminUser) {
-                    (user as SignUpDto & { isAllowedToGenerateApiKeys?: boolean }).isAllowedToGenerateApiKeys = true;
+                    user.isAllowedToGenerateApiKeys = true;
                 }
 
-                exisitingUser = await this.timeOperation('user-sign-up', () => this.authenticationService.signUp(user), {
+                // The flag is seeder metadata, not user data - keep it out of the DTO
+                // the provider and performSignUp see.
+                const { isExtensionUser, ...signUpDto } = user;
+                const intent = isExtensionUser ? SignupIntent.ExtensionModel : SignupIntent.CoreUser;
+
+                exisitingUser = await this.timeOperation('user-sign-up', () => this.authenticationService.signUp(signUpDto, null, intent), {
                     component: 'users',
                     serviceCall: 'authenticationService.signUp',
                     details: `username=${user.username}`,
@@ -1694,8 +1965,8 @@ export class ModuleMetadataSeederService {
     private async seedModuleModelFields(moduleMetadata: CreateModuleMetadataDto): Promise<{ pruned: number; upserted: number }> {
         const fieldMetadataRepo = this.dataSource.getRepository(FieldMetadata);
 
-        // First we create the module. 
-        const module = await this.timeOperation('module-upsert', () => this.moduleMetadataService.upsert(moduleMetadata), {
+        // First we create the module. The version is set explicitly so a metadata file without one clears a stale value.
+        const module = await this.timeOperation('module-upsert', () => this.moduleMetadataService.upsert({ ...moduleMetadata, version: moduleMetadata.version ?? null }), {
             moduleName: moduleMetadata.name,
             component: 'module-model-fields',
             serviceCall: 'moduleMetadataService.upsert',

@@ -8,6 +8,7 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
 import { EventEmitter2 } from "@nestjs/event-emitter";
@@ -36,10 +37,19 @@ import { OTPSignUpDto } from "../dtos/otp-sign-up.dto";
 import { RefreshTokenDto } from "../dtos/refresh-token.dto";
 import { SignInDto } from "../dtos/sign-in.dto";
 import { SignUpDto } from "../dtos/sign-up.dto";
+import { SignupIntent } from "../enums/signup-intent.enum";
 import { User } from "../entities/user.entity";
-import { EventDetails, EventType } from "../interfaces";
+import {
+  EventDetails,
+  EventType,
+  ILoginExtensionContext,
+  ILoginExtensionProvider,
+  LoginExtensionChannel,
+} from "../interfaces";
 import { ActiveUserData } from "../interfaces/active-user-data.interface";
+import { SolidRegistry } from "../helpers/solid-registry";
 import { ActiveSessionStorageService } from "./active-session-storage.service";
+import { AccessTokenDenylistService } from "./access-token-denylist.service";
 import { HashingService } from "./hashing.service";
 import {
   InvalidatedRefreshTokenError,
@@ -53,7 +63,6 @@ import { MetadataValidationService } from "./metadata-validation.service";
 import { UserService } from "./user.service";
 import { SmsFactory } from "src/factories/sms.factory";
 import { WhatsAppFactory } from "src/factories/whatsapp.factory";
-import { SolidRegistry } from "src/helpers/solid-registry";
 
 enum LoginProvider {
   LOCAL = "local",
@@ -66,6 +75,73 @@ interface otp {
   expiresAt: Date;
 }
 
+/** Where a signup's role names come from. */
+enum RolesSource {
+  /**
+   * Ask nobody; returning [] lets performSignUp apply the configured `defaultRole`.
+   *
+   * No intent maps here today - it is kept for paths that deliberately bypass the
+   * provider. OAuth is the live example: its DTO can never carry a discriminator, so
+   * it takes `defaultRole` outright (currently inline in UserService).
+   */
+  Default,
+  /**
+   * `provider.roles(dto)` - and nothing else. Yields [] when no provider is registered
+   * or when the provider declines to name any, which falls through to `defaultRole`.
+   */
+  Provider,
+  /** The caller's own `dto.roles`. */
+  Caller,
+}
+
+/**
+ * The single place that decides, per intent, which entity a signup builds and where
+ * its roles come from.
+ *
+ * Where an extension user provider is registered it is the authority on that app's user
+ * roles, so every provider-backed intent asks it. `defaultRole` is the *fallback* for
+ * when it names none - or when there is no provider at all - not the rule.
+ *
+ * SelfRegistration and ExtensionModel resolve identically today. They stay separate
+ * intents because only SelfRegistration is gated on `allowPublicRegistration`, and
+ * because "an anonymous visitor signing themselves up" and "an admin creating a user
+ * from the model's own form" are different things that may yet need to diverge.
+ *
+ * `useProvider` is computable from `rolesSource` today (`Caller` implies false), but the
+ * two answer different questions - "which entity?" and "which roles?" - that merely
+ * coincide across these intents. Keep both, and change behaviour here, not at a call site.
+ */
+const SIGNUP_POLICY: Record<
+  SignupIntent,
+  { useProvider: boolean; rolesSource: RolesSource }
+> = {
+  [SignupIntent.SelfRegistration]: {
+    useProvider: true,
+    rolesSource: RolesSource.Provider,
+  },
+  [SignupIntent.ExtensionModel]: {
+    useProvider: true,
+    rolesSource: RolesSource.Provider,
+  },
+  [SignupIntent.CoreUser]: {
+    useProvider: false,
+    rolesSource: RolesSource.Caller,
+  },
+};
+
+/** Deadline for a single login extension provider, unless it overrides it. */
+const DEFAULT_LOGIN_EXTENSION_TIMEOUT_MS = 5000;
+
+/** A registered login extension provider denied this attempt. */
+export class LoginExtensionDeniedException extends UnauthorizedException {}
+
+/**
+ * A login extension provider malfunctioned or timed out while its failure
+ * policy was fail-closed. 503, not 401: the credential was fine, the
+ * dependency was not, and the client should retry.
+ */
+export class LoginExtensionUnavailableException extends ServiceUnavailableException {}
+
 @Injectable()
 export class AuthenticationService {
   private readonly logger = new Logger(AuthenticationService.name);
@@ -77,6 +153,7 @@ export class AuthenticationService {
     private readonly hashingService: HashingService,
     private readonly jwtService: JwtService,
     private readonly activeSessionStorage: ActiveSessionStorageService,
+    private readonly accessTokenDenylist: AccessTokenDenylistService,
     private readonly refreshTokenIdsStorage: RefreshTokenIdsStorageService,
     private readonly httpService: HttpService,
     // private readonly mailService: SMTPEMailService,
@@ -90,10 +167,10 @@ export class AuthenticationService {
     private readonly userActivityHistoryService: UserActivityHistoryService,
     private readonly ssoCodeStorage: SsoCodeStorageService,
     private readonly metadataValidationService: MetadataValidationService,
+    private readonly solidRegistry: SolidRegistry,
 
     @InjectDataSource()
     private readonly dataSource: DataSource,
-    private readonly solidRegistry: SolidRegistry,
   ) {
     // this.mailService = this.mailServiceFactory.getMailService();
   }
@@ -152,6 +229,103 @@ export class AuthenticationService {
     });
   }
 
+  /**
+   * Runs the registered login extension chain for a user whose primary
+   * credential has already been proven.
+   *
+   * Every call site invokes this after that path's credential check has
+   * passed and before any token is minted, so the chain can only convert a
+   * successful login into a failure - never the other way round.
+   */
+  async runLoginExtensions(
+    user: User,
+    ctxt: Omit<ILoginExtensionContext, "attemptId" | "startedAt">,
+  ): Promise<void> {
+    const wrappers = this.solidRegistry.getLoginExtensionProviders();
+
+    // Guardrail: with no provider registered this is the entire cost of the
+    // feature - one array read. No log line, nothing observable in any login
+    // path. Do not "simplify" this early return away: it is what makes
+    // absence structurally different from a provider that errors.
+    if (wrappers.length === 0) return;
+
+    const context: ILoginExtensionContext = {
+      attemptId: randomUUID(),
+      startedAt: new Date(),
+      ...ctxt,
+    };
+
+    const providers = wrappers
+      .map((w) => w.instance as ILoginExtensionProvider)
+      .filter(Boolean)
+      .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+
+    for (const provider of providers) {
+      const providerName =
+        provider.name?.() ?? provider.constructor?.name ?? "unknown";
+      try {
+        const result = await this.withLoginExtensionTimeout(
+          provider.verifyLogin(user, context),
+          provider.timeoutMs ?? DEFAULT_LOGIN_EXTENSION_TIMEOUT_MS,
+          providerName,
+        );
+
+        if (result?.allow === false) {
+          this.logger.warn(
+            `Login denied by ${providerName} for user ${user.id} ` +
+              `[attempt=${context.attemptId} channel=${context.channel}]: ` +
+              `${result.reason ?? "no reason given"}`,
+          );
+          throw new LoginExtensionDeniedException(
+            result.message ?? ERROR_MESSAGES.LOGIN_DENIED_BY_EXTENSION,
+          );
+        }
+      } catch (e: any) {
+        // Our own denial is a decision, not a malfunction, and is never
+        // fail-opened.
+        if (e instanceof LoginExtensionDeniedException) throw e;
+
+        const policy = provider.failurePolicy ?? "fail-closed";
+        this.logger.error(
+          `Login extension ${providerName} failed ` +
+            `[attempt=${context.attemptId} policy=${policy}]: ${e?.message}`,
+          e?.stack,
+        );
+        if (policy === "fail-open") continue;
+        throw new LoginExtensionUnavailableException(
+          ERROR_MESSAGES.LOGIN_EXTENSION_UNAVAILABLE,
+        );
+      }
+    }
+  }
+
+  /**
+   * A provider that ignores its own timeouts must not be able to hang login,
+   * so the deadline is enforced here rather than trusted to the provider.
+   */
+  private withLoginExtensionTimeout<T>(
+    work: Promise<T>,
+    ms: number,
+    providerName: string,
+  ): Promise<T> {
+    if (!(ms > 0)) return work;
+    let timer: NodeJS.Timeout;
+    return Promise.race([
+      work.finally(() => clearTimeout(timer)),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () =>
+            reject(
+              new Error(
+                `Login extension ${providerName} timed out after ${ms}ms`,
+              ),
+            ),
+          ms,
+        );
+      }),
+    ]);
+  }
+
   private async validateUserForPasswordLogin(
     user: User,
     password: string,
@@ -182,52 +356,70 @@ export class AuthenticationService {
     }
   }
 
-  private static readonly SIGNUP_DTO_KEYS = new Set([
-    "username",
-    "email",
-    "password",
-    "fullName",
-    "mobile",
-    "roles",
-    "forcePasswordChange",
-    "isAllowedToGenerateApiKeys",
-    "failedLoginAttempts",
-  ]);
-
   async signUp(
     signUpDto: SignUpDto & Record<string, any>,
     activeUser: ActiveUserData = null,
+    intent: SignupIntent = SignupIntent.SelfRegistration,
   ): Promise<User> {
-    const hasExtensionFields = Object.keys(signUpDto).some(
-      (k) => !AuthenticationService.SIGNUP_DTO_KEYS.has(k),
+    const { useProvider, rolesSource } = SIGNUP_POLICY[intent];
+
+    if (intent === SignupIntent.SelfRegistration) {
+      this.assertPublicRegistrationEnabled();
+    }
+
+    const { entity, repo } = await this.userService.buildSignupTarget(
+      signUpDto,
+      useProvider,
     );
-    if (hasExtensionFields) {
-      const provider = this.solidRegistry.getExtensionUserCreationProvider();
-      if (!provider) {
-        throw new InternalServerErrorException(
-          "No ExtensionUserCreationProvider registered. Register one to handle extension user creation.",
-        );
-      }
-      const entity = await provider.buildExtensionEntity(signUpDto);
-      const effectiveDto = { ...signUpDto, roles: provider.roles(signUpDto) };
-      return this.performSignUp(
-        effectiveDto,
-        entity,
-        provider.repo as Repository<User>,
-        true,
+    const roles = this.resolveSignupRoles(signUpDto, rolesSource);
+
+    return this.performSignUp({ ...signUpDto, roles }, entity, repo);
+  }
+
+  private resolveSignupRoles(
+    dto: Record<string, any>,
+    source: RolesSource,
+  ): string[] {
+    // Only `Caller` reads dto.roles. Anywhere else, roles in the body are ignored -
+    // which is what keeps an anonymous caller from naming their own on a @Public()
+    // endpoint - so say so rather than dropping them silently.
+    if (source !== RolesSource.Caller && dto.roles?.length) {
+      this.logger.warn(
+        `Ignoring caller-supplied roles for "${dto.username}": roles on this path come from ` +
+          (source === RolesSource.Provider
+            ? "the extension user provider"
+            : "the configured defaultRole"),
       );
     }
-    return this.performSignUp(signUpDto, new User(), this.userRepository);
+
+    switch (source) {
+      case RolesSource.Provider:
+        // Sole authority. Reading dto.roles as a preference or fallback would skip
+        // roles(), which is where a provider validates its discriminator, and
+        // CreateUserDto types roles as UpdateRoleMetadataDto[] where performSignUp
+        // expects role-name strings. [] here falls through to `defaultRole`.
+        //
+        // Delegated to UserService.resolveProviderRoles - the one place that calls
+        // provider.roles() - rather than looking up the registry here too, which is
+        // what UserService.resolveSelfRegistrationRoles (the OAuth callers' equivalent
+        // of this switch) also needs and previously duplicated.
+        return this.userService.resolveProviderRoles(dto);
+
+      case RolesSource.Caller:
+        return dto.roles ?? [];
+
+      case RolesSource.Default:
+        return [];
+    }
   }
 
   private async performSignUp<T extends User>(
     signUpDto: SignUpDto,
     entity: T,
     repo: Repository<T>,
-    preferEntityApiKeyFlag: boolean = false,
   ): Promise<T> {
     try {
-      await this.assertUniqueSignupIdentifiers(signUpDto, repo);
+      await this.assertUniqueSignupIdentifiers(signUpDto);
       await this.metadataValidationService.validateCreateDto("user", signUpDto);
 
       const onForcePasswordChange =
@@ -247,11 +439,11 @@ export class AuthenticationService {
         activateUserOnRegistration,
         onForcePasswordChange,
       );
+      // An explicitly supplied value wins over whatever the entity carries. The
+      // entity's own flag cannot be trusted as a signal: User initialises it to
+      // false, so "the provider set it" is indistinguishable from "nobody set it".
       const privateDto = signUpDto as { isAllowedToGenerateApiKeys?: boolean };
-      if (
-        !preferEntityApiKeyFlag &&
-        privateDto.isAllowedToGenerateApiKeys !== undefined
-      ) {
+      if (privateDto.isAllowedToGenerateApiKeys !== undefined) {
         user.isAllowedToGenerateApiKeys = privateDto.isAllowedToGenerateApiKeys;
       }
       const savedUser = await repo.save(user);
@@ -281,33 +473,41 @@ export class AuthenticationService {
     }
   }
 
-  private async assertUniqueSignupIdentifiers<T extends User>(
+  /**
+   * Always queries the base `User` repository, never the caller's repository.
+   *
+   * `User` is a `@TableInheritance` root, so a child repository scopes every query
+   * to its own discriminator. Checking through one would only compare against users
+   * of the same subtype, and `email`/`mobile` carry non-unique `@Index()` - there is
+   * no database constraint behind them to catch what the query misses. A duplicate
+   * against a base `User` or a sibling subtype would be silently accepted.
+   */
+  private async assertUniqueSignupIdentifiers(
     signUpDto: SignUpDto,
-    repo: Repository<T>,
   ): Promise<void> {
     const username = signUpDto.username?.trim();
     const email = signUpDto.email?.trim();
     const mobile = signUpDto.mobile?.trim();
 
-    const where: FindOptionsWhere<T>[] = [];
+    const where: FindOptionsWhere<User>[] = [];
 
     if (username) {
-      where.push({ username } as FindOptionsWhere<T>);
+      where.push({ username });
     }
 
     if (email) {
-      where.push({ email } as FindOptionsWhere<T>);
+      where.push({ email });
     }
 
     if (mobile) {
-      where.push({ mobile } as FindOptionsWhere<T>);
+      where.push({ mobile });
     }
 
     if (where.length === 0) {
       return;
     }
 
-    const existingUser = await repo.findOne({ where });
+    const existingUser = await this.userRepository.findOne({ where });
 
     if (!existingUser) {
       return;
@@ -399,7 +599,12 @@ export class AuthenticationService {
     }
     user.username = signUpDto.username;
     user.email = signUpDto.email;
-    user.fullName = signUpDto.fullName;
+    // `fullName` is optional on SignUpDto and the stock signup screen only sends it when
+    // showNameFieldsForRegistration is on, so assigning it unconditionally left every
+    // self-registered user with a null display name. `username` is always present -
+    // non-nullable on the entity and @IsNotEmpty() on the DTO - so it is a safe fallback.
+    // `||` rather than `??`: a form posting an empty string means "not supplied" too.
+    user.fullName = signUpDto.fullName?.trim() || signUpDto.username;
     user.forcePasswordChange = onForcePasswordChange;
     if (signUpDto.mobile) {
       user.mobile = signUpDto.mobile;
@@ -600,7 +805,32 @@ export class AuthenticationService {
     }
   }
 
+  /**
+   * Gates *self-service* account creation only - the public register endpoints, where
+   * an anonymous visitor creates their own account. Callers that create a user on
+   * someone else's behalf (the admin console, an extension model's CRUD form, the
+   * seeders) are deliberately unaffected, so turning this off does not disable user
+   * creation across the system.
+   *
+   * Compared against both representations because `getConfigValue` returns the raw
+   * cached value, which is a boolean when it comes from the provider default and a
+   * string once persisted or edited through the Settings screen - see the same
+   * defensive comparison for `mcpEnabled` in setting.service.ts. A plain falsy check
+   * would read `'false'` as truthy and never fire.
+   */
+  private assertPublicRegistrationEnabled(): void {
+    const allowPublicRegistration =
+      this.settingService.getConfigValue<SolidCoreSetting>(
+        "allowPublicRegistration",
+      );
+    if (allowPublicRegistration === false || allowPublicRegistration === "false") {
+      throw new ForbiddenException(ERROR_MESSAGES.PUBLIC_REGISTRATION_DISABLED);
+    }
+  }
+
   async otpInitiateRegistration(signUpDto: OTPSignUpDto) {
+    this.assertPublicRegistrationEnabled();
+
     const isPasswordlessRegistrationEnabled =
       await this.isPasswordlessRegistrationEnabled();
     if (!isPasswordlessRegistrationEnabled) {
@@ -618,7 +848,7 @@ export class AuthenticationService {
     }
 
     try {
-      const user = await this.upsertUserWithRegistrationVerificationTokens(
+      const user = await this.resolveUserForOtpRegistration(
         existingUser,
         signUpDto,
         validationSource,
@@ -675,37 +905,76 @@ export class AuthenticationService {
     );
   }
 
-  private async upsertUserWithRegistrationVerificationTokens(
+  private async resolveUserForOtpRegistration(
     existingUser: User,
     signUpDto: OTPSignUpDto,
     validationSource: string,
   ): Promise<User> {
-    let user = existingUser;
-    if (isEmpty(user)) {
-      user = this.createUser(signUpDto);
+    if (isEmpty(existingUser)) {
+      // Resolved before anything is written: where a provider requires its discriminator
+      // roles() throws, and that should surface as a rejected request rather than as a
+      // half-registered user with no roles.
+      const roles = this.resolveSignupRoles(
+        signUpDto,
+        SIGNUP_POLICY[SignupIntent.SelfRegistration].rolesSource,
+      );
+
+      // A new registration is saved through whichever repository createUser resolved,
+      // which is the provider's when the app registers one.
+      const { entity: user, repo } = await this.createUser(signUpDto);
       user.active = false; // User will be activated only after OTP verification, hence setting active to false for new user.
       await this.assignRegistrationOtp(validationSource, user);
-      await this.userRepository.save(user);
-      await this.userService.addRoleToUser(
-        user.username,
-        this.settingService.getConfigValue<SolidCoreSetting>("defaultRole"),
-      );
-    } else {
-      await this.assignRegistrationOtp(validationSource, user);
-      await this.userRepository.save(user);
+      await repo.save(user);
+
+      // The provider named none, or there is no provider: fall back to the configured
+      // default, matching what performSignUp does on the password paths. Built as a
+      // fresh array rather than mutating `roles` - RolesSource.Provider can return
+      // whatever reference the provider's roles() handed back.
+      const defaultRole = this.settingService.getConfigValue<SolidCoreSetting>("defaultRole");
+      const effectiveRoles = roles.length ? roles : [defaultRole].filter(Boolean);
+
+      // initializeRolesForNewUser always grants "Internal User" - the baseline every
+      // other signup path gets via handlePostSignup - which this branch previously
+      // skipped entirely by calling addRolesToUser/addRoleToUser directly. Without it
+      // an OTP-registered user could not even read their own User record: the
+      // "Internal User" role is what carries that security rule.
+      await this.userService.initializeRolesForNewUser(effectiveRoles, user);
+      return user;
     }
+
+    // An existing row is saved back through the base repository: `User` is the
+    // inheritance root, so TypeORM hydrated it as its own subclass on the way in and
+    // round-trips the discriminator on the way out.
+    const user = existingUser;
+    await this.assignRegistrationOtp(validationSource, user);
+    await this.userRepository.save(user);
     return user;
   }
 
-  // Create a new user entity.
-  private createUser(signUpDto: OTPSignUpDto) {
-    const user = new User();
-    user.username = signUpDto.username;
-    user.email = signUpDto.email;
-    user.mobile = signUpDto.mobile;
-    user.customPayload = signUpDto.customPayload;
-    user.lastLoginProvider = LoginProvider.OTP;
-    return user;
+  /**
+   * Creates a new user entity for OTP registration - of whichever type this app
+   * registers its users as, since passwordless signup is self-registration like any
+   * other. Returns the repository alongside it, because a provider-built entity has
+   * to be saved through the provider's own repository.
+   */
+  private async createUser(
+    signUpDto: OTPSignUpDto,
+  ): Promise<{ entity: User; repo: Repository<User> }> {
+    const { useProvider } = SIGNUP_POLICY[SignupIntent.SelfRegistration];
+    const { entity, repo } = await this.userService.buildSignupTarget(
+      signUpDto,
+      useProvider,
+    );
+
+    entity.username = signUpDto.username;
+    entity.email = signUpDto.email;
+    entity.mobile = signUpDto.mobile;
+    // OTPSignUpDto declares no `fullName`, so username is the only source here. Mirrors the fallback in populateForSignup, which this path does not go through.
+    entity.fullName = signUpDto.fullName?.trim() || signUpDto.username;
+    entity.customPayload = signUpDto.customPayload;
+    entity.lastLoginProvider = LoginProvider.OTP;
+
+    return { entity, repo };
   }
 
   // Generate the validation tokens for the user i.e (system configured + user provided)
@@ -1087,9 +1356,13 @@ export class AuthenticationService {
     if (!user) {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
-    await this.validateUserForPasswordLogin(user, signInDto.password);
+    await this.  validateUserForPasswordLogin(user, signInDto.password);
     await this.rehashPasswordIfRequired(user, signInDto.password);
     await this.resetFailedAttempts(user);
+
+    await this.runLoginExtensions(user, {
+      channel: LoginExtensionChannel.PASSWORD,
+    });
 
     const tokens = await this.generateTokens(user);
 
@@ -1400,6 +1673,9 @@ export class AuthenticationService {
       if (otp !== dummyOtp) {
         throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
       }
+      await this.runLoginExtensions(user, {
+        channel: LoginExtensionChannel.OTP,
+      });
       return this.buildLoginTokenResponse(user);
     }
 
@@ -1411,8 +1687,14 @@ export class AuthenticationService {
     }
 
     await this.clearLoginOtp(user, type);
-    await this.userActivityHistoryService.logEvent("login", user);
+    // Reset before the chain runs, matching signIn: failedLoginAttempts counts
+    // attempts against the *credential*, and the OTP was correct. A denial from
+    // an external system is not a wrong OTP and must not leave the counter up.
     await this.resetFailedAttempts(user);
+    await this.runLoginExtensions(user, {
+      channel: LoginExtensionChannel.OTP,
+    });
+    await this.userActivityHistoryService.logEvent("login", user);
     return this.buildLoginTokenResponse(user);
   }
 
@@ -2356,15 +2638,34 @@ export class AuthenticationService {
       }
 
       const userId = payload.sub;
+
       if (allDevices) {
+        // Deliberately not gated on session ownership: "log out everywhere"
+        // treats any verifiable refresh token as sufficient authority, which is
+        // what invalidateAll already accepts.
         await this.refreshTokenIdsStorage.invalidateAll(userId);
-      } else {
+        await this.accessTokenDenylist.revokeAllForUser(userId);
+      } else if (await this.ownsLiveSession(userId, payload, refreshToken)) {
         // Scoped to the bucket this token belongs to, so signing out on one
         // device leaves the others alive. A token with no deviceKey names the
         // single slot, which is the same key as before.
         await this.refreshTokenIdsStorage.invalidate(userId, payload.deviceKey);
+        await this.accessTokenDenylist.revokeSession(
+          userId,
+          await this.resolveRevocationKey(userId, payload),
+        );
+        await this.activeSessionStorage.clearActiveSession(userId);
+      } else {
+        // The token names a session that is already gone - superseded by a
+        // newer login into the same bucket. Acting on it would destroy the
+        // session that replaced it. Nothing to do, but log it: the failure is
+        // otherwise invisible, and a cluster of these means clients are losing
+        // token state and their logouts are no-ops.
+        this.logger.warn(
+          `logout: refresh token does not match the live session for user ${userId}; nothing invalidated`,
+        );
       }
-      await this.activeSessionStorage.clearActiveSession(userId);
+
       const user = await this.userRepository.findOne({
         where: {
           id: userId,
@@ -2385,6 +2686,101 @@ export class AuthenticationService {
         ? err
         : new InternalServerErrorException(ERROR_MESSAGES.LOGOUT_FAILED);
     }
+  }
+
+  /**
+   * Whether this refresh token belongs to the session that currently occupies
+   * its bucket.
+   *
+   * A per-device bucket holds exactly one session - deviceKey is a fresh
+   * randomUUID per login - so a token carrying one is that session by
+   * construction and needs no further proof. Only the bare `user-<id>` bucket
+   * is shared across logins (preventConcurrentLogins on, or a pre-migration
+   * token), and that is the sole case where a stale token can name a session
+   * that has since been replaced. Without this, a laptop whose session was
+   * superseded by a phone login would, on logging out, destroy the phone's
+   * session instead of its own.
+   *
+   * Matches current OR previous, and deliberately does not consult
+   * isWithinGraceWindow: that window governs whether a rotated-out token may
+   * still be exchanged, whereas the question here is only which session the
+   * token belongs to - which stays true however long ago it rotated.
+   *
+   * Missing state means it owns nothing. Safe, because the refresh state and
+   * active-session entry share one cache: if the state is gone the session
+   * entry is too, so the actions being skipped were no-ops anyway.
+   */
+  private async ownsLiveSession(
+    userId: number,
+    payload: { deviceKey?: string },
+    refreshToken: string,
+  ): Promise<boolean> {
+    if (payload.deviceKey) {
+      return true;
+    }
+
+    const state =
+      await this.refreshTokenIdsStorage.getCurrentRefreshTokenState(userId);
+    return (
+      state?.currentRefreshToken === refreshToken ||
+      (!!state?.previousRefreshToken &&
+        state.previousRefreshToken === refreshToken)
+    );
+  }
+
+  /**
+   * The key a session's access tokens are denylisted under. Mirrors how the
+   * access token itself is stamped: deviceKey while concurrent logins are
+   * allowed, sessionId while they are not - and in the latter case only one
+   * session exists, so the recorded active session IS this session's id.
+   *
+   * Must be read before clearActiveSession, which deletes the value it reads.
+   */
+  private async resolveRevocationKey(
+    userId: number,
+    payload: { deviceKey?: string },
+  ): Promise<string | undefined> {
+    return (
+      payload.deviceKey ??
+      (await this.activeSessionStorage.getActiveSession(userId))
+    );
+  }
+
+  /**
+   * Public seam for consuming projects that need a logout of their own shape -
+   * for instance revoking the access token while deliberately leaving the
+   * refresh token valid.
+   *
+   * Verifies the refresh token (signature/audience/issuer enforced, expiry
+   * tolerated), confirms it owns the live session, and returns the key its
+   * access tokens are denylisted under.
+   *
+   *   null                    - unverifiable: forged, malformed, or an access
+   *                             token presented here
+   *   revocationKey undefined - verified, but nothing safe to revoke: either a
+   *                             superseded session, or no session key could be
+   *                             resolved. userId is still returned so the caller
+   *                             can log the event or call revokeAllForUser.
+   *
+   * logout() uses this same method, so the seam cannot silently rot.
+   */
+  async resolveSessionRevocationKey(
+    refreshToken: string,
+  ): Promise<{ userId: number; revocationKey?: string } | null> {
+    const payload = await this.verifyRefreshTokenForLogout(refreshToken);
+    if (!payload?.sub) {
+      return null;
+    }
+
+    const userId = payload.sub;
+    if (!(await this.ownsLiveSession(userId, payload, refreshToken))) {
+      return { userId };
+    }
+
+    return {
+      userId,
+      revocationKey: await this.resolveRevocationKey(userId, payload),
+    };
   }
 
   private async verifyRefreshTokenForLogout(
@@ -2450,6 +2846,9 @@ export class AuthenticationService {
         // forcePasswordChange: user.forcePasswordChange,
         id: user.id,
         roles: user.roles.map((role) => role.name),
+        // Lets the admin UI decide whether to show the SolidX Agent launcher
+        // without calling the agent; the agent enforces the same permission.
+        canUseAgent: !!activeUser.permissions?.includes("agent:invoke"),
       },
       // Null-guarded because the cache entry now carries a TTL: once it
       // expires - or after a logout followed by a call with a still-valid

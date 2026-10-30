@@ -15,6 +15,7 @@ import { RoleMetadata } from "../entities/role-metadata.entity";
 import { User } from "../entities/user.entity";
 import { ActiveUserData } from "../interfaces/active-user-data.interface";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
+import { SolidRegistry } from "src/helpers/solid-registry";
 import { UserRepository } from "src/repository/user.repository";
 import { RoleMetadataRepository } from "src/repository/role-metadata.repository";
 import { HashingService } from "./hashing.service";
@@ -109,6 +110,82 @@ export class UserService extends CRUDService<User> {
     }
 
     return super.deleteMany(ids, solidRequestContext);
+  }
+
+  /**
+   * Resolves which entity a signup should build and which repository it should be
+   * saved through.
+   *
+   * When `useProvider` is set and the app registered an `IExtensionUserCreationProvider`,
+   * the provider builds the entity and owns the repository; otherwise a plain `User`
+   * is saved through the base repository. The caller decides `useProvider` from its
+   * `SignupIntent` - nothing here inspects the DTO.
+   *
+   * The registry is resolved lazily through `moduleRef` rather than injected, mirroring
+   * `CRUDService.tryCreateAsExtensionUser`, to keep this off the DI graph that
+   * AuthenticationService and CRUDService already form a cycle around.
+   */
+  async buildSignupTarget(
+    dto: Record<string, any>,
+    useProvider: boolean,
+  ): Promise<{ entity: User; repo: Repository<User> }> {
+    const provider = useProvider
+      ? this.moduleRef
+          .get(SolidRegistry, { strict: false })
+          ?.getExtensionUserCreationProvider()
+      : null;
+
+    if (!provider) {
+      return { entity: new User(), repo: this.repo };
+    }
+
+    return {
+      entity: await provider.buildExtensionEntity(dto as any),
+      repo: provider.repo as Repository<User>,
+    };
+  }
+
+  /**
+   * Asks the registered extension-user provider for role names, treating "no provider
+   * registered" and "provider named none for this DTO" identically as [].
+   *
+   * The one place that actually calls `IExtensionUserCreationProvider.roles()`.
+   * `resolveSelfRegistrationRoles` below and `AuthenticationService.resolveSignupRoles`'s
+   * `Provider` branch both delegate here rather than each re-deriving "look up the
+   * registry, call roles(), default to []". Lives on `UserService` - not on
+   * `SolidRegistry`, which stays a pure lookup/storage layer for every provider kind it
+   * holds - because `AuthenticationService` already injects `UserService` directly
+   * (mirrors `buildSignupTarget`, and the DI cycle runs the other way: `UserService`
+   * cannot inject `AuthenticationService` back).
+   */
+  resolveProviderRoles(dto: Record<string, any>): string[] {
+    return (
+      this.moduleRef
+        .get(SolidRegistry, { strict: false })
+        ?.getExtensionUserCreationProvider()
+        ?.roles(dto as any) ?? []
+    );
+  }
+
+  /**
+   * Role names for a self-provisioning user, mirroring SignupIntent.SelfRegistration's
+   * policy on the password/OTP paths: ask the extension-user provider first, and fall
+   * back to the configured `defaultRole` when it names none - either because there is
+   * no provider, or the provider declines to name any for this DTO.
+   *
+   * Safe to call for OAuth even though `OauthUserDto` carries no discriminator field:
+   * a provider whose `roles()` requires one already needs to default it for public
+   * register/OTP to work at all (see the extending-users docs), and once it does,
+   * this resolves the same way automatically - there is no separate obligation OAuth
+   * places on providers beyond what self-registration already requires.
+   */
+  private resolveSelfRegistrationRoles(dto: Record<string, any>): string[] {
+    const roles = this.resolveProviderRoles(dto);
+    if (roles.length) {
+      return roles;
+    }
+    const defaultRole = this.settingService.getConfigValue<SolidCoreSetting>("defaultRole");
+    return defaultRole ? [defaultRole] : [];
   }
 
   async findOneByEmail(email: string): Promise<User> {
@@ -281,21 +358,26 @@ export class UserService extends CRUDService<User> {
 
     // if we are unable to find a user then we need to create one.
     if (!user) {
-      const user = new User();
-      user.username = oauthUserDto.email;
-      user.email = oauthUserDto.email;
-      user.fullName = oauthUserDto.name;
-      user.lastLoginProvider = oauthUserDto.provider;
-      user.accessCode = oauthUserDto.accessCode;
-      user.googleAccessToken = oauthUserDto.accessToken;
-      user.googleId = oauthUserDto.providerId;
-      user.googleProfilePicture = oauthUserDto.picture;
+      // Social sign-in provisions an app user, so it is built and roled the same way
+      // public signup and OTP registration are: entity through the registered
+      // extension-user provider when there is one (see buildSignupTarget), roles
+      // through resolveSelfRegistrationRoles below, which asks that same provider
+      // first and falls back to `defaultRole`.
+      const { entity, repo } = await this.buildSignupTarget(oauthUserDto, true);
+      entity.username = oauthUserDto.email;
+      entity.email = oauthUserDto.email;
+      entity.fullName = oauthUserDto.name;
+      entity.lastLoginProvider = oauthUserDto.provider;
+      entity.accessCode = oauthUserDto.accessCode;
+      entity.googleAccessToken = oauthUserDto.accessToken;
+      entity.googleId = oauthUserDto.providerId;
+      entity.googleProfilePicture = oauthUserDto.picture;
 
-      const savedUser = await this.repo.save(user);
+      const savedUser = await repo.save(entity);
 
       // Initialize the user roles
       await this.initializeRolesForNewUser(
-        [this.settingService.getConfigValue<SolidCoreSetting>("defaultRole")],
+        this.resolveSelfRegistrationRoles(oauthUserDto),
         savedUser,
       );
     }
@@ -356,20 +438,22 @@ export class UserService extends CRUDService<User> {
         // facebookProviderFallback,
       );
 
-      const newUser = new User();
-      newUser.username = username;
-      newUser.email = email;
-      newUser.fullName = oauthUserDto.name;
-      newUser.lastLoginProvider = oauthUserDto.provider;
-      newUser.accessCode = oauthUserDto.accessCode;
-      newUser.facebookAccessToken = oauthUserDto.accessToken;
-      newUser.facebookId = oauthUserDto.providerId;
-      newUser.facebookProfilePicture = oauthUserDto.picture;
+      // See resolveUserOnOauthGoogle for why entity and roles both go through the
+      // extension-user provider first, falling back to a plain User / `defaultRole`.
+      const { entity, repo } = await this.buildSignupTarget(oauthUserDto, true);
+      entity.username = username;
+      entity.email = email;
+      entity.fullName = oauthUserDto.name;
+      entity.lastLoginProvider = oauthUserDto.provider;
+      entity.accessCode = oauthUserDto.accessCode;
+      entity.facebookAccessToken = oauthUserDto.accessToken;
+      entity.facebookId = oauthUserDto.providerId;
+      entity.facebookProfilePicture = oauthUserDto.picture;
 
-      const savedUser = await this.repo.save(newUser);
+      const savedUser = await repo.save(entity);
 
       await this.initializeRolesForNewUser(
-        [this.settingService.getConfigValue<SolidCoreSetting>("defaultRole")],
+        this.resolveSelfRegistrationRoles(oauthUserDto),
         savedUser,
       );
       return savedUser;
@@ -398,20 +482,22 @@ export class UserService extends CRUDService<User> {
     });
 
     if (!user) {
-      const newUser = new User();
-      newUser.username = oauthUserDto.email;
-      newUser.email = oauthUserDto.email;
-      newUser.fullName = oauthUserDto.name;
-      newUser.lastLoginProvider = oauthUserDto.provider;
-      newUser.accessCode = oauthUserDto.accessCode;
-      newUser.microsoftAccessToken = oauthUserDto.accessToken;
-      newUser.microsoftId = oauthUserDto.providerId;
-      newUser.microsoftProfilePicture = oauthUserDto.picture;
+      // See resolveUserOnOauthGoogle for why entity and roles both go through the
+      // extension-user provider first, falling back to a plain User / `defaultRole`.
+      const { entity, repo } = await this.buildSignupTarget(oauthUserDto, true);
+      entity.username = oauthUserDto.email;
+      entity.email = oauthUserDto.email;
+      entity.fullName = oauthUserDto.name;
+      entity.lastLoginProvider = oauthUserDto.provider;
+      entity.accessCode = oauthUserDto.accessCode;
+      entity.microsoftAccessToken = oauthUserDto.accessToken;
+      entity.microsoftId = oauthUserDto.providerId;
+      entity.microsoftProfilePicture = oauthUserDto.picture;
 
-      const savedUser = await this.repo.save(newUser);
+      const savedUser = await repo.save(entity);
 
       await this.initializeRolesForNewUser(
-        [this.settingService.getConfigValue<SolidCoreSetting>("defaultRole")],
+        this.resolveSelfRegistrationRoles(oauthUserDto),
         savedUser,
       );
     } else {
@@ -442,20 +528,22 @@ export class UserService extends CRUDService<User> {
     });
 
     if (!user) {
-      const newUser = new User();
-      newUser.username = oauthUserDto.email;
-      newUser.email = oauthUserDto.email;
-      newUser.fullName = oauthUserDto.name;
-      newUser.lastLoginProvider = oauthUserDto.provider;
-      newUser.accessCode = oauthUserDto.accessCode;
-      newUser.microsoftActiveDirectoryAccessToken = oauthUserDto.accessToken;
-      newUser.microsoftActiveDirectoryId = oauthUserDto.providerId;
-      newUser.microsoftActiveDirectoryProfilePicture = oauthUserDto.picture;
+      // See resolveUserOnOauthGoogle for why entity and roles both go through the
+      // extension-user provider first, falling back to a plain User / `defaultRole`.
+      const { entity, repo } = await this.buildSignupTarget(oauthUserDto, true);
+      entity.username = oauthUserDto.email;
+      entity.email = oauthUserDto.email;
+      entity.fullName = oauthUserDto.name;
+      entity.lastLoginProvider = oauthUserDto.provider;
+      entity.accessCode = oauthUserDto.accessCode;
+      entity.microsoftActiveDirectoryAccessToken = oauthUserDto.accessToken;
+      entity.microsoftActiveDirectoryId = oauthUserDto.providerId;
+      entity.microsoftActiveDirectoryProfilePicture = oauthUserDto.picture;
 
-      const savedUser = await this.repo.save(newUser);
+      const savedUser = await repo.save(entity);
 
       await this.initializeRolesForNewUser(
-        [this.settingService.getConfigValue<SolidCoreSetting>("defaultRole")],
+        this.resolveSelfRegistrationRoles(oauthUserDto),
         savedUser,
       );
     } else {

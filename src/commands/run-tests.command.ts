@@ -9,6 +9,7 @@ import { runFromMetadata } from 'src/testing/runner/run-from-metadata';
 import type { TestingMetadata } from 'src/testing/contracts/testing-metadata.types';
 import { SpecRegistry } from 'src/testing/core/spec-registry';
 import { SettingService } from 'src/services/setting.service';
+import { SecretService } from 'src/services/secret.service';
 import type { SolidCoreSetting } from 'src/services/settings/default-settings-provider.service';
 
 interface TestRunCommandOptions {
@@ -27,6 +28,7 @@ interface TestRunCommandOptions {
   retries?: number;
   listSpecs?: boolean;
   printApiLogs?: boolean;
+  failFast?: boolean;
   runName?: string;
   progress?: boolean;
 }
@@ -41,6 +43,7 @@ export class TestRunCommand extends CommandRunner {
   constructor(
     private readonly moduleMetadataHelperService: ModuleMetadataHelperService,
     private readonly settingService: SettingService,
+    private readonly secretService: SecretService,
   ) {
     super();
   }
@@ -134,6 +137,8 @@ export class TestRunCommand extends CommandRunner {
             retries: options?.retries,
           },
           options: { printApiLogs },
+          failFast: options?.failFast,
+          resolveSecrets: (keys) => this.secretService.resolveAvailable(keys),
           specs: specEntries.length
             ? (registry) => loadSpecRegistrations(specEntries, metadataPath, registry)
             : undefined,
@@ -217,6 +222,16 @@ export class TestRunCommand extends CommandRunner {
     required: false,
   })
   parsePrintApiLogs(val?: string): boolean {
+    if (val === undefined) return true;
+    return val === 'false' ? false : true;
+  }
+
+  @Option({
+    flags: '--fail-fast [true|false]',
+    description: 'Stop at the first failed scenario (default true). Use --fail-fast false to run every scenario.',
+    required: false,
+  })
+  parseFailFast(val?: string): boolean {
     if (val === undefined) return true;
     return val === 'false' ? false : true;
   }

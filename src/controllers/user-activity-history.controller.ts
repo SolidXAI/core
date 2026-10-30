@@ -5,10 +5,7 @@ import { UserActivityHistoryService } from '../services/user-activity-history.se
 import { CreateUserActivityHistoryDto } from '../dtos/create-user-activity-history.dto';
 import { UpdateUserActivityHistoryDto } from '../dtos/update-user-activity-history.dto';
 
-enum ShowSoftDeleted {
-  INCLUSIVE = "inclusive",
-  EXCLUSIVE = "exclusive",
-}
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Solid Core')
 @Controller('user-activity-history')

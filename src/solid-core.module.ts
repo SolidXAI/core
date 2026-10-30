@@ -12,7 +12,6 @@ import {
 import { MulterModule } from "@nestjs/platform-express";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { RemoveFieldsCommand } from "./commands/remove-fields.command";
-import { MigrateRemovedFieldsCommand } from "./commands/migrate-removed-fields.command";
 import { FieldMetadataController } from "./controllers/field-metadata.controller";
 import { DashboardController } from "./controllers/dashboard.controller";
 import { MediaStorageProviderMetadataController } from "./controllers/media-storage-provider-metadata.controller";
@@ -50,14 +49,14 @@ import { MediaStorageProviderMetadataService } from "./services/media-storage-pr
 import { MediaService } from "./services/media.service";
 import { MediaDownloadUrlService } from "./services/media-download-url.service";
 import { ModelMetadataService } from "./services/model-metadata.service";
-import { RemovedFieldMigrationService } from "./services/removed-field-migration.service";
 import { ModuleMetadataExplorerService } from "./services/module-metadata-explorer.service";
 import { ModuleMetadataService } from "./services/module-metadata.service";
 import { ModulePackageService } from "./services/module-package.service";
 import { SolidIntrospectService } from "./services/solid-introspect.service";
 // import { ListOfComputedFieldProvider } from './providers/list-of-computed-field-provider.service';
 import { ServeStaticModule } from "@nestjs/serve-static";
-import { basename, join } from "path";
+import { basename } from "path";
+import { PUBLIC_MEDIA_URL_PREFIX, getPublicMediaStorageDir } from "./services/file/media-storage-paths";
 import { RefreshModelCommand } from "./commands/refresh-model.command";
 import { MediaController } from "./controllers/media.controller";
 import { getLowercaseFileExtension, INLINE_SAFE_EXTENSIONS } from "./constants/media-file-types";
@@ -102,6 +101,7 @@ import { OTPAuthenticationController } from "./controllers/otp-authentication.co
 import { ServiceController } from "./controllers/service.controller";
 import { SmsTemplateController } from "./controllers/sms-template.controller";
 import { TestQueueController } from "./controllers/test-queue.controller";
+import { TestRunController } from "./controllers/test-run.controller";
 import { EmailAttachment } from "./entities/email-attachment.entity";
 import { EmailTemplate } from "./entities/email-template.entity";
 import { MenuItemMetadata } from "./entities/menu-item-metadata.entity";
@@ -119,6 +119,8 @@ import { ApiEmailQueuePublisher } from "./jobs/rabbitmq/api-email-publisher.serv
 import { ApiEmailQueueSubscriber } from "./jobs/rabbitmq/api-email-subscriber.service";
 import { TestQueuePublisherDatabase } from "./jobs/database/test-queue-publisher-database.service";
 import { TestQueueSubscriberDatabase } from "./jobs/database/test-queue-subscriber-database.service";
+import { TestRunQueuePublisherDatabase } from "./jobs/database/test-run-queue-publisher-database.service";
+import { TestRunQueueSubscriberDatabase } from "./jobs/database/test-run-queue-subscriber-database.service";
 import { TestQueuePublisherRedis } from "./jobs/redis/test-queue-publisher-redis.service";
 import { TestQueueSubscriberRedis } from "./jobs/redis/test-queue-subscriber-redis.service";
 import { Msg91WhatsappQueuePublisher } from "./jobs/rabbitmq/msg91-whatsapp-publisher.service";
@@ -171,6 +173,7 @@ import { GoogleOauthStrategy } from "./passport-strategies/google-oauth.strategy
 import { ApiKeyService } from "./services/api-key.service";
 import { MpinService } from "./services/mpin.service";
 import { ActiveSessionStorageService } from "./services/active-session-storage.service";
+import { AccessTokenDenylistService } from "./services/access-token-denylist.service";
 import { AuthenticationService } from "./services/authentication.service";
 import { MetadataValidationService } from "./services/metadata-validation.service";
 import { BcryptService } from "./services/bcrypt.service";
@@ -211,6 +214,7 @@ import { ScheduleModule } from "@nestjs/schedule";
 import { ClsModule } from "nestjs-cls";
 import { ChatterMessageDetailsController } from "./controllers/chatter-message-details.controller";
 import { ChatterMessageController } from "./controllers/chatter-message.controller";
+import { ChatterMessageArchiveController } from './controllers/chatter-message-archive.controller';
 
 import { ExportTemplateController } from './controllers/export-template.controller';
 import { ExportTransactionController } from './controllers/export-transaction.controller';
@@ -221,7 +225,6 @@ import { LocaleController } from './controllers/locale.controller';
 import { RoleMetadataController } from './controllers/role-metadata.controller';
 import { SavedFiltersController } from './controllers/saved-filters.controller';
 import { ScheduledJobController } from './controllers/scheduled-job.controller';
-import { AgentSessionController } from './controllers/agent-session.controller';
 import { AgentEventController } from './controllers/agent-event.controller';
 import { McpAuditLogController } from './controllers/mcp-audit-log.controller';
 import { SecurityRuleController } from './controllers/security-rule.controller';
@@ -242,7 +245,6 @@ import { Locale } from './entities/locale.entity';
 import { RoleMetadata } from './entities/role-metadata.entity';
 import { SavedFilters } from './entities/saved-filters.entity';
 import { ScheduledJob } from './entities/scheduled-job.entity';
-import { AgentSession } from './entities/agent-session.entity';
 import { AgentEvent } from './entities/agent-event.entity';
 import { McpAuditLog } from './entities/mcp-audit-log.entity';
 import { SecurityRule } from './entities/security-rule.entity';
@@ -314,7 +316,6 @@ import { PermissionMetadataRepository } from './repository/permission-metadata.r
 import { RoleMetadataRepository } from './repository/role-metadata.repository';
 import { SavedFiltersRepository } from './repository/saved-filters.repository';
 import { ScheduledJobRepository } from './repository/scheduled-job.repository';
-import { AgentSessionRepository } from './repository/agent-session.repository';
 import { AgentEventRepository } from './repository/agent-event.repository';
 import { McpAuditLogRepository } from './repository/mcp-audit-log.repository';
 import { SecurityRuleRepository } from './repository/security-rule.repository';
@@ -330,6 +331,7 @@ import { PermissionMetadataSeederService } from './seeders/permission-metadata-s
 import { SystemFieldsSeederService } from './seeders/system-fields-seeder.service';
 import { ChatterMessageDetailsService } from './services/chatter-message-details.service';
 import { ChatterMessageService } from './services/chatter-message.service';
+import { ChatterMessageArchiveService } from './services/chatter-message-archive.service';
 import { ConcatComputedFieldProvider } from './services/computed-fields/concat-computed-field-provider.service';
 import { AlphaNumExternalIdComputationProvider } from './services/computed-fields/entity/alpha-num-external-id-computed-field-provider';
 import { ConcatEntityComputedFieldProvider } from './services/computed-fields/entity/concat-entity-computed-field-provider.service';
@@ -364,7 +366,6 @@ import { RequestContextService } from './services/request-context.service';
 import { RoleMetadataService } from './services/role-metadata.service';
 import { SavedFiltersService } from './services/saved-filters.service';
 import { ScheduledJobService } from './services/scheduled-job.service';
-import { AgentSessionService } from './services/agent-session.service';
 import { AgentEventService } from './services/agent-event.service';
 import { McpAuditLogService } from './services/mcp-audit-log.service';
 import { SchedulerServiceImpl } from './services/scheduled-jobs/scheduler.service';
@@ -386,6 +387,15 @@ import { ListOfValuesSubscriber } from './subscribers/list-of-values.subscriber'
 import { ScheduledJobSubscriber } from './subscribers/scheduled-job.subscriber';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
+import { AgentRegistrySubscriber } from './subscribers/agent-registry.subscriber';
+import { AgentToolRegistrySubscriber } from './subscribers/agent-tool-registry.subscriber';
+import { AgentSkillRegistrySubscriber } from './subscribers/agent-skill-registry.subscriber';
+import { AgentHubTagSubscriber } from './subscribers/agent-hub-tag.subscriber';
+import { AgentSkillSubscriber } from './subscribers/agent-skill.subscriber';
+import { AgentToolSubscriber } from './subscribers/agent-tool.subscriber';
+import { SecretSubscriber } from './subscribers/secret.subscriber';
+import { AgentSecretSubscriber } from './subscribers/agent-secret.subscriber';
+import { AgentRoleSubscriber } from './subscribers/agent-role.subscriber';
 import { MediaStorageProviderMetadataRepository } from './repository/media-storage-provider-metadata.repository';
 import { McpCommand } from './commands/mcp.command';
 import { FixturesService } from './services/fixtures.service';
@@ -419,14 +429,14 @@ import { WorkflowStepExecution } from './entities/workflow-step-execution.entity
 import { WorkflowExecutionLog } from './entities/workflow-execution-log.entity';
 import { WorkflowExecutionArtifact } from './entities/workflow-execution-artifact.entity';
 import { WorkflowTriggerExecution } from './entities/workflow-trigger-execution.entity';
-import { WorkflowSecret } from './entities/workflow-secret.entity';
+import { Secret } from './entities/secret.entity';
 import { WorkflowDefinitionController } from './controllers/workflow-definition.controller';
 import { WorkflowExecutionController } from './controllers/workflow-execution.controller';
 import { WorkflowStepExecutionController } from './controllers/workflow-step-execution.controller';
 import { WorkflowExecutionLogController } from './controllers/workflow-execution-log.controller';
 import { WorkflowExecutionArtifactController } from './controllers/workflow-execution-artifact.controller';
 import { WorkflowTriggerExecutionController } from './controllers/workflow-trigger-execution.controller';
-import { WorkflowSecretController } from './controllers/workflow-secret.controller';
+import { SecretController } from './controllers/secret.controller';
 import { WorkflowDefinitionService } from './services/workflow-definition.service';
 import { WorkflowDefinitionMetadataSyncService } from './services/workflow/workflow-definition-metadata-sync.service';
 import { WorkflowExecutionService } from './services/workflow-execution.service';
@@ -434,14 +444,14 @@ import { WorkflowStepExecutionService } from './services/workflow-step-execution
 import { WorkflowExecutionLogService } from './services/workflow-execution-log.service';
 import { WorkflowExecutionArtifactService } from './services/workflow-execution-artifact.service';
 import { WorkflowTriggerExecutionService } from './services/workflow-trigger-execution.service';
-import { WorkflowSecretService } from './services/workflow-secret.service';
+import { SecretService } from './services/secret.service';
 import { WorkflowDefinitionRepository } from './repository/workflow-definition.repository';
 import { WorkflowExecutionRepository } from './repository/workflow-execution.repository';
 import { WorkflowStepExecutionRepository } from './repository/workflow-step-execution.repository';
 import { WorkflowExecutionLogRepository } from './repository/workflow-execution-log.repository';
 import { WorkflowExecutionArtifactRepository } from './repository/workflow-execution-artifact.repository';
 import { WorkflowTriggerExecutionRepository } from './repository/workflow-trigger-execution.repository';
-import { WorkflowSecretRepository } from './repository/workflow-secret.repository';
+import { SecretRepository } from './repository/secret.repository';
 import { WorkflowDefinitionValidatorService } from './services/workflow/workflow-definition-validator.service';
 import { WorkflowExecutionWriterService } from './services/workflow/workflow-execution-writer.service';
 import { WorkflowExpressionService } from './services/workflow/workflow-expression.service';
@@ -471,6 +481,71 @@ import { SolidXSendEmailNode } from './services/workflow/nodes/solidx-send-email
 import { SolidXSendSmsNode } from './services/workflow/nodes/solidx-send-sms.node';
 import { SwitchNode } from './services/workflow/nodes/switch.node';
 
+//Agent hub
+
+import { AgentRegistry } from "./entities/agent-registry.entity";
+import { AgentToolRegistry } from "./entities/agent-tool-registry.entity";
+import { AgentSkillRegistry } from "./entities/agent-skill-registry.entity";
+import { AgentHubTag } from "./entities/agent-hub-tag.entity";
+import { AgentTool } from "./entities/agent-tool.entity";
+import { AgentSkill } from "./entities/agent-skill.entity";
+import { AgentSecret } from "./entities/agent-secret.entity";
+import { AgentProcess } from "./entities/agent-process.entity";
+import { AgentSession } from "./entities/agent-session.entity";
+import { AgentJob } from "./entities/agent-job.entity";
+import { AgentRole } from "./entities/agent-role.entity";
+import { AgentSessionCheckpoint } from "./entities/agent-session-checkpoint.entity";
+import { AgentUserMemory } from "./entities/agent-user-memory.entity";
+import { AgentHumanRequest } from "./entities/agent-human-request.entity";
+import { AgentConfigVersion } from "./entities/agent-config-version.entity";
+import { AgentRegistryController } from "./controllers/agent-registry.controller";
+import { AgentEmbedController } from './controllers/agent-embed.controller';
+import { AgentToolRegistryController } from "./controllers/agent-tool-registry.controller";
+import { AgentSkillRegistryController } from "./controllers/agent-skill-registry.controller";
+import { AgentHubTagController } from "./controllers/agent-hub-tag.controller";
+import { AgentToolController } from "./controllers/agent-tool.controller";
+import { AgentSkillController } from "./controllers/agent-skill.controller";
+import { AgentRoleController } from "./controllers/agent-role.controller";
+import { AgentSecretController } from "./controllers/agent-secret.controller";
+import { AgentProcessController } from "./controllers/agent-process.controller";
+import { AgentSessionController } from "./controllers/agent-session.controller";
+import { AgentJobController } from "./controllers/agent-job.controller";
+import { AgentSessionCheckpointController } from "./controllers/agent-session-checkpoint.controller";
+import { AgentUserMemoryController } from "./controllers/agent-user-memory.controller";
+import { AgentHumanRequestController } from "./controllers/agent-human-request.controller";
+import { AgentConfigVersionController } from "./controllers/agent-config-version.controller";
+import { AgentHumanRequestRepository } from "./repository/agent-human-request.repository";
+import { AgentConfigVersionRepository } from "./repository/agent-config-version.repository";
+import { AgentHumanRequestService } from "./services/agent-human-request.service";
+import { AgentConfigVersionRecordService } from "./services/agent-config-version-record.service";
+import { AgentSessionCheckpointRepository } from "./repository/agent-session-checkpoint.repository";
+import { AgentSessionCheckpointService } from "./services/agent-session-checkpoint.service";
+import { AgentUserMemoryRepository } from "./repository/agent-user-memory.repository";
+import { AgentUserMemoryService } from "./services/agent-user-memory.service";
+import { AgentSessionRepository } from "./repository/agent-session.repository";
+import { AgentJobRepository } from "./repository/agent-job.repository";
+import { AgentProcessRepository } from "./repository/agent-process.repository";
+import { AgentRegistryRepository } from "./repository/agent-registry.repository";
+import { AgentRoleRepository } from "./repository/agent-role.repository";
+import { AgentSecretRepository } from "./repository/agent-secret.repository";
+import { AgentSkillRepository } from "./repository/agent-skill.repository";
+import { AgentToolRepository } from "./repository/agent-tool.repository";
+import { AgentSkillRegistryRepository } from "./repository/agent-skill-registry.repository";
+import { AgentHubTagRepository } from "./repository/agent-hub-tag.repository";
+import { AgentToolRegistryRepository } from "./repository/agent-tool-registry.repository";
+import { AgentSessionService } from "./services/agent-session.service";
+import { AgentJobService } from "./services/agent-job.service";
+import { AgentProcessService } from "./services/agent-process.service";
+import { AgentHubProcessManagerService } from "./services/agent-hub-process-manager.service";
+import { AgentRegistryService } from "./services/agent-registry.service";
+import { AgentRoleService } from "./services/agent-role.service";
+import { AgentSecretService } from "./services/agent-secret.service";
+import { AgentSkillService } from "./services/agent-skill.service";
+import { AgentToolService } from "./services/agent-tool.service";
+import { AgentSkillRegistryService } from "./services/agent-skill-registry.service";
+import { AgentHubTagService } from "./services/agent-hub-tag.service";
+import { AgentToolRegistryService } from "./services/agent-tool-registry.service";
+
 @Global()
 @Module({
   imports: [
@@ -498,7 +573,6 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
       RoleMetadata,
       SavedFilters,
       ScheduledJob,
-      AgentSession,
       AgentEvent,
       McpAuditLog,
       SecurityRule,
@@ -517,14 +591,31 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
       WorkflowExecutionLog,
       WorkflowExecutionArtifact,
       WorkflowTriggerExecution,
-      WorkflowSecret,
-    ]),
+      Secret,
 
+      //Agent hub
+
+      AgentRegistry,
+      AgentToolRegistry,
+      AgentSkillRegistry,
+      AgentHubTag,
+      AgentTool,
+      AgentSkill,
+      AgentRole,
+      AgentSecret,
+      AgentProcess,
+      AgentSession,
+      AgentJob,
+      AgentSessionCheckpoint,
+      AgentUserMemory,
+      AgentHumanRequest,
+      AgentConfigVersion
+    ]),
     CacheModule.registerAsync(CacheManagerOptions),
     ScheduleModule.forRoot(),
     ServeStaticModule.forRoot({
-      rootPath: join(process.cwd(), "media-files-storage"),
-      serveRoot: "/media-files-storage",
+      rootPath: getPublicMediaStorageDir(),
+      serveRoot: `/${PUBLIC_MEDIA_URL_PREFIX}`,
       serveStaticOptions: {
         setHeaders: (res, path) => {
           // Allow use of these files from a different origin (e.g., :3000 UI)
@@ -541,16 +632,26 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
           res.setHeader("X-Content-Type-Options", "nosniff");
 
           // Only a small allowlist of media types is ever safe to render inline. Everything
-          // else (including svg, html, and any other uploaded file) is forced to download
+          // else (including html and any other uploaded file) is forced to download
           // rather than be displayed/executed by the browser, regardless of what mimetype or
           // extension it was uploaded with.
           // basename first: getLowercaseFileExtension takes a file name, not a path, so a
           // directory containing a dot must not be mistaken for the extension. An
           // extensionless file yields undefined, which is not inline-safe - so it correctly
           // falls through to the forced-download branch.
-          if (!INLINE_SAFE_EXTENSIONS.has(getLowercaseFileExtension(basename(path)) ?? '')) {
+          const ext = getLowercaseFileExtension(basename(path)) ?? '';
+          if (!INLINE_SAFE_EXTENSIONS.has(ext)) {
             res.setHeader("Content-Type", "application/octet-stream");
             res.setHeader("Content-Disposition", "attachment");
+          }
+
+          // svg is only ever inline-safe (see INLINE_SAFE_EXTENSIONS) once it can also render
+          // as an active document (<script>, event handlers). <img>/CSS never execute it, but
+          // a direct navigation to this URL would - so pin it to a locked-down document: no
+          // script, no network, and `sandbox` gives it an opaque origin so even a parser bypass
+          // can't reach app cookies or storage.
+          if (ext === 'svg') {
+            res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; img-src data:; sandbox");
           }
         },
       },
@@ -587,6 +688,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     ActionMetadataController,
     AuthenticationController,
     ChatterMessageController,
+    ChatterMessageArchiveController,
     ChatterMessageDetailsController,
     EmailTemplateController,
     ExportTemplateController,
@@ -620,7 +722,6 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     RoleMetadataController,
     SavedFiltersController,
     ScheduledJobController,
-    AgentSessionController,
     AgentEventController,
     McpAuditLogController,
     SecurityRuleController,
@@ -630,6 +731,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     SmsTemplateController,
     TestController,
     TestQueueController,
+    TestRunController,
     UserActivityHistoryController,
     UserController,
     UserViewMetadataController,
@@ -642,7 +744,23 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     WorkflowExecutionLogController,
     WorkflowExecutionArtifactController,
     WorkflowTriggerExecutionController,
-    WorkflowSecretController,
+    SecretController,
+    AgentRegistryController,
+    AgentEmbedController,
+    AgentToolRegistryController,
+    AgentSkillRegistryController,
+    AgentHubTagController,
+    AgentToolController,
+    AgentSkillController,
+    AgentRoleController,
+    AgentSecretController,
+    AgentProcessController,
+    AgentSessionController,
+    AgentJobController,
+    AgentSessionCheckpointController,
+    AgentUserMemoryController,
+    AgentHumanRequestController,
+    AgentConfigVersionController
   ],
   providers: [
     {
@@ -677,7 +795,6 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     FieldMetadataService,
     DashboardRuntimeService,
     RemoveFieldsCommand,
-    MigrateRemovedFieldsCommand,
     RefreshModelCommand,
     RefreshModuleCommand,
     InfoCommand,
@@ -783,6 +900,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     ApiKeyService,
     MpinService,
     ActiveSessionStorageService,
+    AccessTokenDenylistService,
     AuthenticationService,
     GoogleAuthenticationController,
     RefreshTokenIdsStorageService,
@@ -809,6 +927,8 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
 
     TestQueuePublisherDatabase,
     TestQueueSubscriberDatabase,
+    TestRunQueuePublisherDatabase,
+    TestRunQueueSubscriberDatabase,
     TestQueuePublisherRedis,
     TestQueueSubscriberRedis,
     ApiEmailQueuePublisherRedis,
@@ -874,6 +994,15 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     FileS3StorageProvider,
     MediaRepository,
     ViewMetadataSubsciber,
+    AgentRegistrySubscriber,
+    AgentToolRegistrySubscriber,
+    AgentSkillRegistrySubscriber,
+    AgentHubTagSubscriber,
+    AgentSkillSubscriber,
+    AgentToolSubscriber,
+    SecretSubscriber,
+    AgentSecretSubscriber,
+    AgentRoleSubscriber,
     SavedFiltersService,
     UserViewMetadataService,
     SecurityRuleService,
@@ -882,6 +1011,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     RequestContextService,
     SavedFiltersService,
     ChatterMessageService,
+    ChatterMessageArchiveService,
     ChatterMessageDetailsService,
     LocaleService,
     AuditSubscriber,
@@ -912,10 +1042,8 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
 
     ViewMetadataRepository,
     ScheduledJobRepository,
-    AgentSessionRepository,
     AgentEventRepository,
     McpAuditLogRepository,
-    AgentSessionService,
     AgentEventService,
     McpAuditLogService,
     ScheduledJobSubscriber,
@@ -946,7 +1074,6 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     UserViewMetadataRepository,
     ModelMetadataRepository,
     ModuleMetadataRepository,
-    RemovedFieldMigrationService,
     ActionMetadataRepository,
     MediaStorageProviderMetadataRepository,
     FixturesService,
@@ -974,8 +1101,8 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     WorkflowExecutionArtifactRepository,
     WorkflowTriggerExecutionService,
     WorkflowTriggerExecutionRepository,
-    WorkflowSecretService,
-    WorkflowSecretRepository,
+    SecretService,
+    SecretRepository,
     WorkflowInvocationService,
     WorkflowRuntimeService,
     WorkflowExecutionWriterService,
@@ -1002,8 +1129,44 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     SolidXDeleteNode,
     SolidXSendEmailNode,
     SolidXSendSmsNode,
+
+    //Agent hub
+    AgentRegistryService,
+    AgentRegistryRepository,
+    AgentToolRegistryService,
+    AgentToolRegistryRepository,
+    AgentSkillRegistryService,
+    AgentSkillRegistryRepository,
+    AgentHubTagService,
+    AgentHubTagRepository,
+    AgentToolService,
+    AgentToolRepository,
+    AgentSkillService,
+    AgentSkillRepository,
+    AgentRoleService,
+    AgentRoleRepository,
+    AgentSecretService,
+    AgentSecretRepository,
+    AgentProcessService,
+    AgentHubProcessManagerService,
+    AgentProcessRepository,
+    AgentSessionService,
+    AgentSessionRepository,
+    AgentJobService,
+    AgentJobRepository,
+    AgentSessionCheckpointService,
+    AgentSessionCheckpointRepository,
+    AgentUserMemoryService,
+    AgentUserMemoryRepository,
+    AgentHumanRequestService,
+    AgentHumanRequestRepository,
+    AgentConfigVersionRecordService,
+    AgentConfigVersionRepository
   ],
   exports: [
+    // Exported for DI, not merely re-exported from index.ts: a consuming
+    // project composing its own logout has to be able to inject this.
+    AccessTokenDenylistService,
     AuthenticationService,
     ChatterMessageDetailsRepository,
     ChatterMessageDetailsService,
@@ -1077,4 +1240,4 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
 // Body-size limits live in bootstrapSolidApp (see SolidBootstrapOptions.bodyLimit).
 // They cannot be applied here: module middleware is registered in registerRouter(),
 // which runs after Nest's own parser middleware, so anything set here never takes effect.
-export class SolidCoreModule {}
+export class SolidCoreModule { }

@@ -39,6 +39,9 @@ export class TestingEngine {
       let scenarioError: unknown;
 
       reporter.onScenarioStart(scenario);
+      // Start a clean capture window for this scenario (UI adapter buffers console/network
+      // events; they're only flushed to the reporter if the scenario fails below).
+      ctx.ui?.resetCapture();
 
       try {
         const execute = async () => {
@@ -60,6 +63,25 @@ export class TestingEngine {
       } catch (err: any) {
         scenarioError = err;
       } finally {
+        // On failure, flush the UI adapter's captured artifacts (console + network) BEFORE
+        // onScenarioEnd — the lifecycle reporter snapshots the attached artifacts inside
+        // onScenarioEnd. No page (e.g. API scenarios) → nothing captured.
+        if (scenarioError && ctx.ui?.page && reporter.attach) {
+          try {
+            const artifacts = await ctx.ui.collectFailureArtifacts();
+            for (const a of artifacts) {
+              reporter.attach({
+                scenarioId: ctx.scenarioId,
+                name: a.name,
+                contentType: a.contentType,
+                data: a.data,
+              });
+            }
+          } catch {
+            // Artifact capture is best-effort; never let it mask the scenario error.
+          }
+        }
+
         const durationMs = Date.now() - scenarioStart;
         reporter.onScenarioEnd(scenario, {
           ok: !scenarioError,
@@ -78,6 +100,21 @@ export class TestingEngine {
     }
   }
 
+  // Interpolates the step, except the `with` fields its op takes as written (StepOptions.rawWith).
+  private resolveStep(step: OpStep, ctx: TestContext): OpStep {
+    const raw = this.registry
+      .rawWithFields(step.op)
+      .filter((field) => step.with && typeof step.with === "object" && field in step.with);
+    if (!raw.length) {
+      return interpolateDeep(step, ctx);
+    }
+    const rest = { ...step.with };
+    for (const field of raw) delete rest[field];
+    const resolved = interpolateDeep({ ...step, with: rest }, ctx);
+    const kept = Object.fromEntries(raw.map((field) => [field, step.with![field]]));
+    return { ...resolved, with: { ...resolved.with, ...kept } };
+  }
+
   private async runBlock(
     phase: StepPhase,
     steps: OpStep[],
@@ -92,7 +129,7 @@ export class TestingEngine {
       reporter.onStepStart({ scenarioId: ctx.scenarioId, phase, step });
 
       try {
-        resolvedStep = interpolateDeep(step, ctx) as OpStep;
+        resolvedStep = this.resolveStep(step, ctx);
         const handler = this.registry.get(resolvedStep.op);
         const run = handler(ctx, resolvedStep);
         const result =

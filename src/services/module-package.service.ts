@@ -4,15 +4,20 @@ import {
     Logger,
     NotFoundException,
 } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
 import { createHash } from 'crypto';
 import archiver from 'archiver';
 import { createWriteStream } from 'fs';
+import * as semver from 'semver';
 import { DisallowInProduction } from 'src/decorators/disallow-in-production.decorator';
 import { ConfirmModulePackageImportDto } from 'src/dtos/confirm-module-package-import.dto';
+import { ExportModulePackageDto } from 'src/dtos/export-module-package.dto';
 import { RunModulePackageBuildDto } from 'src/dtos/run-module-package-build.dto';
 import { RunModulePackageSeedDto } from 'src/dtos/run-module-package-seed.dto';
+import { ModuleMetadata } from 'src/entities/module-metadata.entity';
 import { CommandService } from 'src/helpers/command.service';
 import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
+import { DataSource } from 'typeorm';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -27,6 +32,7 @@ type ModulePackageManifest = {
     };
     module: {
         name: string;
+        version?: string;
         displayName?: string;
         description?: string;
     };
@@ -46,12 +52,45 @@ type ValidationPayload = {
     warnings: string[];
 };
 
+type ModulePackageMode = 'install' | 'update';
+
+// new: module not installed. first_version: installed module is unversioned, package is versioned.
+// legacy_package: package is unversioned while the module is installed.
+type ModulePackageVersionComparison = 'new' | 'upgrade' | 'same' | 'downgrade' | 'first_version' | 'legacy_package';
+
+type ModulePackageFileDiff = {
+    added: string[];
+    modified: string[];
+    removed: string[];
+    unchangedCount: number;
+};
+
+type ModulePackageChangeSet = {
+    solidApi: ModulePackageFileDiff;
+    solidUi: ModulePackageFileDiff;
+};
+
+type ModulePackageBackup = {
+    path: string;
+    version: string | null;
+    createdAt: string;
+};
+
 type PreviewPayload = {
     module: {
         name: string;
+        version?: string;
         displayName?: string;
         description?: string;
     };
+    mode: ModulePackageMode;
+    installedVersion: string | null;
+    incomingVersion: string | null;
+    versionComparison: ModulePackageVersionComparison | null;
+    requiresVersionAcknowledgement: boolean;
+    identicalContent: boolean;
+    contentFingerprint: string | null;
+    changeSet: ModulePackageChangeSet | null;
     manifest: ModulePackageManifest;
     contentsSummary: {
         totalEntries: number;
@@ -92,10 +131,17 @@ type ModulePackageStatusFile = {
     preview: PreviewPayload | null;
     validation: ValidationPayload | null;
     conflicts: string[];
+    mode: ModulePackageMode;
+    installedVersion: string | null;
+    incomingVersion: string | null;
+    versionComparison: ModulePackageVersionComparison | null;
+    backup: ModulePackageBackup | null;
+    restoredFromBackup: boolean;
     outputs: {
         import: string | null;
         build: string | null;
         seed: string | null;
+        restore: string | null;
     };
     errorMessage: string | null;
     createdAt: string;
@@ -114,8 +160,14 @@ type ModulePackageRuntimeCleanupResult = {
     removedExportTransactions: number;
     removedImportLooseEntries: number;
     removedExportLooseEntries: number;
+    removedBackups: number;
     clearedActiveTransactionPointer: boolean;
     clearedAt: string;
+};
+
+type InstalledModuleState = {
+    installed: boolean;
+    version: string | null;
 };
 
 type ModulePackageActiveTransactionFile = {
@@ -134,6 +186,7 @@ enum ModulePackageStatus {
     build_succeeded = 'build_succeeded',
     seed_running = 'seed_running',
     seed_failed = 'seed_failed',
+    restore_running = 'restore_running',
     completed = 'completed',
     failed = 'failed',
 }
@@ -143,14 +196,18 @@ export class ModulePackageService {
     private readonly logger = new Logger(ModulePackageService.name);
     private static readonly SUPPORTED_SCHEMA_VERSION = '1.0';
     private static readonly SUPPORTED_PACKAGE_TYPE = 'solidx-module';
+    private static readonly OVERWRITE_CONFIRMATION_WARNING = 'The target module already exists locally and will require overwrite confirmation.';
+    private static readonly VERSION_ACKNOWLEDGEMENT_COMPARISONS: ModulePackageVersionComparison[] = ['same', 'downgrade', 'legacy_package'];
 
     constructor(
         private readonly commandService: CommandService,
         private readonly moduleMetadataHelperService: ModuleMetadataHelperService,
+        @InjectDataSource()
+        private readonly dataSource: DataSource,
     ) { }
 
     @DisallowInProduction()
-    async validateUpload(file: Express.Multer.File) {
+    async validateUpload(file: Express.Multer.File, expectedModuleNameInput?: string) {
         if (!file) {
             throw new BadRequestException('A .sldx archive file is required.');
         }
@@ -168,6 +225,11 @@ export class ModulePackageService {
 
         const parsed = await this.parseArchive(archiveFilePath);
         await this.extractArchive(archiveFilePath, extractDirPath);
+        await this.applyInstallStateToPreview(
+            parsed,
+            this.resolveExtractRoot(extractDirPath, parsed.archiveRootPrefix),
+            (expectedModuleNameInput ?? '').trim() || null,
+        );
 
         const transaction: ModulePackageStatusFile = {
             transactionKey,
@@ -184,10 +246,17 @@ export class ModulePackageService {
             preview: parsed.preview,
             validation: parsed.validation,
             conflicts: parsed.preview.conflicts,
+            mode: parsed.preview.mode,
+            installedVersion: parsed.preview.installedVersion,
+            incomingVersion: parsed.preview.incomingVersion,
+            versionComparison: parsed.preview.versionComparison,
+            backup: null,
+            restoredFromBackup: false,
             outputs: {
                 import: null,
                 build: null,
                 seed: null,
+                restore: null,
             },
             errorMessage: parsed.validation.valid ? null : parsed.validation.errors.join('\n'),
             createdAt: new Date().toISOString(),
@@ -236,7 +305,7 @@ export class ModulePackageService {
     }
 
     @DisallowInProduction()
-    async exportModulePackage(moduleNameInput: string): Promise<ModulePackageExportFile> {
+    async exportModulePackage(moduleNameInput: string, dto: ExportModulePackageDto = {}): Promise<ModulePackageExportFile> {
         const moduleName = (moduleNameInput ?? '').trim();
         if (!moduleName) {
             throw new BadRequestException('A module name is required to export a module package.');
@@ -250,15 +319,23 @@ export class ModulePackageService {
         await this.assertPathExists(solidUiModulePath, 'solid-ui module path');
         await this.assertPathExists(metadataFilePath, 'module metadata file');
 
-        const metadataDocument = this.parseMetadataDocument(
+        let metadataDocument = this.parseMetadataDocument(
             await fs.readFile(metadataFilePath, 'utf-8'),
             [],
         );
 
+        const currentVersion = this.toValidVersion(metadataDocument?.moduleMetadata?.version);
+        const exportVersion = this.resolveExportVersion(currentVersion, dto);
+        if (exportVersion !== currentVersion) {
+            // The version is owned by the metadata file, so write it back before staging the package.
+            metadataDocument = await this.writeModuleVersion(metadataFilePath, exportVersion);
+            await this.syncModuleVersionInDb(moduleName, exportVersion);
+        }
+
         const transactionKey = uuidv4();
         const exportRoot = path.join(this.getModulePackageExportsRoot(), transactionKey);
         const stagingDir = path.join(exportRoot, 'staging');
-        const archiveFileName = `${moduleName}.sldx`;
+        const archiveFileName = exportVersion ? `${moduleName}-v${exportVersion}.sldx` : `${moduleName}.sldx`;
         const archiveFilePath = path.join(exportRoot, archiveFileName);
 
         await fs.mkdir(path.join(stagingDir, 'solid-api', 'src'), { recursive: true });
@@ -300,8 +377,13 @@ export class ModulePackageService {
             });
         }
 
-        const overwriteExisting = dto.overwriteExisting ?? false;
-        if (preview.conflicts.length > 0 && !overwriteExisting) {
+        const isUpdate = transaction.mode === 'update';
+        if (isUpdate) {
+            await this.assertUpdateApproved(transaction, dto);
+        }
+
+        const overwriteExisting = isUpdate || (dto.overwriteExisting ?? false);
+        if (!isUpdate && preview.conflicts.length > 0 && !overwriteExisting) {
             throw new BadRequestException({
                 message: 'Conflicts were detected. Re-submit with overwriteExisting=true to continue.',
                 conflicts: preview.conflicts,
@@ -317,14 +399,17 @@ export class ModulePackageService {
             const moduleName = preview.module.name;
             const solidApiTarget = this.getSolidApiModuleTargetPath(moduleName);
             const solidUiTarget = this.getSolidUiModuleTargetPath(moduleName);
-            const extractRoot = transaction.archiveRootPrefix
-                ? path.join(transaction.extractDirPath as string, transaction.archiveRootPrefix.replace(/\/$/, ''))
-                : transaction.extractDirPath as string;
+            const extractRoot = this.resolveExtractRoot(transaction.extractDirPath as string, transaction.archiveRootPrefix);
             const solidApiSource = path.join(extractRoot, 'solid-api', 'src', moduleName);
             const solidUiSource = path.join(extractRoot, 'solid-ui', 'src', moduleName);
 
             await this.assertPathExists(solidApiSource, 'solid-api module source');
             await this.assertPathExists(solidUiSource, 'solid-ui module source');
+
+            if (isUpdate) {
+                transaction.backup = await this.backupModuleFolders(transactionKey, moduleName, transaction.installedVersion);
+                await this.writeStatusFile(transactionKey, transaction);
+            }
 
             if (overwriteExisting) {
                 await fs.rm(solidApiTarget, { recursive: true, force: true });
@@ -337,6 +422,12 @@ export class ModulePackageService {
             await fs.cp(solidApiSource, solidApiTarget, { recursive: true, force: overwriteExisting });
             await fs.cp(solidUiSource, solidUiTarget, { recursive: true, force: overwriteExisting });
 
+            // The installed metadata file records the installed version, whichever tool produced the package.
+            await this.writeModuleVersion(
+                await this.moduleMetadataHelperService.getModuleMetadataFilePath(moduleName),
+                transaction.incomingVersion,
+            );
+
             if (transaction.extractDirPath) {
                 await fs.rm(transaction.extractDirPath, { recursive: true, force: true });
                 transaction.extractDirPath = null;
@@ -345,10 +436,14 @@ export class ModulePackageService {
             transaction.status = ModulePackageStatus.awaiting_restart;
             transaction.currentStep = 'restart';
             transaction.outputs.import = [
+                isUpdate
+                    ? `Updated ${moduleName} from ${this.formatVersion(transaction.installedVersion)} to ${this.formatVersion(transaction.incomingVersion)}`
+                    : null,
                 `Placed solid-api module at ${solidApiTarget}`,
                 `Placed solid-ui module at ${solidUiTarget}`,
                 `Metadata file placed at ${preview.requiredPaths.metadataPath}`,
-            ].join('\n');
+                transaction.backup ? `Backed up the previous module folders to ${transaction.backup.path}` : null,
+            ].filter(Boolean).join('\n');
             await this.writeStatusFile(transactionKey, transaction);
             await this.syncActiveTransactionPointer(transaction);
 
@@ -444,15 +539,16 @@ export class ModulePackageService {
         await this.writeStatusFile(transactionKey, transaction);
 
         try {
+            const seedArgs = ['seed', '--modules-to-seed', moduleName, ...(dto.prune ? ['--prune'] : [])];
             const output = await this.commandService.executeCommandWithArgs({
                 command: 'npx',
-                args: ['-y', '@solidxai/solidctl@latest', 'seed', '--modules-to-seed', moduleName],
+                args: ['-y', '@solidxai/solidctl@latest', ...seedArgs],
                 cwd: this.getProjectRoot(),
             });
             transaction.status = ModulePackageStatus.completed;
             transaction.currentStep = 'done';
             transaction.outputs.seed = [
-                `solidctl seed --modules-to-seed ${moduleName} [success]`,
+                `solidctl ${seedArgs.join(' ')} [success]`,
                 output,
             ].filter(Boolean).join('\n');
             await this.writeStatusFile(transactionKey, transaction);
@@ -467,6 +563,110 @@ export class ModulePackageService {
             await this.writeStatusFile(transactionKey, transaction);
             await this.syncActiveTransactionPointer(transaction);
             return this.toStatusResponse(transaction);
+        }
+    }
+
+    // The most recent update backup of a module that has not been restored yet, so a finished update can still be rolled back.
+    @DisallowInProduction()
+    async getLatestBackup(moduleNameInput: string) {
+        const moduleName = (moduleNameInput ?? '').trim();
+        if (!moduleName) {
+            throw new BadRequestException('A module name is required to look up its backup.');
+        }
+
+        await this.cleanupModulePackageTransactions();
+
+        const candidates: ModulePackageStatusFile[] = [];
+        for (const entry of await this.readDirSafe(this.getModulePackageImportsRoot())) {
+            if (!entry.isDirectory() || !/^[a-zA-Z0-9-]+$/.test(entry.name)) {
+                continue;
+            }
+
+            try {
+                const transaction = await this.loadTransaction(entry.name);
+                if (
+                    transaction.moduleName === moduleName
+                    && transaction.backup
+                    && !transaction.restoredFromBackup
+                    && this.isRestorableStatus(transaction.status)
+                    && await this.pathExists(transaction.backup.path)
+                ) {
+                    candidates.push(transaction);
+                }
+            } catch (error) {
+                continue;
+            }
+        }
+
+        candidates.sort((left, right) => new Date(right.backup!.createdAt).getTime() - new Date(left.backup!.createdAt).getTime());
+        const latest = candidates[0];
+        if (!latest) {
+            return null;
+        }
+
+        const installedState = await this.resolveInstalledState(moduleName);
+        return {
+            ...this.toStatusResponse(latest),
+            currentVersion: installedState.version,
+        };
+    }
+
+    @DisallowInProduction()
+    async restoreBackup(transactionKey: string) {
+        const transaction = await this.loadTransaction(transactionKey);
+        const moduleName = transaction.moduleName;
+        const backup = transaction.backup;
+
+        if (!moduleName || !backup) {
+            throw new BadRequestException('This module package transaction has no backup to restore.');
+        }
+
+        if (!this.isRestorableStatus(transaction.status)) {
+            throw new BadRequestException(`A backup cannot be restored while the transaction is ${transaction.status}.`);
+        }
+
+        await this.assertPathExists(backup.path, 'module backup');
+
+        transaction.status = ModulePackageStatus.restore_running;
+        transaction.currentStep = 'restore';
+        transaction.errorMessage = null;
+        await this.writeStatusFile(transactionKey, transaction);
+
+        try {
+            const targets = [
+                { label: 'solid-api', source: path.join(backup.path, 'solid-api'), target: this.getSolidApiModuleTargetPath(moduleName) },
+                { label: 'solid-ui', source: path.join(backup.path, 'solid-ui'), target: this.getSolidUiModuleTargetPath(moduleName) },
+            ];
+            const outputs: string[] = [`Restored ${moduleName} ${this.formatVersion(backup.version)} from ${backup.path}`];
+
+            for (const { label, source, target } of targets) {
+                await fs.rm(target, { recursive: true, force: true });
+                if (await this.pathExists(source)) {
+                    await fs.mkdir(path.dirname(target), { recursive: true });
+                    await fs.cp(source, target, { recursive: true });
+                    outputs.push(`Restored ${label} module at ${target}`);
+                } else {
+                    outputs.push(`Removed ${label} module at ${target} (it did not exist before the update)`);
+                }
+            }
+
+            transaction.status = ModulePackageStatus.awaiting_restart;
+            transaction.currentStep = 'restart';
+            transaction.restoredFromBackup = true;
+            transaction.outputs.restore = outputs.join('\n');
+            transaction.outputs.build = null;
+            transaction.outputs.seed = null;
+            await this.writeStatusFile(transactionKey, transaction);
+            await this.syncActiveTransactionPointer(transaction);
+
+            return this.toStatusResponse(transaction);
+        } catch (error: any) {
+            transaction.status = ModulePackageStatus.failed;
+            transaction.currentStep = 'restore';
+            transaction.errorMessage = error.message ?? 'Failed to restore the module backup.';
+            await this.writeStatusFile(transactionKey, transaction);
+            await this.syncActiveTransactionPointer(transaction);
+            throw error;
         }
     }
 
@@ -509,6 +709,7 @@ export class ModulePackageService {
                 },
                 preview: {
                     module: { name: '', displayName: '' },
+                    ...this.getEmptyInstallState(),
                     manifest: this.getFallbackManifest(),
                     contentsSummary: {
                         totalEntries: normalizedEntries.length,
@@ -535,6 +736,12 @@ export class ModulePackageService {
         }
         if (!manifest.module?.name) {
             validationErrors.push('manifest.json module.name is required.');
+        }
+        if (manifest.module?.version !== undefined && manifest.module?.version !== null && !this.toValidVersion(manifest.module.version)) {
+            validationErrors.push(`manifest.json module.version "${manifest.module.version}" is not a valid semver version.`);
+        }
+        if (!this.toValidVersion(manifest.module?.version)) {
+            validationWarnings.push('This package is unversioned.');
         }
 
         const moduleName = manifest.module?.name ?? '';
@@ -578,7 +785,7 @@ export class ModulePackageService {
 
         const conflicts = await this.detectConflicts(moduleName);
         if (conflicts.length > 0) {
-            validationWarnings.push('The target module already exists locally and will require overwrite confirmation.');
+            validationWarnings.push(ModulePackageService.OVERWRITE_CONFIRMATION_WARNING);
         }
 
         const validation: ValidationPayload = {
@@ -589,6 +796,8 @@ export class ModulePackageService {
 
         const preview: PreviewPayload = {
             module: manifest.module,
+            ...this.getEmptyInstallState(),
+            incomingVersion: this.toValidVersion(manifest.module?.version),
             manifest,
             contentsSummary: {
                 totalEntries: normalizedEntries.length,
@@ -613,6 +822,336 @@ export class ModulePackageService {
             validation,
             preview,
         };
+    }
+
+    private getEmptyInstallState() {
+        return {
+            mode: 'install' as ModulePackageMode,
+            installedVersion: null,
+            incomingVersion: null,
+            versionComparison: null,
+            requiresVersionAcknowledgement: false,
+            identicalContent: false,
+            contentFingerprint: null,
+            changeSet: null,
+        };
+    }
+
+    // Works out whether this is an install or an update of an existing module and fills the
+    // version / change-set parts of the preview. Runs after extraction because it needs file contents.
+    private async applyInstallStateToPreview(parsed: ParsedArchive, extractRoot: string, expectedModuleName: string | null) {
+        const { preview, validation } = parsed;
+        const moduleName = parsed.manifest.module?.name ?? '';
+
+        if (expectedModuleName && moduleName !== expectedModuleName) {
+            validation.errors.push(`This package is for module "${moduleName || 'unknown'}", but you are updating "${expectedModuleName}".`);
+        }
+
+        if (moduleName) {
+            validation.errors.push(...await this.verifyArchiveChecksums(parsed.manifest, extractRoot));
+
+            const incomingChecksums = await this.computeModuleContentChecksums(
+                path.join(extractRoot, 'solid-api', 'src', moduleName),
+                path.join(extractRoot, 'solid-ui', 'src', moduleName),
+                moduleName,
+            );
+            preview.contentFingerprint = this.computeContentFingerprint(incomingChecksums);
+
+            const installedState = await this.resolveInstalledState(moduleName);
+            preview.versionComparison = this.compareModuleVersions(installedState, preview.incomingVersion);
+
+            if (installedState.installed) {
+                const installedChecksums = await this.computeModuleContentChecksums(
+                    this.getSolidApiModuleTargetPath(moduleName),
+                    this.getSolidUiModuleTargetPath(moduleName),
+                    moduleName,
+                );
+
+                preview.mode = 'update';
+                preview.installedVersion = installedState.version;
+                preview.identicalContent = this.computeContentFingerprint(installedChecksums) === preview.contentFingerprint;
+                preview.changeSet = {
+                    solidApi: this.diffChecksums(installedChecksums, incomingChecksums, `solid-api/src/${moduleName}/`),
+                    solidUi: this.diffChecksums(installedChecksums, incomingChecksums, `solid-ui/src/${moduleName}/`),
+                };
+                preview.requiresVersionAcknowledgement = preview.identicalContent
+                    || ModulePackageService.VERSION_ACKNOWLEDGEMENT_COMPARISONS.includes(preview.versionComparison);
+                preview.nextActions = [
+                    'Review the version change and the files that will change.',
+                    'Approve the update to replace the module folders. The current folders are backed up first.',
+                    'Wait for service restart, then run build and seed.',
+                ];
+
+                validation.warnings = validation.warnings.filter((warning) => warning !== ModulePackageService.OVERWRITE_CONFIRMATION_WARNING);
+                validation.warnings.push(...this.buildUpdateWarnings(preview));
+            }
+        }
+
+        validation.valid = validation.errors.length === 0;
+    }
+
+    private buildUpdateWarnings(preview: PreviewPayload): string[] {
+        const installed = this.formatVersion(preview.installedVersion);
+        const incoming = this.formatVersion(preview.incomingVersion);
+        const warnings: string[] = [];
+
+        if (preview.versionComparison === 'downgrade') {
+            warnings.push(`This package (${incoming}) is older than the installed version (${installed}).`);
+        } else if (preview.versionComparison === 'same') {
+            warnings.push(preview.identicalContent
+                ? `${installed} is already installed with identical content.`
+                : `${installed} is already installed, but this package's content is different.`);
+        } else if (preview.versionComparison === 'legacy_package' && preview.installedVersion) {
+            warnings.push(`The installed module is ${installed}, but this package is unversioned. After the update the module will be unversioned.`);
+        }
+
+        if (preview.identicalContent && preview.versionComparison !== 'same') {
+            warnings.push('The package content is identical to the installed module.');
+        }
+
+        warnings.push('Updating replaces the solid-api and solid-ui module folders. Local changes inside them are kept only in the backup.');
+        return warnings;
+    }
+
+    private compareModuleVersions(installedState: InstalledModuleState, incomingVersion: string | null): ModulePackageVersionComparison {
+        if (!installedState.installed) {
+            return 'new';
+        }
+        if (!incomingVersion) {
+            return 'legacy_package';
+        }
+        if (!installedState.version) {
+            return 'first_version';
+        }
+
+        const comparison = semver.compare(incomingVersion, installedState.version);
+        return comparison > 0 ? 'upgrade' : comparison === 0 ? 'same' : 'downgrade';
+    }
+
+    private async assertUpdateApproved(transaction: ModulePackageStatusFile, dto: ConfirmModulePackageImportDto) {
+        const moduleName = transaction.moduleName as string;
+        const incomingVersion = transaction.incomingVersion ?? null;
+
+        if ((dto.confirmedVersion ?? null) !== incomingVersion) {
+            throw new BadRequestException({
+                message: `Approve the update to ${this.formatVersion(incomingVersion)} to continue.`,
+                incomingVersion,
+            });
+        }
+
+        if (transaction.preview?.requiresVersionAcknowledgement && !dto.acknowledgeVersionChange) {
+            throw new BadRequestException(
+                'This update is a reinstall, a downgrade, identical content or an unversioned package. Acknowledge the version change to continue.',
+            );
+        }
+
+        const currentState = await this.resolveInstalledState(moduleName);
+        if (!currentState.installed || currentState.version !== transaction.installedVersion) {
+            throw new BadRequestException(
+                `The installed module changed since this package was previewed (now ${this.formatVersion(currentState.version)}). Upload the package again to refresh the preview.`,
+            );
+        }
+    }
+
+    private async resolveInstalledState(moduleName: string): Promise<InstalledModuleState> {
+        const metadataFilePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(moduleName);
+        const installed = (await this.pathExists(this.getSolidApiModuleTargetPath(moduleName)))
+            || (await this.pathExists(this.getSolidUiModuleTargetPath(moduleName)))
+            || (await this.pathExists(metadataFilePath));
+
+        let version: string | null = null;
+        if (await this.pathExists(metadataFilePath)) {
+            try {
+                const metadataDocument = JSON.parse(await fs.readFile(metadataFilePath, 'utf-8'));
+                version = this.toValidVersion(metadataDocument?.moduleMetadata?.version);
+            } catch (error) {
+                version = null;
+            }
+        }
+
+        return { installed, version };
+    }
+
+    private async verifyArchiveChecksums(manifest: ModulePackageManifest, extractRoot: string): Promise<string[]> {
+        const expected = manifest.checksums;
+        if (!expected || Object.keys(expected).length === 0) {
+            return [];
+        }
+
+        const actual = await this.computeDirectoryChecksums(extractRoot, ['manifest.json']);
+        const actualPaths = Object.keys(actual).filter((entry) => !this.isMacOsMetadataEntry(entry));
+        const missing = Object.keys(expected).filter((entry) => !(entry in actual));
+        const unexpected = actualPaths.filter((entry) => !(entry in expected));
+        const mismatched = Object.keys(expected).filter((entry) => entry in actual && actual[entry] !== expected[entry]);
+        const errors: string[] = [];
+
+        if (mismatched.length > 0) {
+            errors.push(`Checksum mismatch for ${this.summarizePaths(mismatched)}. The package may be corrupted or was modified after export.`);
+        }
+        if (missing.length > 0) {
+            errors.push(`Archive is missing files listed in manifest.json checksums: ${this.summarizePaths(missing)}.`);
+        }
+        if (unexpected.length > 0) {
+            errors.push(`Archive contains files not listed in manifest.json checksums: ${this.summarizePaths(unexpected)}.`);
+        }
+
+        return errors;
+    }
+
+    // Checksums keyed by package path (solid-api/src/<m>/..., solid-ui/src/<m>/...). The metadata file is
+    // hashed without its version so a version bump alone does not count as a content change.
+    private async computeModuleContentChecksums(solidApiDir: string, solidUiDir: string, moduleName: string): Promise<Record<string, string>> {
+        const checksums: Record<string, string> = {};
+        const roots: Array<[string, string]> = [
+            [`solid-api/src/${moduleName}`, solidApiDir],
+            [`solid-ui/src/${moduleName}`, solidUiDir],
+        ];
+
+        for (const [prefix, rootDir] of roots) {
+            if (!(await this.pathExists(rootDir))) {
+                continue;
+            }
+
+            const rootChecksums = await this.computeDirectoryChecksums(rootDir);
+            for (const [relativePath, checksum] of Object.entries(rootChecksums)) {
+                if (this.isMacOsMetadataEntry(relativePath) || path.posix.basename(relativePath) === '.DS_Store') {
+                    continue;
+                }
+                checksums[`${prefix}/${relativePath}`] = checksum;
+            }
+        }
+
+        const metadataKey = `solid-api/src/${moduleName}/metadata/${moduleName}-metadata.json`;
+        if (checksums[metadataKey]) {
+            const metadataText = await fs.readFile(path.join(solidApiDir, 'metadata', `${moduleName}-metadata.json`), 'utf-8');
+            try {
+                const versionless = this.withModuleVersion(JSON.parse(metadataText), null);
+                checksums[metadataKey] = createHash('sha256').update(JSON.stringify(versionless)).digest('hex');
+            } catch (error) {
+                // Unparseable metadata keeps its raw checksum.
+            }
+        }
+
+        return checksums;
+    }
+
+    private computeContentFingerprint(checksums: Record<string, string>): string {
+        const lines = Object.keys(checksums).sort().map((entry) => `${entry}:${checksums[entry]}`);
+        return createHash('sha256').update(lines.join('\n')).digest('hex');
+    }
+
+    private diffChecksums(installed: Record<string, string>, incoming: Record<string, string>, prefix: string): ModulePackageFileDiff {
+        const strip = (entries: string[]) => entries.filter((entry) => entry.startsWith(prefix)).map((entry) => entry.slice(prefix.length)).sort();
+        const installedPaths = Object.keys(installed);
+        const incomingPaths = Object.keys(incoming);
+
+        const added = strip(incomingPaths.filter((entry) => !(entry in installed)));
+        const removed = strip(installedPaths.filter((entry) => !(entry in incoming)));
+        const shared = incomingPaths.filter((entry) => entry in installed);
+        const modified = strip(shared.filter((entry) => installed[entry] !== incoming[entry]));
+        const unchangedCount = strip(shared.filter((entry) => installed[entry] === incoming[entry])).length;
+
+        return { added, modified, removed, unchangedCount };
+    }
+
+    private async backupModuleFolders(transactionKey: string, moduleName: string, version: string | null): Promise<ModulePackageBackup> {
+        const backupPath = path.join(this.getModulePackageBackupsRoot(), transactionKey);
+        await fs.rm(backupPath, { recursive: true, force: true });
+        await fs.mkdir(backupPath, { recursive: true });
+
+        const sources: Array<[string, string]> = [
+            ['solid-api', this.getSolidApiModuleTargetPath(moduleName)],
+            ['solid-ui', this.getSolidUiModuleTargetPath(moduleName)],
+        ];
+        for (const [label, sourcePath] of sources) {
+            if (await this.pathExists(sourcePath)) {
+                await fs.cp(sourcePath, path.join(backupPath, label), { recursive: true });
+            }
+        }
+
+        const backup: ModulePackageBackup = { path: backupPath, version, createdAt: new Date().toISOString() };
+        await fs.writeFile(path.join(backupPath, 'backup.json'), JSON.stringify({ moduleName, ...backup }, null, 2));
+        return backup;
+    }
+
+    private resolveExportVersion(currentVersion: string | null, dto: ExportModulePackageDto): string | null {
+        const explicitVersion = (dto.version ?? '').trim();
+        if (explicitVersion) {
+            const version = this.toValidVersion(explicitVersion);
+            if (!version) {
+                throw new BadRequestException(`"${explicitVersion}" is not a valid semver version.`);
+            }
+            // An explicit version only sets the initial version; versioned modules move forward with a bump.
+            if (currentVersion && version !== currentVersion) {
+                throw new BadRequestException(`This module is already at v${currentVersion}. Choose a patch, minor or major bump instead.`);
+            }
+            return version;
+        }
+
+        const bump = dto.bump ?? 'none';
+        if (bump === 'none') {
+            return currentVersion;
+        }
+
+        const nextVersion = semver.inc(currentVersion ?? '0.0.0', bump);
+        if (!nextVersion) {
+            throw new BadRequestException(`Unable to bump version ${currentVersion ?? '0.0.0'} by ${bump}.`);
+        }
+        return nextVersion;
+    }
+
+    // Writes the version into the metadata file, leaving the file untouched when it already matches.
+    private async writeModuleVersion(metadataFilePath: string, version: string | null) {
+        const currentDocument = JSON.parse(await fs.readFile(metadataFilePath, 'utf-8'));
+        if ((currentDocument?.moduleMetadata?.version ?? null) === version) {
+            return currentDocument;
+        }
+
+        const metadataDocument = this.withModuleVersion(currentDocument, version);
+        await fs.writeFile(metadataFilePath, JSON.stringify(metadataDocument, null, 2));
+        return metadataDocument;
+    }
+
+    // Returns a copy of the metadata document with moduleMetadata.version set right after name, or removed when null.
+    private withModuleVersion(metadataDocument: any, version: string | null) {
+        if (!metadataDocument?.moduleMetadata) {
+            return metadataDocument;
+        }
+
+        const { version: _previousVersion, ...moduleMetadata } = metadataDocument.moduleMetadata;
+        const entries = Object.entries(moduleMetadata);
+        if (version) {
+            entries.splice(entries.findIndex(([key]) => key === 'name') + 1, 0, ['version', version]);
+        }
+
+        return { ...metadataDocument, moduleMetadata: Object.fromEntries(entries) };
+    }
+
+    private async syncModuleVersionInDb(moduleName: string, version: string | null) {
+        try {
+            await this.dataSource.getRepository(ModuleMetadata).update({ name: moduleName }, { version });
+        } catch (error) {
+            this.logger.warn(`Failed to update the version of module ${moduleName} in the database: ${String(error)}`);
+        }
+    }
+
+    private toValidVersion(value: unknown): string | null {
+        return typeof value === 'string' ? semver.valid(value.trim()) : null;
+    }
+
+    private formatVersion(version: string | null | undefined) {
+        return version ? `v${version}` : 'unversioned';
+    }
+
+    private summarizePaths(paths: string[], limit = 5) {
+        const shown = paths.slice(0, limit).join(', ');
+        return paths.length > limit ? `${shown} and ${paths.length - limit} more` : shown;
+    }
+
+    private resolveExtractRoot(extractDirPath: string, archiveRootPrefix: string | null) {
+        return archiveRootPrefix
+            ? path.join(extractDirPath, archiveRootPrefix.replace(/\/$/, ''))
+            : extractDirPath;
     }
 
     private parseManifest(manifestText: string, validationErrors: string[]): ModulePackageManifest | null {
@@ -765,7 +1304,27 @@ export class ModulePackageService {
             throw new NotFoundException(`Module package transaction ${transactionKey} was not found.`);
         }
 
-        return JSON.parse(await fs.readFile(statusFilePath, 'utf-8')) as ModulePackageStatusFile;
+        return this.normalizeTransaction(JSON.parse(await fs.readFile(statusFilePath, 'utf-8')));
+    }
+
+    // Status files written before module versioning existed lack the update fields; default them so those imports still resume.
+    private normalizeTransaction(transaction: any): ModulePackageStatusFile {
+        return {
+            ...transaction,
+            mode: transaction.mode ?? 'install',
+            installedVersion: transaction.installedVersion ?? null,
+            incomingVersion: transaction.incomingVersion ?? this.toValidVersion(transaction.manifest?.module?.version),
+            versionComparison: transaction.versionComparison ?? null,
+            backup: transaction.backup ?? null,
+            restoredFromBackup: transaction.restoredFromBackup ?? false,
+            outputs: {
+                import: null,
+                build: null,
+                seed: null,
+                restore: null,
+                ...(transaction.outputs ?? {}),
+            },
+        };
     }
 
     private isResumableStatus(status: string | null | undefined) {
@@ -777,7 +1336,13 @@ export class ModulePackageService {
             ModulePackageStatus.build_succeeded,
             ModulePackageStatus.seed_running,
             ModulePackageStatus.seed_failed,
+            ModulePackageStatus.restore_running,
         ].includes(status as ModulePackageStatus);
+    }
+
+    private isRestorableStatus(status: string | null | undefined) {
+        return this.isResumableStatus(status)
+            || [ModulePackageStatus.failed, ModulePackageStatus.completed].includes(status as ModulePackageStatus);
     }
 
     private async createWorkingDir(transactionKey: string) {
@@ -813,6 +1378,13 @@ export class ModulePackageService {
         return path.join(
             this.getModulePackageRuntimeRoot(),
             'module-package-exports',
+        );
+    }
+
+    private getModulePackageBackupsRoot() {
+        return path.join(
+            this.getModulePackageRuntimeRoot(),
+            'module-package-backups',
         );
     }
 
@@ -921,6 +1493,7 @@ export class ModulePackageService {
     private async collectRuntimeCleanupSnapshot() {
         const importEntries = await this.readDirSafe(this.getModulePackageImportsRoot());
         const exportEntries = await this.readDirSafe(this.getModulePackageExportsRoot());
+        const backupEntries = await this.readDirSafe(this.getModulePackageBackupsRoot());
 
         const importTransactionEntries = importEntries.filter(
             (entry) => entry.isDirectory() && /^[a-zA-Z0-9-]+$/.test(entry.name),
@@ -941,6 +1514,7 @@ export class ModulePackageService {
             removedExportTransactions: exportTransactionEntries.length,
             removedImportLooseEntries: importLooseEntries.length,
             removedExportLooseEntries: exportLooseEntries.length,
+            removedBackups: backupEntries.filter((entry) => entry.isDirectory()).length,
             clearedActiveTransactionPointer: importEntries.some((entry) => entry.name === 'active-transaction.json'),
         };
     }
@@ -998,6 +1572,8 @@ export class ModulePackageService {
                 }
 
                 await fs.rm(path.join(importsRoot, transactionKey), { recursive: true, force: true });
+                // A backup never outlives its transaction.
+                await fs.rm(path.join(this.getModulePackageBackupsRoot(), transactionKey), { recursive: true, force: true });
 
                 if (activePointer?.transactionKey === transactionKey) {
                     await fs.rm(this.getActiveTransactionFilePath(), { force: true });
@@ -1072,6 +1648,12 @@ export class ModulePackageService {
             currentStep: transaction.currentStep,
             moduleName: transaction.moduleName,
             moduleDisplayName: transaction.moduleDisplayName,
+            mode: transaction.mode,
+            installedVersion: transaction.installedVersion,
+            incomingVersion: transaction.incomingVersion,
+            versionComparison: transaction.versionComparison,
+            backup: transaction.backup,
+            restoredFromBackup: transaction.restoredFromBackup,
             archiveFileName: transaction.archiveFileName,
             manifest: transaction.manifest,
             preview: transaction.preview,
@@ -1097,6 +1679,7 @@ export class ModulePackageService {
             },
             module: {
                 name: moduleName,
+                version: this.toValidVersion(metadataDocument?.moduleMetadata?.version) ?? undefined,
                 displayName: metadataDocument?.moduleMetadata?.displayName,
                 description: metadataDocument?.moduleMetadata?.description,
             },

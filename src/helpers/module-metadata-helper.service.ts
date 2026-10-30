@@ -24,7 +24,7 @@ export class ModuleMetadataHelperService {
             return JSON.parse(fileContent);
         }
         catch (error: any) {
-            this.logger.error(`module metadata configuration non existent at: ${configFilePath}`);
+            this.logger.error(`failed to read or parse module metadata at ${configFilePath}: ${error?.message ?? error}`);
         }
 
         return null;
@@ -47,7 +47,7 @@ export class ModuleMetadataHelperService {
     }
 
     private resolveModuleMetadataFolderPath(moduleName: string): string {
-        const dashModuleName = kebabCase(moduleName);
+        const dashModuleName = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(moduleName) ? moduleName : kebabCase(moduleName);
         return path.resolve(process.cwd(), 'src', dashModuleName, 'metadata');
     }
 
@@ -55,7 +55,7 @@ export class ModuleMetadataHelperService {
         if (!moduleName) {
             return '';
         }
-        const dashModuleName = kebabCase(moduleName);
+        const dashModuleName = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(moduleName) ? moduleName : kebabCase(moduleName);
         const filePath = path.join(
             this.resolveModuleMetadataFolderPath(dashModuleName),
             `${dashModuleName}-metadata.json`,

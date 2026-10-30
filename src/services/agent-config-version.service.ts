@@ -1,0 +1,190 @@
+import { BadRequestException, Logger } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
+import { EntityManager, EntityTarget, FindOptionsWhere, In } from 'typeorm';
+import { CommonEntity } from '../entities/common.entity';
+import { AgentRegistry } from '../entities/agent-registry.entity';
+import { CRUDService } from './crud.service';
+import { SolidBaseRepository } from '../repository/solid-base.repository';
+import { ModuleMetadataHelperService } from '../helpers/module-metadata-helper.service';
+import { syncEntityTagsToModuleMetadataJson } from '../subscribers/agenthub-metadata-sync.util';
+
+/*
+export async function bumpAgentConfigVersions(entityManager: EntityManager, agentIds: number[]): Promise<void> {
+  const ids = [...new Set(agentIds.filter((id) => Number.isInteger(id) && id > 0))];
+  if (!ids.length) return;
+
+  const column = entityManager.connection.getMetadata(AgentRegistry).findColumnWithPropertyName('configVersion');
+  const versionColumn = entityManager.connection.driver.escape(column.databaseName);
+  await entityManager.createQueryBuilder()
+    .update(AgentRegistry)
+    .set({ configVersion: () => `COALESCE(${versionColumn}, 1) + 1` })
+    .whereInIds(ids)
+    .execute();
+}
+*/
+
+export async function markActiveAgentsDraft(entityManager: EntityManager, agentIds: number[]): Promise<void> {
+  const ids = [...new Set(agentIds.filter((id) => Number.isInteger(id) && id > 0))];
+  if (!ids.length) return;
+
+  await entityManager.createQueryBuilder()
+    .update(AgentRegistry)
+    .set({ status: 'draft' })
+    .whereInIds(ids)
+    .andWhere('status = :status', { status: 'active' })
+    .execute();
+}
+
+export async function agentIdsForLinks(entityManager: EntityManager, linkEntity: EntityTarget<any>, linkIds: number[]): Promise<number[]> {
+  if (!linkIds.length) return [];
+  const links = await entityManager.getRepository(linkEntity).find({
+    where: { id: In(linkIds) },
+    relations: { agentRegistry: true },
+  });
+  return links.map((link) => link.agentRegistry?.id).filter((id): id is number => Number.isInteger(id));
+}
+
+export async function agentIdsForCatalog(
+  entityManager: EntityManager,
+  linkEntity: EntityTarget<any>,
+  catalogRelation: string,
+  catalogIds: number[],
+): Promise<number[]> {
+  if (!catalogIds.length) return [];
+  const links = await entityManager.getRepository(linkEntity).find({
+    where: { [catalogRelation]: { id: In(catalogIds) } },
+    relations: { agentRegistry: true },
+  });
+  return links.map((link) => link.agentRegistry?.id).filter((id): id is number => Number.isInteger(id));
+}
+
+export abstract class AgentConfigLinkService<T extends CommonEntity> extends CRUDService<T> {
+  constructor(
+    entityManager: EntityManager,
+    repo: SolidBaseRepository<T>,
+    modelName: string,
+    moduleRef: ModuleRef,
+    private readonly linkEntity: EntityTarget<T>,
+  ) {
+    super(entityManager, repo, modelName, 'agent-hub', moduleRef);
+  }
+
+  override async create(createDto: any, files: Express.Multer.File[] = [], solidRequestContext: any = {}): Promise<T> {
+    const saved = await super.create(createDto, files, solidRequestContext);
+    await markActiveAgentsDraft(this.entityManager, await agentIdsForLinks(this.entityManager, this.linkEntity, [saved.id]));
+    return saved;
+  }
+
+  override async createMany(createDtos: any[], solidRequestContext: any = {}): Promise<T[]> {
+    const saved = await super.createMany(createDtos, solidRequestContext);
+    await markActiveAgentsDraft(this.entityManager, await agentIdsForLinks(this.entityManager, this.linkEntity, saved.map((row) => row.id)));
+    return saved;
+  }
+
+  override async update(id: number, updateDto: any, files: Express.Multer.File[] = [], isPartialUpdate = false, solidRequestContext: any = {}, isUpdate = false): Promise<T> {
+    const before = await agentIdsForLinks(this.entityManager, this.linkEntity, [id]);
+    const saved = await super.update(id, updateDto, files, isPartialUpdate, solidRequestContext, isUpdate);
+    const after = await agentIdsForLinks(this.entityManager, this.linkEntity, [saved.id]);
+    await markActiveAgentsDraft(this.entityManager, [...before, ...after]);
+    return saved;
+  }
+
+  override async delete(id: number, solidRequestContext: any = {}) {
+    const agentIds = await agentIdsForLinks(this.entityManager, this.linkEntity, [id]);
+    const result = await super.delete(id, solidRequestContext);
+    await markActiveAgentsDraft(this.entityManager, agentIds);
+    return result;
+  }
+
+  override async deleteMany(ids: number[], solidRequestContext: any = {}) {
+    const agentIds = await agentIdsForLinks(this.entityManager, this.linkEntity, ids);
+    const result = await super.deleteMany(ids, solidRequestContext);
+    await markActiveAgentsDraft(this.entityManager, agentIds);
+    return result;
+  }
+}
+
+export abstract class AgentConfigCatalogService<T extends CommonEntity & {
+  type: string;
+  name: string;
+  module?: { name: string };
+  tags?: Array<{ name: string }>;
+}> extends CRUDService<T> {
+  protected readonly metadataSyncLogger = new Logger(AgentConfigCatalogService.name);
+  constructor(
+    entityManager: EntityManager,
+    repo: SolidBaseRepository<T>,
+    modelName: string,
+    moduleRef: ModuleRef,
+    private readonly linkEntity: EntityTarget<any>,
+    private readonly catalogRelation: string,
+  ) {
+    super(entityManager, repo, modelName, 'agent-hub', moduleRef);
+  }
+
+  private agentIds(catalogIds: number[]) {
+    return agentIdsForCatalog(this.entityManager, this.linkEntity, this.catalogRelation, catalogIds);
+  }
+
+  // SolidX catalog rows are seeded by Core and are read-only.
+  private async assertEditable(ids: number[]) {
+    const locked = await this.repo.find({ where: { id: In(ids), type: 'solidx' } as FindOptionsWhere<T>, select: { id: true } as any });
+    if (locked.length) {
+      throw new BadRequestException(`SolidX ${this.modelName} records cannot be modified. Invalid Ids ${locked.map((row) => row.id).join(', ')}.`);
+    }
+  }
+
+  override async create(createDto: any, files: Express.Multer.File[] = [], solidRequestContext: any = {}): Promise<T> {
+    const saved = await super.create(createDto, files, solidRequestContext);
+    await markActiveAgentsDraft(this.entityManager, await this.agentIds([saved.id]));
+    return saved;
+  }
+
+  override async createMany(createDtos: any[], solidRequestContext: any = {}): Promise<T[]> {
+    const saved = await super.createMany(createDtos, solidRequestContext);
+    await markActiveAgentsDraft(this.entityManager, await this.agentIds(saved.map((row) => row.id)));
+    return saved;
+  }
+
+  override async update(id: number, updateDto: any, files: Express.Multer.File[] = [], isPartialUpdate = false, solidRequestContext: any = {}, isUpdate = false): Promise<T> {
+    await this.assertEditable([id]);
+    const before = await this.agentIds([id]);
+    const saved = await super.update(id, updateDto, files, isPartialUpdate, solidRequestContext, isUpdate);
+    if ('tagsCommand' in updateDto) {
+      const metadataKey = this.modelName === 'agentSkillRegistry' ? 'agenthubSkills' : 'agenthubTools';
+      const entity = await this.repo.findOne({
+        where: { id: saved.id } as FindOptionsWhere<T>,
+        relations: { module: true, tags: true } as any,
+      });
+      if (entity) {
+        await syncEntityTagsToModuleMetadataJson(
+          entity.module?.name,
+          metadataKey,
+          entity.name,
+          entity.tags ?? [],
+          this.moduleRef.get(ModuleMetadataHelperService, { strict: false }),
+          this.metadataSyncLogger,
+        );
+      }
+    }
+    const after = await this.agentIds([saved.id]);
+    await markActiveAgentsDraft(this.entityManager, [...before, ...after]);
+    return saved;
+  }
+
+  override async delete(id: number, solidRequestContext: any = {}) {
+    await this.assertEditable([id]);
+    const agentIds = await this.agentIds([id]);
+    const result = await super.delete(id, solidRequestContext);
+    await markActiveAgentsDraft(this.entityManager, agentIds);
+    return result;
+  }
+
+  override async deleteMany(ids: number[], solidRequestContext: any = {}) {
+    await this.assertEditable(ids);
+    const agentIds = await this.agentIds(ids);
+    const result = await super.deleteMany(ids, solidRequestContext);
+    await markActiveAgentsDraft(this.entityManager, agentIds);
+    return result;
+  }
+}

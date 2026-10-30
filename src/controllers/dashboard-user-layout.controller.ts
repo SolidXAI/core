@@ -5,10 +5,7 @@ import { DashboardUserLayoutService } from '../services/dashboard-user-layout.se
 import { CreateDashboardUserLayoutDto } from '../dtos/create-dashboard-user-layout.dto';
 import { UpdateDashboardUserLayoutDto } from '../dtos/update-dashboard-user-layout.dto';
 
-enum ShowSoftDeleted {
-  INCLUSIVE = "inclusive",
-  EXCLUSIVE = "exclusive",
-}
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Solid Core')
 @Controller('dashboard-user-layout')

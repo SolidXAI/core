@@ -484,7 +484,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.messageBodyMentions = postDto.messageBodyMentions;
         chatterMessage.coModelEntityId = postDto.coModelEntityId;
         chatterMessage.coModelName = coModelName;
-        chatterMessage.modelUserKey = postDto.modelUserKey ?? null;
+        chatterMessage.modelUserKey = this.toUserKeyString(postDto.modelUserKey);
         // Left unset otherwise, so the @CreateDateColumn default still applies.
         if (options.createdAt) {
             chatterMessage.createdAt = options.createdAt;
@@ -945,7 +945,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.coModelEntityId = entity.id;
         chatterMessage.coModelName = model?.singularName;
         chatterMessage.modelDisplayName = model?.displayName;
-        chatterMessage.modelUserKey = entity[model?.userKeyField?.name];
+        chatterMessage.modelUserKey = this.toUserKeyString(entity[model?.userKeyField?.name]);
         chatterMessage.messageBody = `New ${model?.displayName} created`;
         this.stampMessageAuditFields(chatterMessage, userId);
 
@@ -1057,7 +1057,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.coModelEntityId = entity?.id;
         chatterMessage.coModelName = model?.singularName;
         chatterMessage.modelDisplayName = model.displayName;
-        chatterMessage.modelUserKey = entity[model?.userKeyField?.name];
+        chatterMessage.modelUserKey = this.toUserKeyString(entity[model?.userKeyField?.name]);
         chatterMessage.messageBody = `${model?.displayName} updated`;
         this.stampMessageAuditFields(chatterMessage, userId);
 
@@ -1115,7 +1115,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.coModelEntityId = databaseEntity?.id;
         chatterMessage.coModelName = model?.singularName;
         chatterMessage.modelDisplayName = model?.displayName;
-        chatterMessage.modelUserKey = databaseEntity[model?.userKeyField?.name];
+        chatterMessage.modelUserKey = this.toUserKeyString(databaseEntity[model?.userKeyField?.name]);
         chatterMessage.messageBody = `${model?.displayName} deleted`;
 
         this.stampMessageAuditFields(chatterMessage, userId);
@@ -1179,36 +1179,67 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         if (field.type === 'relation') {
             if (field.relationType === "many-to-one") {
-                if (value.name) {
-                    return value.name;
-                }
-
-                try {
-                    const relatedModel = await this.modelMetadataRepo.findOne({
-                        where: { singularName: field.relationCoModelSingularName || field.relation },
-                        relations: { userKeyField: true }
-                    });
-
-                    if (relatedModel && relatedModel.userKeyField) {
-                        const userKeyFieldName = relatedModel.userKeyField.name;
-                        return value[userKeyFieldName] ? value[userKeyFieldName].toString() : '';
-                    }
-
-                    if (value.id) {
-                        return value.id.toString();
-                    }
-                } catch (error: any) {
-                    console.error('Error fetching related model metadata:', error);
-                    return value.id ? value.id.toString() : '';
-                }
+                const relatedModel = await this.loadRelatedModelForDisplay(field);
+                return this.resolveRelationDisplayValue(value, relatedModel?.userKeyField?.name);
             }
 
             if (field.relationType === 'many-to-many') {
-                return value.map(item => item.name).join(', ');
+                if (!Array.isArray(value)) {
+                    const relatedModel = await this.loadRelatedModelForDisplay(field);
+                    return this.resolveRelationDisplayValue(value, relatedModel?.userKeyField?.name);
+                }
+
+                const relatedModel = await this.loadRelatedModelForDisplay(field);
+                const userKeyFieldName = relatedModel?.userKeyField?.name;
+                return value
+                    .map(item => this.resolveRelationDisplayValue(item, userKeyFieldName))
+                    .filter(Boolean)
+                    .join(', ');
             }
         }
 
         return value.toString();
+    }
+
+    private async loadRelatedModelForDisplay(field: any): Promise<any | null> {
+        try {
+            return await this.modelMetadataRepo.findOne({
+                where: { singularName: field.relationCoModelSingularName || field.relation },
+                relations: { userKeyField: true }
+            });
+        } catch (error: any) {
+            this._logger.warn(`Unable to load related model metadata for audit display: ${error?.message ?? error}`);
+            return null;
+        }
+    }
+
+    private resolveRelationDisplayValue(value: any, userKeyFieldName?: string): string {
+        if (value === null || value === undefined) {
+            return '';
+        }
+
+        if (typeof value !== 'object') {
+            return String(value);
+        }
+
+        const candidateKeys = [
+            userKeyFieldName,
+            'fullName',
+            'displayName',
+            'username',
+            'name',
+            'title',
+            'id',
+        ].filter(Boolean) as string[];
+
+        for (const key of candidateKeys) {
+            const candidate = value[key];
+            if (candidate !== null && candidate !== undefined && String(candidate).trim() !== '') {
+                return String(candidate);
+            }
+        }
+
+        return '';
     }
 
     private hasValueChanged(newValue: any, oldValue: any): boolean {
@@ -1522,5 +1553,11 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             },
             records: entities
         };
+    }
+
+    // model_user_key is a varchar column, but a model's user key field can be numeric (e.g. an int `id`).
+    // Drivers like mssql reject non-string values for string parameters, so always persist it as a string.
+    private toUserKeyString(value: unknown): string | null {
+        return value === null || value === undefined ? null : String(value);
     }
 }

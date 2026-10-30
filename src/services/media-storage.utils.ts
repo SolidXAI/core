@@ -1,10 +1,8 @@
 import { ConfigService } from '@nestjs/config';
-import * as path from 'path';
 import { FieldMetadata } from 'src/entities/field-metadata.entity';
 import { MediaStorageProviderMetadata } from 'src/entities/media-storage-provider-metadata.entity';
 import { SettingService } from 'src/services/setting.service';
-import { DEFAULT_MEDIA_FILE_STORAGE_DIR } from 'src/services/settings/default-settings-provider.service';
-import type { SolidCoreSetting } from 'src/services/settings/default-settings-provider.service';
+import { resolveDiskMediaPath } from 'src/services/file/media-storage-paths';
 import { normalizeUploadedFileName } from 'src/constants/media-file-types';
 
 // Keeps the joined path well clear of filesystem NAME_MAX (255 on ext4/APFS) once the
@@ -48,19 +46,15 @@ export function buildStoredMediaFileName(file: Pick<Express.Multer.File, 'filena
   return `${file.filename}-${sanitizeStoredMediaFileName(file.originalname)}`;
 }
 
-// Resolves the on-disk path for a media file based on settings and provider visibility.
-export function buildDiskMediaPath(fileName: string,settingService: Pick<SettingService, 'getConfigValue'>,storageProvider?: Pick<MediaStorageProviderMetadata, 'localPath' | 'isPublic'>,): string {
-  const publicBase = settingService.getConfigValue<SolidCoreSetting>('fileStorageDir') || DEFAULT_MEDIA_FILE_STORAGE_DIR;
-  const privateBase = `${publicBase}-private`;
-  // const localPath = storageProvider?.localPath;
-  // const isUsingLegacyDefaultPath = localPath === publicBase || localPath === privateBase || localPath === privateBase;
-  const providerBase = storageProvider?.isPublic === false ? privateBase : publicBase
-
-  if ( path.isAbsolute(fileName) || fileName.startsWith(`${publicBase}/`) || fileName.startsWith(`${privateBase}/`) ) {
-    return fileName;
-  }
-
-  return `${providerBase}/${fileName}`;
+// Resolves the on-disk path for a media file based on provider visibility. Disk locations
+// come from env (see media-storage-paths.ts) so they always match what ServeStaticModule
+// serves; the settingService argument is kept only for signature compatibility.
+export function buildDiskMediaPath(
+  fileName: string,
+  _settingService: Pick<SettingService, 'getConfigValue'>,
+  storageProvider?: Pick<MediaStorageProviderMetadata, 'localPath' | 'isPublic'>,
+): string {
+  return resolveDiskMediaPath(fileName, storageProvider?.isPublic !== false);
 }
 
 // Returns the S3 region from the provider when present, otherwise falls back to app config.

@@ -18,6 +18,18 @@ export interface TestingUserSpec {
   fullName?: string;
   mobile?: string;
   roles?: string[];
+  /**
+   * Seed this user through the registered IExtensionUserCreationProvider, making it
+   * an instance of the app's extension entity rather than a base `User`.
+   *
+   * Absent means a base `User`, so existing specs are unaffected. Set it on users
+   * that carry extension fields (`userType` and the like) - without it those fields
+   * are ignored and a plain `User` is created.
+   *
+   * `roles` is ignored on a flagged user: the provider derives them from the
+   * extension fields, exactly as it does on the model's own CRUD form.
+   */
+  isExtensionUser?: boolean;
   [key: string]: any;
 }
 

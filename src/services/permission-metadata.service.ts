@@ -63,7 +63,11 @@ export class PermissionMetadataService extends CRUDService<PermissionMetadata> {
     if (useCache) {
       for (const role of uncachedRoles) {
         const permsForRole = fromDb.filter(p => p.roles?.some(r => r.name === role));
-        await this.cacheManager.set(this.buildPermissionsByRoleCacheKey(role), permsForRole);
+        // Do not cache empty permission sets. They are negative lookups and
+        // may become valid after a permission is assigned to the role.
+        if (permsForRole.length > 0) {
+          await this.cacheManager.set(this.buildPermissionsByRoleCacheKey(role), permsForRole);
+        }
       }
     }
 
@@ -94,11 +98,13 @@ export class PermissionMetadataService extends CRUDService<PermissionMetadata> {
     });
 
     if (useCache) {
-      await this.cacheManager.set(cacheKey, fromDb);
+      // Do not cache an empty result; permissions can be added after this miss.
+      if (fromDb.length > 0) {
+        await this.cacheManager.set(cacheKey, fromDb);
+      }
     }
 
     return fromDb.filter(p => p.name === permission);
   }
 
 }
-

@@ -48,7 +48,7 @@ export class PasswordFieldCrudManager implements FieldCrudManager {
         if(dto[this.options.fieldName]){
             dto[this.options.fieldName] = await this.options.hashingService.hash(dto[this.options.fieldName]);
             dto['passwordScheme'] = this.options.hashingService.name(); //Don't want to expose this in dto  // e.g., 'bcrypt'
-            dto['passwordHashVersion'] = this.options.hashingService.currentVersion(); //Don't want to expose this in dto // e.g., 1, 2, ...
+            dto['passwordSchemeVersion'] = this.options.hashingService.currentVersion(); //Don't want to expose this in dto // e.g., 1, 2, ...
         }
         return dto;
     }

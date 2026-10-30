@@ -8,6 +8,21 @@
 - `reporter/`: reporting interfaces + console reporter
 - `runner/`: lifecycle helpers + metadata runner
 
+## Browser Setup
+UI scenarios need a Chromium build. The npm `playwright` package ships no install script, so
+the binary is fetched separately.
+
+- **By default it is lazy.** The first test run that selects a UI scenario downloads Chromium
+  (~150MB) before the run starts, then reuses it. Runs filtered to API-only scenarios never
+  download anything, and neither do projects that have no UI scenarios.
+- **To fetch it at install time instead**, set `COMMON_UI_TEST_BROWSERS_EAGER_INSTALL=true`
+  either in the API project's `.env` or as a real environment variable. Useful for CI images.
+  A failed download never fails the install. Note that `npm install --ignore-scripts` skips
+  this entirely, in which case the lazy path still applies.
+- **In Docker**, browsers land in `~/.cache/ms-playwright` (Linux). A multi-stage build that
+  installs as `root` but runs as another user must set `PLAYWRIGHT_BROWSERS_PATH` to a shared
+  location, or the runtime user will not find the binary.
+
 ## Metadata Shape
 `TestingMetadata` lives under `testing` in module metadata JSON files.
 
@@ -131,8 +146,13 @@ Available tokens:
 - `${env:NAME}` (environment variables)
 - `${params.foo}` (scenario params)
 - `${res:saveAs.path}` (saved step results)
+- `${random:<generator>}` or `${random:<generator>(name=value, ...)}` (random test data; see below)
+- `${now:<kind>}` or `${now:<kind>(offset=+7d, format=DD/MM/YYYY)}` (the current date or time; see below)
 - `${data:modelUserKey["recUserKeyValue"].field}` (test data from `testing.data`)
 - `${data:modelUserKey["recUserKeyValue"]._rec}` (raw record object when used alone)
+
+`util.script` is the exception: it resolves its own `input`, where a value that is exactly one token keeps its
+type (a list stays a list), and its `script` is never interpolated. See *Op: `util.script`*.
 
 Test data lookup details:
 - Data is indexed as `data:<modelUserKey>["<recUserKeyValue>"]`.
@@ -165,6 +185,136 @@ Examples:
   ]
 }
 ```
+
+### Reading saved results
+`${res:<name>.<path>}` reads what an earlier step saved with `saveAs`. An `api.request` result has `status`,
+`headers`, `bodyText` and `bodyJson`. The examples read a `books` result whose body is:
+
+```json
+{ "records": [ { "id": 7, "title": "Dune" }, { "id": 8, "title": "Emma", "note": "" } ] }
+```
+
+Paths:
+- `${res:books.status}` gives `200`.
+- `${res:books.bodyJson.records.0.id}` gives `7`. A number in the path is a position in a list, counted from 0.
+- `${res:books.bodyJson.records[1].title}` gives `Emma`. Brackets and dots mean the same.
+- `${res:books.bodyJson.records.length}` gives `2`, the number of records.
+- `${res:books.bodyJson.records.0}` gives the whole first record, as JSON text.
+- `${res:created.headers.location}` reads a response header. Header names are lower case.
+
+A token becomes text, even when it is the whole value (except a `._rec` record, a secret that is not text, and
+`util.script`'s `input`). So in `assert.equals` write the expected value as text: `"expected": "7"`, not `7`.
+
+Transforms go after the path, each after a `|`:
+- `| match:PATTERN` runs a regular expression over the value and gives the part in brackets, or the whole match
+  when the pattern has no brackets.
+- `| default:VALUE` replaces a value that is null or empty.
+
+```json
+{ "then": { "op": "assert.equals", "with": { "actual": "${res:created.headers.location | match:/api/book/(\\d+)}", "expected": "42" } } },
+{ "and":  { "op": "api.request", "with": { "method": "GET", "url": "${env:API_BASE_URL}/api/order/${res:receipt.bodyText | match:ref=([A-Z0-9-]+)}" } } },
+{ "and":  { "op": "ui.fill", "with": { "selector": "#note", "value": "${res:books.bodyJson.records.1.note | default:none}" } } }
+```
+
+The first gives `42` from a `Location: /api/book/42` header. The second takes `BK-2026-0042` from a plain-text
+body such as `Created book id=42 ref=BK-2026-0042`. The third types `none`, because that record's note is empty.
+
+Each of these fails the step:
+- A path that does not exist (`Missing resource for token`). `default:` does not help here: it replaces only a
+  null or empty value.
+- A pattern that matches nothing.
+- A pattern that contains `}` or `|`: the `}` ends the token, and `|` starts another transform. Write `\d\d`
+  rather than `\d{2}`. For alternatives such as `(id|ref)`, use `util.script`.
+
+In a JSON file, double every backslash: `\\d` in the file reaches the pattern as `\d`. On a list or object,
+`match:` runs over its JSON text. For the last item of a list, an item found by a field value, or anything
+computed, use `util.script`.
+
+### Random test data
+Every generator, argument and value is listed on the docs page *Random Test Data* (`developer-docs/testing/random-test-data`); the table below is the short form.
+`${random:...}` generates realistic values that are never repeated within one run, so a run can
+create several records whose fields must be unique (emails, phone numbers, PANs, invoice numbers).
+Each run starts afresh. Every generator takes `unique=false` to allow repeats.
+
+| Generator | Arguments (default first) | Example |
+|---|---|---|
+| `firstName` | `locale`: `any`, `in`, `gb`, `us` | `Priya` |
+| `lastName` | `locale`: `any`, `in`, `gb`, `us` | `Sharma` |
+| `emailAddress` | `domain`: `example.com`; `format`: `first.last`, `firstlast`, `first_last`, `flast`, `random`; `digits` (after the name): `4`, 0–8; `length` (for `random`): `10`, 4–64 | `priya.sharma4821@example.com` |
+| `mobileNo` | `country`: `in`, `gb`, `us`; `format`: `digits`, `national`, `e164`, `international`; `fictional`: `false` (UK and US only) | India `9876543210`, `+91 98765 43210`; UK `07912 345678`, `+447912345678`; US `(415) 234-5678`, `+1 415-234-5678` |
+| `panNo` | `holderType`: `P`, `C`, `H`, `F`, `A`, `T`, `B`, `L`, `J`, `G` | `ABCPK1234Z` |
+| `date` | `from`: `-1y` and `to`: `+1y` (`today`, `now`, `2026-10-17`, or shifts such as `-18y`, `+30d`, `+1d+2h`); `time`: `none`, `random`, or a window `09:00-18:00`; `format`: a dayjs pattern, `iso` or `epoch` (default `YYYY-MM-DD`); `tz`: `local`, `utc` or `Asia/Kolkata`; `unique`: **`false`** | `1987-04-12`, `03/11/2026` |
+| `invoiceId` | `prefix`: `INV` (empty for none); `separator`: `-`, `/`, `_`, `none`; `length` (digits): `8`, 4–20; `date`: `none`, `yyyy`, `yyyymm`, `yyyymmdd`, `yyyymmddhhmm`, `yyyymmddhhmmss` | `INV-00482913`, `INV-20261017143205-00482913` |
+
+- **Arguments** are `name=value` pairs: `${random:emailAddress(domain=acme.test, digits=0)}`. A simple
+  value (letters, digits and `. - / _ + : @`) is written bare. Anything else, such as a space, comma or
+  bracket, goes in quotes: `${now:date(format='D MMM, YYYY')}`. Prefer single quotes, since double quotes
+  must be escaped inside JSON; a backslash writes the quote character itself (`'it\'s'`).
+- **Each token gives a new value.** To type a value in one step and assert it in another, generate
+  it once with `util.random` and read it back with `${res:...}`:
+
+  ```json
+  { "given": { "op": "util.random", "with": { "generator": "emailAddress", "args": { "domain": "acme.test" } }, "saveAs": "newEmail" } },
+  { "when":  { "op": "ui.fill", "with": { "selector": "#email", "value": "${res:newEmail}" } } },
+  { "then":  { "op": "ui.expectText", "with": { "selector": ".profile-email", "equals": "${res:newEmail}" } } }
+  ```
+
+- **Phone numbers are real-looking, so they may belong to someone.** Run against a test SMS
+  provider, or pass `fictional=true` with `country=gb` (Ofcom's drama range, 07700 900000–900999) or
+  `country=us` (555-0100 to 555-0199 in each area code). India has no such range, so `country=in`
+  with `fictional=true` is an error. A phone number counts as
+  used whatever its format, so the same number cannot come back as `e164` after `digits`.
+- **Names come from fixed lists** (50 first and 50 last names per locale; 150 first and 123 last names for `any`). A run that asks for more
+  distinct names than the list holds fails with a message saying so; pass `unique=false` then.
+- **Emails** use `example.com` by default, which never receives mail. The digits after the name
+  keep addresses distinct across runs as well, where an application's unique-email rule would
+  otherwise reject one seen in an earlier run.
+- **PANs** have the right shape (3 letters, holder type, a letter, 4 digits, a letter). The last
+  letter is a check letter whose rule is not published, so it is random: fine for format checks,
+  not for a service that verifies the PAN.
+
+### Current date and time
+`${now:<kind>(offset=…, format=…, tz=…)}` gives the current moment, shifted by `offset`. It is not random:
+the same instant gives the same value.
+
+| Kind | Default format | Example |
+|---|---|---|
+| `date` | `YYYY-MM-DD` | `2026-10-17` |
+| `time` | `HH:mm:ss` | `14:46:15` |
+| `datetime` | `YYYY-MM-DD HH:mm:ss` | `2026-10-17 14:46:15` |
+
+ISO 8601 and epoch milliseconds are formats, not kinds: `${now:datetime(format=iso)}` gives `2026-10-17T14:46:15+05:30` (`…Z` with `tz=utc`), and `${now:datetime(format=epoch)}` gives `1792228575000`.
+
+- `offset` is `0` or terms such as `+7d`, `-1m`, `+1d+2h`: `y` years, `m` months, `w` weeks, `d` days,
+  `h` hours, `min` minutes, `s` seconds. A month shift stops at the end of a shorter month (31 Jan + 1m is 28 Feb).
+- `format` is a [dayjs](https://day.js.org/docs/en/display/format) pattern: `YYYY` year, `MM` month,
+  `DD` day, `HH` hour, `mm` minutes, `MMM` month name. Text in `[brackets]` is literal. Java and C# patterns
+  (`dd/mm/yyyy`) are refused with the token to use instead.
+- `tz` is `local` (the machine running the test), `utc`, or a zone such as `Asia/Kolkata`. A date near
+  midnight can differ between zones, so set `tz` when the app compares dates in one.
+- Two `${now:...}` tokens can differ by a second. To type a timestamp and then assert it, take it once with
+  `util.now` and `saveAs`.
+- `random:date` takes the same `format`, `tz` and shifts. It allows repeats by default (a year has
+  only 365 days); pass `unique=true` when a date must be distinct.
+
+Date recipes:
+
+| Need | Token |
+|---|---|
+| Date of birth, aged 18 to 60 | `${random:date(from=-60y, to=-18y)}` |
+| The same, written 12/04/1987 | `${random:date(from=-60y, to=-18y, format=DD/MM/YYYY)}` |
+| A date in the past year | `${random:date(from=-1y, to=today)}` |
+| A due date in the next 30 days | `${random:date(from=today, to=+30d)}` |
+| A date in a fixed period | `${random:date(from=2026-04-01, to=2027-03-31)}` |
+| A slot in business hours, next two weeks | `${random:date(from=today, to=+14d, time=09:00-18:00)}` |
+| A time in the next two hours | `${random:date(from=now, to=now+2h, time=random)}` |
+| Today | `${now:date}` |
+| A week from today | `${now:date(offset=+7d)}` |
+| Yesterday (an expired date) | `${now:date(offset=-1d)}` |
+| Exactly 18 years ago today (an age-limit boundary) | `${now:date(offset=-18y)}` |
+| The current moment as an ISO timestamp, in UTC | `${now:datetime(tz=utc, format=iso)}` |
+
+In `from`, `to` and `offset`, `now` and shifts in `h`, `min` or `s` mean an exact moment. Anything else (`today`, a fixed date, shifts in `y`, `m`, `w` or `d`) means the whole day, so `to=today` includes all of today. A shift with no base counts from the start of today, so a time ahead of the current moment is written with the base: `to=now+2h`, not `to=+2h`.
 
 ## Ops Reference
 
@@ -252,11 +402,14 @@ Options in `with`:
 - `timeoutMs` (optional, overrides the run-wide UI navigation timeout)
 
 ### **Op: `ui.expectUrl`**
-Description: Asserts the current page URL.
+Description: Waits for the page URL to match, then asserts it. Backed by `page.waitForURL`, so an
+assertion placed straight after a navigating click does not race the navigation. Returns
+immediately when the URL already matches.
 
 Options in `with`:
 - `equals` (optional)
 - `contains` (optional)
+- `timeoutMs` (optional, overrides the run-wide UI navigation timeout)
 
 ### **Op: `ui.fill`**
 Description: Fills an input or editable element.
@@ -288,6 +441,19 @@ Options in `with`:
 - `selector` (required)
 - `key` (required)
 - `timeoutMs` (optional, overrides the run-wide UI timeout)
+
+### **Op: `ui.uploadFile`**
+Description: Sets one or more files on a file input.
+
+Options in `with`:
+- `selector` (required, the `<input type="file">`)
+- `filePath` (required, a path or an array of paths)
+- `timeoutMs` (optional, overrides the run-wide UI timeout)
+
+Notes:
+- Paths are resolved against the run's working directory, so a relative path is relative to where
+  `solid test run` was invoked.
+- Pass an array to populate a `multiple` input; a single string is the common case.
 
 ### **Op: `ui.waitForManual`**
 Description: Pauses a headed Playwright run so a human can interact with the live browser, then resumes when Enter is pressed in the terminal.
@@ -326,6 +492,18 @@ Description: Waits for an element to be visible.
 Options in `with`:
 - `selector` (required)
 - `timeoutMs` (optional, overrides the run-wide UI timeout)
+
+### **Op: `ui.expectHidden`**
+Description: Waits for an element to be hidden — i.e. detached or no longer visible.
+
+Options in `with`:
+- `selector` (required)
+- `timeoutMs` (optional, overrides the run-wide UI timeout)
+
+Notes:
+- The counterpart to `ui.expectVisible`: use it to wait for a modal, spinner, toast or overlay to
+  **go away** before the next step acts. Prefer it over `util.sleep` for that — it returns the moment
+  the element disappears instead of always spending the full duration.
 
 ### **Op: `ui.expectText`**
 Description: Asserts the text content of an element.
@@ -391,6 +569,69 @@ Description: Fails the step if a required resource is missing.
 Options in `with`:
 - `resource` (required)
 - `message` (optional)
+
+### **Op: `util.random`**
+Description: Returns one random value (see *Random test data*), to keep with `saveAs`.
+
+Options in `with`:
+- `generator` (required): `firstName`, `lastName`, `emailAddress`, `mobileNo`, `panNo`, `date` or `invoiceId`
+- `args` (optional): the generator's arguments as an object, e.g. `{ "format": "e164" }`
+
+### **Op: `util.now`**
+Description: Returns the current date or time (see *Current date and time*), to keep with `saveAs`.
+
+Options in `with`:
+- `kind` (optional): `date` (default), `time` or `datetime`. For ISO 8601 or epoch milliseconds, pass
+  `"format": "iso"` or `"epoch"` in `args`
+- `args` (optional): `offset`, `format` and `tz` as an object, e.g. `{ "offset": "+7d" }`
+
+### **Op: `util.script`**
+Description: Runs a short TypeScript function over `input` and returns its result, to keep with `saveAs`.
+Use it for what a token cannot do: find an item by a condition, combine two responses, reshape a value
+for the next request. A fixed path (`${res:r.bodyJson.records.0.id}`) or a regex (`| match:`) needs no script;
+see *Reading saved results*.
+
+Options in `with`:
+- `script` (required): a function body, as text or a list of lines, that ends with `return`
+- `input` (optional): an object of values the script reads as `input.<name>`
+- `timeoutMs` (optional, on the step): stops a script that runs too long; defaults to `5000`, at most `30000`
+
+Tokens go in `input`, code goes in `script`:
+```json
+{ "when": { "op": "api.request", "with": { "method": "GET", "url": "${env:API_BASE_URL}/api/book" }, "saveAs": "books" } },
+{ "and":  { "op": "util.script", "with": {
+    "input": { "records": "${res:books.bodyJson.records}", "title": "${params.title}" },
+    "script": [
+      "const book = input.records.find((b: any) => b.title === input.title);",
+      "if (!book) throw new Error(`No book titled ${input.title}`);",
+      "return book.id;"
+    ] }, "saveAs": "bookId" } },
+{ "then": { "op": "api.request", "with": { "method": "DELETE", "url": "${env:API_BASE_URL}/api/book/${res:bookId}" } } }
+```
+
+Notes:
+- The script sees only `input` and `console`. Anything it needs from the run, such as saved results, params,
+  test data, secrets, or random and current values, goes in `input` as a token, so each step shows what it depends on.
+- A value in `input` that is exactly one token keeps its type: `"${res:books.bodyJson.records}"` arrives as a
+  list and `"${res:r.status}"` as a number. A token inside text (`"id-${res:r.status}"`) is text, as in any op.
+- Don't write tokens inside `script`; the step refuses them. Inside code, `${...}` belongs to JavaScript: in a
+  template literal such as `` `Book ${input.id}` `` it inserts a variable's value. So the runner leaves the
+  script exactly as written, and values reach it only through `input`.
+- The script runs synchronously: no `await`, `require`, timers or network. It gets a copy of `input`, so it
+  cannot change a saved result. While it runs, nothing else in the runner's process does (in test-hub, the
+  whole API), which is why the timeout is capped at 30 seconds. Keep scripts small: there is no memory limit.
+- It must return data (text, numbers, true/false, lists or objects). The result is saved as JSON, so a date
+  comes back as ISO text. With `saveAs`, a script that returns nothing fails. Without `saveAs`, a throw still
+  fails the step, so a script can act as a custom check.
+- `console.log`, `info`, `warn`, `error` and `debug` are collected and attached to the step's report as
+  *util.script console*, also when the script fails.
+- TypeScript is compiled with the project's `typescript` package. Where that is not installed, write plain JavaScript.
+- The script runs in a Node `vm` context that is given only text: `input` arrives as JSON, `console` is defined
+  inside it, and the result leaves as JSON. That keeps the runner's own objects, and with them `process` and
+  `require`, out of reach. Node does not promise that `vm` is a security boundary, though, so a script still
+  runs with the trust of whoever can change the scenario file, and in test-hub that file is the application's
+  tracked branch.
+- For I/O, async work or logic shared between scenarios, write a `test.spec`.
 
 ### **Op: `test.spec`**
 Description: Runs a custom test spec registered via testing.specs.
@@ -479,6 +720,7 @@ Common `test run` flags (all pass through solidctl unchanged):
 - `--ui-navigation-timeout-ms <number>` — default wait for `ui.goto`
 - `--timeout-ms <number>` / `--retries <number>` — scenario-level guard and retry count
 - `--scenario-ids <ids>` / `--include-tags <tags>` / `--skip-scenario-ids <ids>`
+- `--fail-fast [true|false]` — stop at the first failed scenario (the default). `--fail-fast false` runs every scenario, then still reports the run as failed and exits with code 1 if any failed
 - `--no-progress` — disable the interactive test progress footer
 
 ## Add A New Step (SOP)

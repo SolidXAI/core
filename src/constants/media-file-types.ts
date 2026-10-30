@@ -8,8 +8,71 @@ export type MediaFileTypeDefinition = {
     extension: string;
 };
 
-// Single source of truth for every supported media extension, its canonical MIME type,
-// and the coarse media category used across validation and UI metadata.
+/**
+ * Extensions that must never be accepted as media uploads, regardless of declared mimetype or
+ * admin-configured mediaTypes allowlist. Checked before any other resolution so a spoofed
+ * Content-Type (e.g. application/octet-stream on an .html file) can't bypass this.
+ *
+ * The default list below. A deployment can replace it wholesale via AB_DANGEROUS_EXTENSIONS
+ * (comma-separated) - e.g. to accept svg uploads, which some clients legitimately need. This
+ * replaces rather than narrows the list: whatever is set there becomes the entire denylist, so
+ * anything left out of it becomes an accepted upload type. See default-settings-provider.service.ts
+ * for the read-only "dangerousExtensions" setting that surfaces the effective list to admins.
+ */
+const DEFAULT_DANGEROUS_EXTENSIONS = [
+    'html', 'htm', 'xhtml', 'svg', 'xml',
+    'js', 'mjs', 'php', 'phtml', 'jsp', 'asp', 'aspx',
+    'exe', 'sh', 'bat', 'cmd', 'ps1', 'jar', 'dll',
+    'msi', 'msix', 'msp', 'com', 'scr', 'vbs', 'vbe', 'wsf', 'wsh', 'hta', 'cpl', 'pif', 'reg',
+];
+
+const parseExtensionList = (raw: string): string[] =>
+    raw.split(',').map(ext => ext.toLowerCase().trim().replace(/^\./, '')).filter(Boolean);
+
+const configuredDangerousExtensions = parseExtensionList(process.env.AB_DANGEROUS_EXTENSIONS ?? '');
+
+export const DANGEROUS_EXTENSIONS = new Set(
+    configuredDangerousExtensions.length > 0
+        ? configuredDangerousExtensions
+        : DEFAULT_DANGEROUS_EXTENSIONS
+);
+
+/**
+ * The mimetype gate must track the extension gate: a .svg upload arrives as image/svg+xml, so
+ * removing svg from DANGEROUS_EXTENSIONS while image/svg+xml stayed on a separate literal would
+ * still reject the upload at isDangerousMediaFile's second check - with a message pointing at
+ * nothing the operator changed. Deriving from a single mapping keeps the two in sync.
+ *
+ * Only browser-rendered types appear here, which is why the resulting set is short (a handful of
+ * entries against dozens of dangerous extensions): everything else is dangerous once downloaded
+ * and run, and the mimetype sent for those is typically application/octet-stream, which must stay
+ * allowed. When adding a browser-renderable extension to the denylist above, add it here too.
+ */
+const DANGEROUS_MIME_TYPES_BY_EXTENSION: Record<string, string[]> = {
+    html: ['text/html'],
+    htm: ['text/html'],
+    xhtml: ['application/xhtml+xml'],
+    svg: ['image/svg+xml'],
+};
+
+/**
+ * Mimetypes that are never safe to accept, regardless of extension. These render as active
+ * content in a browser (svg can carry <script>), so they are rejected even when the filename
+ * looks harmless. Kept in sync with DANGEROUS_EXTENSIONS via DANGEROUS_MIME_TYPES_BY_EXTENSION
+ * above, rather than maintained separately.
+ */
+export const DANGEROUS_MIME_TYPES = new Set(
+    Object.entries(DANGEROUS_MIME_TYPES_BY_EXTENSION)
+        .filter(([extension]) => DANGEROUS_EXTENSIONS.has(extension))
+        .flatMap(([, mimeTypes]) => mimeTypes)
+);
+
+// The set of media extensions the system currently recognises - its canonical MIME type, and the
+// coarse media category used across validation and UI metadata. Membership here means
+// "resolvable", not "safe": svg is included only when DANGEROUS_EXTENSIONS has been configured to
+// allow it (see below), since accepting it as an upload also makes it eligible for the inline-safe
+// serving path (INLINE_SAFE_EXTENSIONS further down) - safe there only because of the
+// Content-Security-Policy applied when serving it (solid-core.module.ts, media.controller.ts).
 export const MEDIA_FILE_TYPES: MediaFileTypeDefinition[] = [
     { mediaType: 'image', mimeType: 'image/png', extension: 'png' },
     { mediaType: 'image', mimeType: 'image/jpeg', extension: 'jpg' },
@@ -21,6 +84,12 @@ export const MEDIA_FILE_TYPES: MediaFileTypeDefinition[] = [
     { mediaType: 'image', mimeType: 'image/tiff', extension: 'tiff' },
     { mediaType: 'image', mimeType: 'image/heic', extension: 'heic' },
     { mediaType: 'image', mimeType: 'image/heif', extension: 'heif' },
+    // Only a media type when explicitly unblocked via AB_DANGEROUS_EXTENSIONS - see the file
+    // header comment. Hardcoded to svg specifically: unblocking e.g. html must not make html a
+    // media type, since it isn't a format the product supports as an upload.
+    ...(DANGEROUS_EXTENSIONS.has('svg')
+        ? []
+        : [{ mediaType: 'image', mimeType: 'image/svg+xml', extension: 'svg' } as MediaFileTypeDefinition]),
 
     { mediaType: 'audio', mimeType: 'audio/mpeg', extension: 'mp3' },
     { mediaType: 'audio', mimeType: 'audio/mp3', extension: 'mp3' },
@@ -96,28 +165,6 @@ export const MIME_TO_MEDIA_TYPE: Record<string, MediaCategory> = MEDIA_FILE_TYPE
     }
     return acc;
 }, {} as Record<string, MediaCategory>);
-
-/**
- * Extensions that must never be accepted as media uploads, regardless of declared mimetype or
- * admin-configured mediaTypes allowlist. Checked before any other resolution so a spoofed
- * Content-Type (e.g. application/octet-stream on an .html file) can't bypass this.
- */
-export const DANGEROUS_EXTENSIONS = new Set([
-    'html', 'htm', 'xhtml', 'svg', 'xml',
-    'js', 'mjs', 'php', 'phtml', 'jsp', 'asp', 'aspx',
-    'exe', 'sh', 'bat', 'cmd', 'ps1', 'jar', 'dll',
-    'msi', 'msix', 'msp', 'com', 'scr', 'vbs', 'vbe', 'wsf', 'wsh', 'hta', 'cpl', 'pif', 'reg',
-]);
-
-
-/**
- * Mimetypes that are never safe to accept, regardless of extension. These render as active
- * content in a browser (svg can carry <script>), so they are rejected even when the filename
- * looks harmless. Kept alongside DANGEROUS_EXTENSIONS so upload paths check both.
- */
-export const DANGEROUS_MIME_TYPES = new Set([
-    'image/svg+xml', 'text/html', 'application/xhtml+xml',
-]);
 
 /**
  * Percent-decodes a filename, repeating a bounded number of times so a double-encoded payload
@@ -264,6 +311,11 @@ export const EXT_TO_MEDIA_TYPE: Record<string, MediaCategory> = {
 /**
  * Extensions safe to serve inline with their natural Content-Type; everything else served from
  * media-files-storage is forced to application/octet-stream + Content-Disposition: attachment.
+ *
+ * svg is included here only when it's an accepted media type (see MEDIA_FILE_TYPES above) - and
+ * even then it's inline-safe only because both serve paths (ServeStaticModule in
+ * solid-core.module.ts, and the signed-URL download in media.controller.ts) attach a
+ * Content-Security-Policy to svg responses that neutralizes any embedded script.
  */
 export const INLINE_SAFE_EXTENSIONS = new Set<string>([
     ...IMAGE_EXTENSIONS,

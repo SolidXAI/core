@@ -4,6 +4,8 @@ import type { OpStep, ScenarioSpec } from "../contracts/testing-metadata.types";
 import type { SolidTestSpecResult } from "../contracts/test-spec.types";
 import type { Reporter } from "./reporter.types";
 
+type RunStartArgs = Parameters<NonNullable<Reporter["onRunStart"]>>[0];
+
 const ANSI_BOLD = "\u001b[1m";
 const ANSI_BOLD_OFF = "\u001b[22m";
 const ANSI_DIM = "\u001b[2m";
@@ -24,7 +26,7 @@ export class ProgressReporter implements Reporter {
 
   constructor(private readonly delegate: Reporter) {}
 
-  onRunStart(args: { total: number }): void {
+  onRunStart(args: RunStartArgs): void {
     this.total = args.total;
     this.startedAt = Date.now();
     this.completed = 0;

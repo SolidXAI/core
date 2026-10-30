@@ -5,10 +5,7 @@ import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 import { UpdateScheduledJobDto } from 'src/dtos/update-scheduled-job.dto';
 import { ScheduledJobService } from 'src/services/scheduled-job.service';
 
-enum ShowSoftDeleted {
-  INCLUSIVE = "inclusive",
-  EXCLUSIVE = "exclusive",
-}
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Solid Core')
 @Controller('scheduled-job')

@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsOptional, MaxLength, MinLength, IsString, Matches, IsBoolean } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, MaxLength, MinLength, IsString, Matches, IsBoolean, IsInt } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateSmsTemplateDto {
@@ -37,4 +37,14 @@ export class CreateSmsTemplateDto {
     @IsString()
     @ApiProperty()
     type: string;
+
+    @IsOptional()
+    @IsInt()
+    @ApiProperty({ required: false, description: 'Related module id' })
+    moduleId?: number;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ required: false, description: 'Related module user key' })
+    moduleUserKey?: string;
 }

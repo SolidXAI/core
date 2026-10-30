@@ -5,10 +5,7 @@ import { WorkflowTriggerExecutionService } from '../services/workflow-trigger-ex
 import { CreateWorkflowTriggerExecutionDto } from '../dtos/create-workflow-trigger-execution.dto';
 import { UpdateWorkflowTriggerExecutionDto } from '../dtos/update-workflow-trigger-execution.dto';
 
-enum ShowSoftDeleted {
-  INCLUSIVE = "inclusive",
-  EXCLUSIVE = "exclusive",
-}
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Solid Core')
 @Controller('workflow-trigger-execution')

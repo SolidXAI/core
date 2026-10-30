@@ -236,6 +236,15 @@ export class ConsoleReporter implements Reporter {
   }): void {
     const header = `ATTACH ${args.name} (${args.contentType})`;
     console.log(indentLines(header, `${STEP_INDENT}${INDENT}`));
+    // Don't dump binary payloads (e.g. screenshot bytes) to stdout — just note the size.
+    const ct = args.contentType.toLowerCase();
+    const isBinary =
+      Buffer.isBuffer(args.data) &&
+      (ct.startsWith("image/") || ct.startsWith("video/") || ct === "application/octet-stream");
+    if (isBinary) {
+      console.log(indentLines(`<${(args.data as Buffer).byteLength} bytes>`, `${STEP_INDENT}${INDENT}${INDENT}`));
+      return;
+    }
     const dataText = Buffer.isBuffer(args.data) ? args.data.toString("utf8") : String(args.data ?? "");
     if (!dataText.length) return;
     console.log(indentLines(dataText, `${STEP_INDENT}${INDENT}${INDENT}`));
