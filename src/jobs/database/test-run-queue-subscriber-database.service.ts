@@ -98,6 +98,10 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
         }
 
         let exitCode = 0;
+        // Why the run ended early, when it did. A failed scenario is reported by its own events, but a refusal before any
+        // scenario starts (a device that is not ready, a scenario that cannot run on it) has no scenario to carry the
+        // reason, so it goes out on run.end.
+        let failureReason: string | undefined;
         try {
             await runFromMetadata({
                 scenarios,
@@ -118,9 +122,10 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
         } catch (err: any) {
             // A failed scenario is surfaced via the run.end webhook, not as a job failure.
             exitCode = 1;
-            this.testRunLogger.warn(`Test run ${p.runId} completed with failures: ${err?.message ?? err}`);
+            failureReason = String(err?.message ?? err);
+            this.testRunLogger.warn(`Test run ${p.runId} completed with failures: ${failureReason}`);
         } finally {
-            await reporter.flushPending(exitCode);
+            await reporter.flushPending(exitCode, failureReason);
         }
 
         return { runId: p.runId, exitCode };
