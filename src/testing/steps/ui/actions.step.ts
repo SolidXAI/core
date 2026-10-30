@@ -1,10 +1,11 @@
 import type { TestContext } from "../../contracts/runtime-context.types";
 import type { OpStep } from "../../contracts/testing-metadata.types";
 import { StepRegistry } from "../../core/step-registry";
+import { resolveTarget, type TargetInput } from "../../adapters/ui/resolve-target";
 
-type ClickInput = { selector: string; timeoutMs?: number; optional?: boolean; force?: boolean; js?: boolean };
-type PressInput = { selector: string; key: string; timeoutMs?: number };
-type TypeInput = { selector: string; value: string; delayMs?: number; clear?: boolean; timeoutMs?: number };
+type ClickInput = TargetInput & { optional?: boolean; force?: boolean; js?: boolean };
+type PressInput = TargetInput & { key: string };
+type TypeInput = TargetInput & { value: string; delayMs?: number; clear?: boolean };
 
 function requirePage(ctx: TestContext, op: string) {
   if (!ctx.ui || !ctx.ui.page) {
@@ -24,22 +25,23 @@ export function registerActionSteps(registry: StepRegistry): void {
     // intermittent popup): if the element never appears/clicks in time, swallow
     // the error instead of failing the scenario.
     try {
+      const selector = await resolveTarget(ctx, step, input);
       // `js: true` invokes the element's native .click() in page context — the last
       // resort for a button a real click can't reach (e.g. a fixed drawer rendered
       // outside the viewport in headless). Waits for it to be attached first.
       if (input.js) {
-        const loc = page.locator(input.selector).first();
+        const loc = page.locator(selector).first();
         await loc.waitFor({ state: "attached", timeout: ctx.ui?.resolveTimeout(input.timeoutMs) });
         await loc.evaluate((el: any) => el.click());
       } else if (input.force) {
         // `force: true` bypasses actionability checks (e.g. an overlay intercepting
         // pointer events on a drawer/sheet button). Playwright's force still refuses
         // to click an element outside the viewport, so scroll it into view first.
-        const loc = page.locator(input.selector).first();
+        const loc = page.locator(selector).first();
         await loc.scrollIntoViewIfNeeded({ timeout: ctx.ui?.resolveTimeout(input.timeoutMs) });
         await loc.click({ timeout: ctx.ui?.resolveTimeout(input.timeoutMs), force: true });
       } else {
-        await page.click(input.selector, {
+        await page.click(selector, {
           timeout: ctx.ui?.resolveTimeout(input.timeoutMs),
         });
       }
@@ -57,7 +59,8 @@ export function registerActionSteps(registry: StepRegistry): void {
     if (!input.key) {
       throw new Error('Missing "key" in step.with for op "ui.press"');
     }
-    await page.press(input.selector, input.key, {
+    const selector = await resolveTarget(ctx, step, input);
+    await page.press(selector, input.key, {
       timeout: ctx.ui?.resolveTimeout(input.timeoutMs),
     });
   });
@@ -76,7 +79,7 @@ export function registerActionSteps(registry: StepRegistry): void {
       throw new Error('Missing "value" in step.with for op "ui.type"');
     }
     const timeout = ctx.ui?.resolveTimeout(input.timeoutMs);
-    const locator = page.locator(input.selector);
+    const locator = page.locator(await resolveTarget(ctx, step, input));
     if (input.clear !== false) {
       await locator.fill("", { timeout });
     }

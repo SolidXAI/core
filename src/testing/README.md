@@ -3,7 +3,7 @@
 ## Folder Structure
 - `contracts/`: metadata + runtime context types
 - `core/`: engine, registry, interpolation, utilities
-- `adapters/`: API (axios) and UI (Playwright) adapters
+- `adapters/`: API (axios), UI (Playwright) and mobile (Appium) adapters
 - `steps/`: step implementations grouped by domain
 - `reporter/`: reporting interfaces + console reporter
 - `runner/`: lifecycle helpers + metadata runner
@@ -22,6 +22,53 @@ the binary is fetched separately.
 - **In Docker**, browsers land in `~/.cache/ms-playwright` (Linux). A multi-stage build that
   installs as `root` but runs as another user must set `PLAYWRIGHT_BROWSERS_PATH` to a shared
   location, or the runtime user will not find the binary.
+
+## Mobile Setup
+Mobile scenarios (`"type": "mobile"`, ops `mobile.*`) drive an Android emulator or phone through an
+[Appium](https://appium.io) server. They are optional: nothing here is needed unless you run one.
+
+- **Appium 3** with the **UiAutomator2** driver (`appium driver install uiautomator2`), started on the
+  machine the device is attached to (`appium --port 4723`).
+- **Android SDK** with `platform-tools`, `emulator` and **`build-tools`**. Appium needs the build-tools'
+  `aapt2` to install an uploaded APK; its own doctor does not report this. Restart Appium after
+  installing SDK packages, because it caches where the tools are.
+- **`webdriverio`** installed in the app that runs the tests (`npm i webdriverio@^10.0.1`). It is an
+  optional peer dependency of this package, loaded only when a mobile scenario starts. Its current
+  release declares Node 22.19 or newer.
+- **A device.** Every run names its device (`udid` from `adb devices`). Core never lets Appium pick one,
+  and does not boot emulators: the caller (Test Hub) does that and passes the device serial.
+
+A run needs `RunnerOptions.mobile`, or the `mobile` block of `POST /test-runs`:
+
+```json
+{
+  "mobile": {
+    "appiumUrl": "http://localhost:4723",
+    "udid": "emulator-5554",
+    "appSource": "installed",
+    "appPackage": "com.acme.app",
+    "appActivity": ".MainActivity"
+  }
+}
+```
+
+- `appSource: "upload"` installs the APK at `appPath` (an absolute path on the Appium machine) and clears
+  the app's data at session start. `"installed"` opens an app that is already on the device and keeps its
+  data, restarting it so each session starts on its home screen.
+- Timeouts follow the UI adapter: `defaultTimeoutMs` (element waits, default 30 s) and
+  `navigationTimeoutMs` (app launch). A step's own `timeoutMs` overrides both.
+- All mobile scenarios in a run share one device session, in file order.
+- The whole run is recorded, but the video (`run.mp4`) is only kept when the run fails. Android records 180 s per
+  file, so a long run is recorded in chunks. Install `ffmpeg` on the Appium machine to get them merged; without it
+  you get the most recent chunk (up to 3 minutes), which is the part leading up to the failure. A failed scenario
+  also gets the device log (`console.json`). A screenshot (`screenshot.png`) is only attached when the run's
+  `capture.screenshotOnFailure` is on, because it is a binary upload. The device log is filtered
+  to what is useful: warnings and errors from anything, the app's own lines, and the React Native, crash and
+  WebView tags. Each entry's `type` is read from the Android priority in the log line; the newest 500 are kept.
+
+**Start every mobile scenario with `mobile.launch` and `"clearData": true`.** An app remembers things
+between scenarios (who is logged in, the cart), so one scenario can break the next. Leave `clearData` out
+only when a scenario deliberately relies on state prepared outside the test.
 
 ## Metadata Shape
 `TestingMetadata` lives under `testing` in module metadata JSON files.
@@ -513,6 +560,146 @@ Options in `with`:
 - `equals` (optional)
 - `contains` (optional)
 - `timeoutMs` (optional, overrides the run-wide UI timeout)
+
+### **Mobile ops (`mobile.*`)**
+Every op that takes a `locator` waits for the element to be displayed first. `with.timeoutMs` (or the
+step's `timeoutMs`) overrides the wait. `locator` is an object:
+
+```json
+{ "by": "accessibilityId", "value": "Login button" }
+```
+
+| `by` | Finds | Notes |
+|---|---|---|
+| `accessibilityId` | Android `content-desc`; React Native `accessibilityLabel` / `testID` | Preferred when unique |
+| `id` | Resource id | A bare id gets the app package prefixed (`edit` becomes `<package>:id/edit`). React Native apps have none. |
+| `text` / `textContains` | Visible text | Exact / partial |
+| `description` | `content-desc` through UiSelector | |
+| `uiautomator` | A raw `new UiSelector()...` expression | Escape hatch |
+| `xpath` | An XPath | Last resort; slower and fragile |
+
+Add `"index": 1` (0-based) to pick one match. A locator that matches more than one element **fails the
+step** unless it has an `index`. An `"android": { "by": ..., "value": ... }` block replaces `by`/`value`
+on Android, and `"ios"` does the same on iOS.
+
+A step waits by looking for the element about every half second and goes on as soon as it is there, so
+`timeoutMs` is the longest it will wait, not how long it waits. Each lookup is also held to the step's
+timeout: if the device does not answer a lookup in time (a busy phone can leave one unanswered for tens of
+seconds), the step fails with "The device did not answer while looking for ..." rather than running past
+its timeout. On Android the runner sets `appium:settings[waitForIdleTimeout]` to 500 ms; give a device a
+different value with `extraCapabilities` (Test Hub's "Default Appium capabilities" setting does this for
+every run).
+
+| Op | `with` | Does |
+|---|---|---|
+| `mobile.launch` | `clearData` (optional, default false), `grantPermissions` (optional, default true) | Stops the app, optionally wipes its data, starts it. Android clears an installed app in place. iOS has no "clear data": it removes the app and installs the uploaded build again (the Simulator's `.app`, an iPhone's `.ipa`), so `clearData` fails on an iOS device that has no build (see "The reset scenario") |
+| `mobile.reset` | – | `mobile.launch` with `clearData: true` |
+| `mobile.terminate` | – | Stops the app |
+| `mobile.tap` | `locator`, `optional` (optional) | Taps the element |
+| `mobile.type` | `locator`, `text`, `clear` (default true), `optional` (optional) | Sets the text; `clear: false` appends |
+| `mobile.clear` | `locator` | Clears the field |
+| `mobile.swipe` | `direction` (up/down/left/right), `percent` (0.1 to 1, default 0.75), `locator` (optional) | Swipes on the element, or the screen |
+| `mobile.scrollTo` | `locator`, `direction` (down/up, default down), `maxSwipes` (default 10) | Swipes until the element shows |
+| `mobile.back` | `optional` (optional) | Presses Back |
+| `mobile.hideKeyboard` | `method` (iPhone only, recorded by authoring: `driver`, `doneKey`, `tapOutside`, `swipeDown`) | Hides the keyboard if it is shown. On a real iPhone iOS has no hide action, so the keyboard's own Done key, a tap on a spot that is on no control, and a swipe down are tried in turn; the step passes with the first that works and fails when none does. The recorded `method` is tried first on a run |
+| `mobile.submit` | `action` (optional: `search`, `go`, `send`, `done`, `next`, `enter`) | Presses the keyboard's action key on the field that has focus, e.g. to run a search. Typing `\n` does not submit, because the field takes it as a character. Android performs the editor action (`done` when none is named; `enter` presses the Enter key); iOS taps the keyboard's own key. No locator, never heals |
+| `mobile.expectVisible` | `locator` | Passes when the element is displayed in time |
+| `mobile.expectHidden` | `locator` | Passes when no match is displayed in time |
+| `mobile.expectText` | `locator` and exactly one of `equals`, `contains`, `matches` (a regex) | Compares the element's text; returns it |
+| `mobile.getText` | `locator` | Returns the element's text (use `saveAs`) |
+
+`api.*`, `assert.*`, `util.*` and `test.spec` ops can be mixed in, for example to check the backend after a
+tap. `ui.*` ops cannot be used in a mobile scenario.
+
+#### Optional steps
+`mobile.tap`, `mobile.type` and `mobile.back` accept `"optional": true`. The step looks for its element for
+`timeoutMs` (default 3 seconds) and, if it is not there, passes without doing anything. That time is how long it
+keeps re-checking, so a screen that is still drawing can settle; each individual check may take as long as an ordinary
+step's wait (`defaultTimeoutMs`, 30 s) to answer, so a slow phone's late "not there" still skips the step. An optional
+step only passes over a missing element: any other failure still fails it, and it never heals. It is meant for a reset,
+which has to work from any state (a "Log out" button only exists when someone is logged in).
+
+#### Healing: `fallbacks` and `fingerprint`
+A step with a `locator` can carry other ways to find the same element, written when the scenario was authored:
+
+```json
+{ "op": "mobile.tap", "with": {
+    "locator": { "by": "accessibilityId", "value": "Save" },
+    "fallbacks": [{ "by": "text", "value": "Save" }],
+    "fingerprint": { "kind": "Button", "accessibilityId": "save-button", "label": "Save" }
+} }
+```
+
+If the locator matches nothing within 2.5 seconds, the runner tries each fallback, then the fingerprint
+(`accessibilityId`, `resourceId`, `text`, `label`, in that order). The first one that matches **exactly one
+displayed element** is used, the step carries on, and the heal is reported on `scenario.end` with the locator
+it replaced (`from`), the one that worked (`to`), and which locator that was in `field`: `locator`, or
+`locator.android` / `locator.ios` when the run used that platform's override. The run's `healing` setting
+controls it: `off` uses the locator only, `report` (the default) heals and reports, `auto` is `report` plus
+permission to write the heal back to the scenario file.
+
+`tap`, `type`, `clear`, `getText`, `expectVisible`, `expectText` and `swipe` on an element heal.
+`expectHidden` does not (swapping a locator that should match nothing would hide a regression), and neither
+does `scrollTo`.
+
+#### Sessions and the reset scenario
+A mobile run shares one device session, so by default each scenario carries on in the app as the last one left
+it. The scenario fields `dependsOn`, `saveSession` and `session` work for mobile too; what they mean here is
+about the app, not a browser:
+
+- `"session": "shared"` (default): carry on in the app as it is.
+- `"session": "fresh"`: start from scratch. On a device that can clear an app's data, the runner launches the
+  app with its data cleared. On an iOS device with no build to reinstall it relaunches the app and runs the file's
+  reset scenario.
+- `"session": "restore"`: start logged in as the scenario it depends on left the app. If that scenario
+  (`saveSession: true`) has just passed and nothing has touched the app since, the app is only relaunched.
+  Otherwise, when the app was last brought to that scenario's state, it is relaunched and the scenario's last
+  `mobile.expectVisible` is looked for (up to 5 seconds): found, the scenario carries on and the login is not
+  run again; not found (something logged out, or the app crashed), or when that scenario ends on no check, the
+  app starts from scratch and that scenario's steps run again (and, for a scenario that was itself restored,
+  the ones before it). End a login scenario on a check of the logged-in screen to let restores skip it.
+
+These steps run as setup inside the scenario that needs them. They are reported with the step event's `setup`
+field (`"reset"` or `"restore"`) and keep the id and `steps[n]` paths of the scenario they come from.
+
+**The reset scenario.** An iOS device with no build to reinstall (an iPhone without an uploaded `.ipa`, or a Simulator
+with only an installed app) cannot clear an app's data, so the file declares one scenario with `"reset": true`
+that brings the app back to its signed-out start screen from any state. A scenario whose first step is
+`mobile.launch` with `clearData` (or `mobile.reset`) then starts through it, and that first step only relaunches the
+app. A run on such a device ends before it starts, naming the scenarios, when the file has no reset scenario, or when
+a scenario clears the data partway through. With a build to reinstall none of this applies. It is never run
+as a scenario of its own, selected, or counted; it cannot use `dependsOn`, `saveSession` or `session`, and no
+scenario can depend on it. Use `optional` steps for what only applies in some states:
+
+```json
+{ "id": "reset-app", "type": "mobile", "reset": true, "steps": [
+  { "given": { "op": "mobile.launch" } },
+  { "and": { "op": "mobile.tap", "with": { "locator": { "by": "accessibilityId", "value": "open menu" }, "optional": true } } },
+  { "and": { "op": "mobile.tap", "with": { "locator": { "by": "accessibilityId", "value": "menu item log out" }, "optional": true } } },
+  { "then": { "op": "mobile.expectVisible", "with": { "locator": { "by": "accessibilityId", "value": "login screen" } } } }
+] }
+```
+
+If a scenario asks for a fresh start on an iPhone and the file has no reset scenario, it fails and says what to
+add. If a reset step fails, the scenario fails with `Setup "reset" (scenario "<id>") failed at <path>: ...`.
+
+Example:
+```json
+{
+  "id": "rn-login-happy-path",
+  "type": "mobile",
+  "steps": [
+    { "given": { "op": "mobile.launch", "with": { "clearData": true } } },
+    { "when": { "op": "mobile.tap", "with": { "locator": { "by": "accessibilityId", "value": "open menu" } } } },
+    { "and": { "op": "mobile.tap", "with": { "locator": { "by": "accessibilityId", "value": "menu item log in" } } } },
+    { "and": { "op": "mobile.type", "with": { "locator": { "by": "accessibilityId", "value": "Username input field" }, "text": "bob@example.com" } } },
+    { "and": { "op": "mobile.type", "with": { "locator": { "by": "accessibilityId", "value": "Password input field" }, "text": "${secret:RN_DEMO_PASSWORD}" } } },
+    { "and": { "op": "mobile.hideKeyboard" } },
+    { "and": { "op": "mobile.tap", "with": { "locator": { "by": "accessibilityId", "value": "Login button" } } } },
+    { "then": { "op": "mobile.expectVisible", "with": { "locator": { "by": "accessibilityId", "value": "products screen" } } } }
+  ]
+}
+```
 
 ### **Op: `assert.equals`**
 Description: Asserts strict equality between two values.

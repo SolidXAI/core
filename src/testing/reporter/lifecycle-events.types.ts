@@ -1,3 +1,4 @@
+import type { HealEvent } from "../contracts/runtime-context.types";
 import type { ScenarioType } from "../contracts/testing-metadata.types";
 
 /**
@@ -34,6 +35,12 @@ export interface StepResultData {
   phase: string;
   operation: string;
   name?: string;
+  /** Position in the scenario file, e.g. `steps[3].when`. */
+  stepPath?: string;
+  /** Mobile only: the longest single device lookup in the step, reported when it was slow (a stalled device). */
+  slowestCallMs?: number;
+  /** Set for a step that ran as setup for the scenario ("reset", "login"), not as one of its own. */
+  setup?: string;
   ok: boolean;
   durationMs: number;
   error?: string;
@@ -65,11 +72,20 @@ export interface ScenarioEndData {
   scenarioId: string;
   name?: string;
   ok: boolean;
+  /**
+   * Absent from older runners, where `ok` alone decides passed/failed. A skipped
+   * scenario has `ok: false` so a consumer that ignores `status` never counts it as passed.
+   */
+  status?: "passed" | "failed" | "skipped";
+  /** Set when `status` is `skipped`. */
+  skip?: { reason: "dependency_failed"; dependency: string };
   durationMs: number;
   error?: string;
   steps: StepResultData[];
   /** console/network/api-log/screenshot/video for THIS scenario. */
   artifacts: ArtifactRef[];
+  /** Selectors replaced by a fallback or fingerprint while the scenario ran. */
+  heals?: HealEvent[];
 }
 
 export interface RunEndData {
@@ -77,6 +93,7 @@ export interface RunEndData {
   total: number;
   passed: number;
   failed: number;
+  skipped?: number;
   durationMs: number;
   exitCode?: number;
   error?: string;

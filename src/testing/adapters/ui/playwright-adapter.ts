@@ -1,6 +1,11 @@
-import type { Browser, BrowserContext, Page, ConsoleMessage, Response, Request } from "playwright";
+import type { Browser, BrowserContext, Page, ConsoleMessage, Response, Request, Video } from "playwright";
 
-import type { CaptureOptions, PlaywrightAdapterOptions } from "./ui.types";
+import type { HealEvent } from "../../contracts/runtime-context.types";
+import type { HealingPolicy } from "../../contracts/testing-metadata.types";
+import type { AttachOptions, CaptureOptions, PlaywrightAdapterOptions, ViewportOptions } from "./ui.types";
+
+/** Storage state as returned by `BrowserContext.storageState()`. */
+export type StorageState = Awaited<ReturnType<BrowserContext["storageState"]>>;
 
 function isAbsoluteUrl(url: string): boolean {
   return /^https?:\/\//i.test(url);
@@ -47,17 +52,27 @@ export class PlaywrightAdapter {
   private readonly navigationTimeoutMs: number;
   private readonly capture: CaptureOptions;
   private readonly recordVideo: boolean;
+  private readonly healing: HealingPolicy;
+  private readonly viewport?: ViewportOptions;
   private browser?: Browser;
   private context?: BrowserContext;
   public page?: Page;
+  /** False when wrapping a caller-owned page via {@link attach}: stop() leaves it open. */
+  private ownsBrowser = true;
 
   /** Per-scenario ring buffers; reset via {@link resetCapture} at each scenario start. */
   private consoleBuf: ConsoleLogEntry[] = [];
   private networkBuf: NetworkLogEntry[] = [];
+  private heals: HealEvent[] = [];
 
-  /** Whole-run video: temp dir Playwright writes the webm into, and the finalized bytes. */
+  /**
+   * Whole-run video: temp dir Playwright writes into, one recording per browser context
+   * (a run that switches context for `session: restore|fresh` produces several), and the
+   * finalized bytes.
+   */
   private videoDir?: string;
-  private runVideo?: FailureArtifact;
+  private videoSegments: Video[] = [];
+  private runVideos: FailureArtifact[] = [];
   private readonly requestStartedAt = new Map<Request, number>();
 
   constructor(opts?: PlaywrightAdapterOptions) {
@@ -68,10 +83,40 @@ export class PlaywrightAdapter {
       opts?.navigationTimeoutMs ?? this.defaultTimeoutMs;
     this.capture = opts?.capture ?? {};
     this.recordVideo = opts?.recordVideo ?? true;
+    this.healing = opts?.healing ?? "report";
+    this.viewport = sanitizeViewport(opts?.viewport);
+  }
+
+  /**
+   * Wrap a page the caller already launched (e.g. a long-lived authoring session), so
+   * steps run through the exact handlers the runner uses. The adapter never closes the
+   * caller's page, context, or browser.
+   */
+  static attach(page: Page, opts?: AttachOptions): PlaywrightAdapter {
+    const adapter = new PlaywrightAdapter({ ...opts, recordVideo: false });
+    adapter.ownsBrowser = false;
+    adapter.context = page.context();
+    adapter.browser = adapter.context.browser() ?? undefined;
+    adapter.page = page;
+    adapter.attachCaptureListeners(page);
+    return adapter;
   }
 
   isHeadless(): boolean {
     return this.headless;
+  }
+
+  getHealingPolicy(): HealingPolicy {
+    return this.healing;
+  }
+
+  recordHeal(heal: HealEvent): void {
+    this.heals.push(heal);
+  }
+
+  /** Heals recorded since the last {@link resetCapture}. */
+  getHeals(): HealEvent[] {
+    return [...this.heals];
   }
 
   /**
@@ -102,18 +147,65 @@ export class PlaywrightAdapter {
       const fs = await import('fs');
       this.videoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'solid-run-video-'));
     }
-    this.context = await this.browser.newContext(
-      this.videoDir ? { recordVideo: { dir: this.videoDir } } : {},
-    );
+    await this.openContext();
+  }
+
+  private async openContext(storageState?: StorageState): Promise<void> {
+    if (!this.browser) {
+      throw new Error("PlaywrightAdapter: browser is not started");
+    }
+    this.context = await this.browser.newContext({
+      ...contextViewportOptions(this.viewport),
+      ...(this.videoDir ? { recordVideo: { dir: this.videoDir } } : {}),
+      ...(storageState ? { storageState } : {}),
+    });
     this.context.setDefaultTimeout(this.defaultTimeoutMs);
     this.context.setDefaultNavigationTimeout(this.navigationTimeoutMs);
     this.page = await this.context.newPage();
     this.attachCaptureListeners(this.page);
   }
 
-  /** Whole-run video, available after {@link stop} has finalized the recording. */
+  private async closeContext(): Promise<void> {
+    const video = this.videoDir ? this.page?.video() : undefined;
+    if (video) this.videoSegments.push(video);
+    try {
+      if (this.context) {
+        await this.context.close();
+      }
+    } finally {
+      this.context = undefined;
+      this.page = undefined;
+    }
+  }
+
+  /**
+   * Replace the current browser context with a new one, optionally seeded with a saved
+   * storage state. Used for `session: fresh|restore` scenarios.
+   */
+  async newContext(opts?: { storageState?: StorageState }): Promise<void> {
+    if (!this.ownsBrowser) {
+      throw new Error("PlaywrightAdapter: cannot replace the context of an attached page");
+    }
+    await this.closeContext();
+    await this.openContext(opts?.storageState);
+  }
+
+  /** Cookies and localStorage of the current context, kept in memory by the caller. */
+  async storageState(): Promise<StorageState> {
+    if (!this.context) {
+      throw new Error("PlaywrightAdapter: no browser context");
+    }
+    return this.context.storageState();
+  }
+
+  /** First whole-run video segment, available after {@link stop} has finalized it. */
   getRunVideo(): FailureArtifact | undefined {
-    return this.runVideo;
+    return this.runVideos[0];
+  }
+
+  /** Every whole-run video segment (one per browser context), after {@link stop}. */
+  getRunVideos(): FailureArtifact[] {
+    return [...this.runVideos];
   }
 
   /**
@@ -186,6 +278,7 @@ export class PlaywrightAdapter {
   resetCapture(): void {
     this.consoleBuf = [];
     this.networkBuf = [];
+    this.heals = [];
     this.requestStartedAt.clear();
   }
 
@@ -241,28 +334,28 @@ export class PlaywrightAdapter {
   }
 
   async stop(opts?: { keepVideo?: boolean }): Promise<void> {
-    const keepVideo = opts?.keepVideo ?? false;
-    // Grab the video handle before the context closes; its file is only finalized on close().
-    const video = this.videoDir ? this.page?.video() : undefined;
-
-    try {
-      if (this.context) {
-        await this.context.close();
-      }
-    } finally {
+    if (!this.ownsBrowser) {
       this.context = undefined;
       this.page = undefined;
+      this.browser = undefined;
+      return;
     }
+    const keepVideo = opts?.keepVideo ?? false;
+    // closeContext() grabs the video handle first; its file is only finalized on close().
+    await this.closeContext();
 
-    if (video && this.videoDir) {
+    if (this.videoDir) {
       try {
         const fs = await import('fs');
         // Only read the recording into memory when the caller wants to keep it (i.e. the
         // run FAILED). Passing runs discard the webm unread — no wasted IO/memory.
         if (keepVideo) {
-          const videoPath = await video.path();
-          const data = await fs.promises.readFile(videoPath);
-          this.runVideo = { name: 'run.webm', contentType: 'video/webm', data };
+          const single = this.videoSegments.length === 1;
+          for (const [i, video] of this.videoSegments.entries()) {
+            const data = await fs.promises.readFile(await video.path());
+            const name = single ? 'run.webm' : `run-${i + 1}.webm`;
+            this.runVideos.push({ name, contentType: 'video/webm', data });
+          }
         }
         // Clean up the temp recording directory either way.
         await fs.promises.rm(this.videoDir, { recursive: true, force: true }).catch(() => {});
@@ -270,6 +363,7 @@ export class PlaywrightAdapter {
         // A video read failure must never mask the real run result.
       } finally {
         this.videoDir = undefined;
+        this.videoSegments = [];
       }
     }
 
@@ -374,4 +468,37 @@ function shouldCaptureDetailedNetworkEntry(req: Request): boolean {
   }
 
   return resourceType === "document";
+}
+
+/** A usable viewport, or undefined (Playwright's default window) when the size is missing or nonsense. */
+export function sanitizeViewport(viewport?: ViewportOptions): ViewportOptions | undefined {
+  if (!viewport) return undefined;
+  const width = Math.trunc(Number(viewport.width));
+  const height = Math.trunc(Number(viewport.height));
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width < 200 || height < 200 || width > 7680 || height > 4320) {
+    return undefined;
+  }
+  const scale = Number(viewport.deviceScaleFactor);
+  return {
+    width,
+    height,
+    ...(viewport.isMobile ? { isMobile: true } : {}),
+    ...(viewport.hasTouch ? { hasTouch: true } : {}),
+    ...(Number.isFinite(scale) && scale > 0 && scale <= 5 ? { deviceScaleFactor: scale } : {}),
+    ...(typeof viewport.userAgent === "string" && viewport.userAgent.trim() && viewport.userAgent.length <= 400
+      ? { userAgent: viewport.userAgent.trim() }
+      : {}),
+  };
+}
+
+/** The Playwright `newContext` options a viewport stands for. */
+export function contextViewportOptions(viewport?: ViewportOptions): Record<string, unknown> {
+  if (!viewport) return {};
+  return {
+    viewport: { width: viewport.width, height: viewport.height },
+    ...(viewport.isMobile ? { isMobile: true } : {}),
+    ...(viewport.hasTouch ? { hasTouch: true } : {}),
+    ...(viewport.deviceScaleFactor ? { deviceScaleFactor: viewport.deviceScaleFactor } : {}),
+    ...(viewport.userAgent ? { userAgent: viewport.userAgent } : {}),
+  };
 }
