@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.22-beta.1] - 2026-10-30
+
+### Other
+
+- Added odoo import chatter functionality
+
 ## [0.1.22-beta.0] - 2026-10-29
 
 ### Added
