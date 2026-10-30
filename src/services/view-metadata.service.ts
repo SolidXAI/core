@@ -320,13 +320,15 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     }
 
     // 6. We are resolving the create & edit actions if specified in the layout.
+    const actionUserKey = (action: string | { name?: string }): string | undefined =>
+      typeof action === 'string' ? action : action?.name;
     if (entity?.layout?.attrs?.createAction) {
-      const actionName: string = entity.layout.attrs.createAction;
-      entity.layout.attrs.createAction = await this.actionMetadataService.findOneByUserKey(actionName)
+      const actionName = actionUserKey(entity.layout.attrs.createAction);
+      entity.layout.attrs.createAction = actionName ? await this.actionMetadataService.findOneByUserKey(actionName) : null;
     }
     if (entity?.layout?.attrs?.editAction) {
-      const actionName: string = entity.layout.attrs.editAction;
-      entity.layout.attrs.editAction = await this.actionMetadataService.findOneByUserKey(actionName)
+      const actionName = actionUserKey(entity.layout.attrs.editAction);
+      entity.layout.attrs.editAction = actionName ? await this.actionMetadataService.findOneByUserKey(actionName) : null;
     }
 
     // 7. For form views we need to fetch the workflow field metadata if specified.
