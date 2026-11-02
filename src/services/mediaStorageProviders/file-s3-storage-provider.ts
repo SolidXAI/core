@@ -29,13 +29,13 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         private readonly mediaDownloadUrlService: MediaDownloadUrlService,
     ) { }
 
-    async storeStreams(streamPairs: [Readable, string][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
+    async storeStreams(streamPairs: [Readable, string, { mimeType?: string; originalFileName?: string }?][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
         const entityId = this.getSupportedEntityId(entity);
         const result: Media[] = [];
         const storageProvider = mediaFieldMetadata.mediaStorageProvider;
         const region = getEffectiveS3Region(this.configService, storageProvider.region);
 
-        for (const [stream, fileName] of streamPairs) {
+        for (const [stream, fileName, extraMeta] of streamPairs) {
             const bucketName = storageProvider.bucketName;
 
             // Buffer the stream so we can get the byte count and upload in one pass
@@ -46,12 +46,14 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
             const fileData = Buffer.concat(chunks);
             const fileSize = fileData.length;
 
-            await this.s3FileService.write(`${bucketName}:${fileName}`, fileData, { region });
+            await this.s3FileService.write(`${bucketName}:${fileName}`, fileData, { region, contentType: extraMeta?.mimeType });
 
             const mediaEntity = await this.mediaRepository.createMedia(
                 buildMediaRecordCreateInput(entityId, mediaFieldMetadata, storageProvider, {
                     relativeUri: fileName,
                     fileSize,
+                    mimeType: extraMeta?.mimeType,
+                    originalFileName: extraMeta?.originalFileName,
                 })
             ) as unknown as Media;
             result.push(mediaEntity);

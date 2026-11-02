@@ -72,7 +72,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         return result;
     }
 
-    async storeStreams(streamPairs: [Readable, string][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
+    async storeStreams(streamPairs: [Readable, string, { mimeType?: string; originalFileName?: string }?][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
         // if (!(entity instanceof CommonEntity)) {
         //     throw new Error("Entity must be an instance of CommonEntity"); //FIXME This needs to be handled through generics. e.g T extends CommonEntity
         // }
@@ -81,6 +81,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         for (const pair of streamPairs) {
             const stream = pair[0];
             const fileName = pair[1];
+            const extraMeta = pair[2];
             const fullPath = buildDiskMediaPath(fileName, this.settingService, storageProvider);
             await this.fileService.writeStream(fullPath, stream);
             const { size: fileSize } = await fs.promises.stat(fullPath);
@@ -88,6 +89,8 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
                 buildMediaRecordCreateInput(this.getEntityId(entity), mediaFieldMetadata, storageProvider, {
                     relativeUri: fileName,
                     fileSize,
+                    mimeType: extraMeta?.mimeType,
+                    originalFileName: extraMeta?.originalFileName,
                 })
             ) as unknown as Media;
             result.push(mediaEntity);

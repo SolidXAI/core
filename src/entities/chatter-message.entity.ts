@@ -46,4 +46,16 @@ export class ChatterMessage extends CommonEntity {
 
     @Column({ default: 'pending' })
     status: string; // pending | completed
+
+    /**
+     * Odoo `mail.message.id` this row was imported from. `mail.message.id` is a single global
+     * sequence in Odoo (not per-model), so this integer alone is enough to (a) prevent
+     * re-importing the same Odoo message twice and (b) act as the resume cursor for a crashed
+     * import - see `ChatterMessageService.runOdooChatterImport`. Uniqueness among non-null values
+     * is enforced at the DB level via a filtered unique index (see migration), not via this
+     * decorator, since a plain unique index would only allow a single NULL row on MSSQL.
+     */
+    @Index()
+    @Column({ type: "integer", nullable: true })
+    odooMessageId: number;
 }
