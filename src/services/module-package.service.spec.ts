@@ -241,6 +241,20 @@ describe('ModulePackageService', () => {
             expect(Object.keys(record.files)).toContain(`${API}/old.ts`);
         });
 
+        it('needs the local changes acknowledged before replacing a file edited since the last install', async () => {
+            await fs.writeFile(modulePath('a.ts'), 'edited by the user');
+
+            const preview = await upload({ version: '2.0.0', files: { 'a.ts': 'a2' } });
+            expect(preview.preview.fileSync.locallyModifiedReplaced).toEqual([`${API}/a.ts`]);
+
+            await expect(service.confirmImport(preview.transactionKey, { confirmedVersion: '2.0.0' })).rejects.toThrow(/Acknowledge the local changes/);
+            expect(await read(modulePath('a.ts'))).toBe('edited by the user');
+            expect(await exists(modulePath('old.ts'))).toBe(true);
+
+            await service.confirmImport(preview.transactionKey, { confirmedVersion: '2.0.0', acknowledgeLocalChanges: true });
+            expect(await read(modulePath('a.ts'))).toBe('a2');
+        });
+
         it('deletes nothing for a legacy install that has no install record', async () => {
             await fs.rm(modulePath('.sldx-installed.json'));
             await fs.writeFile(modulePath('stale.ts'), 'stale');

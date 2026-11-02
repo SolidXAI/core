@@ -1126,6 +1126,14 @@ export class ModulePackageService {
             );
         }
 
+        const replacedLocally = transaction.preview?.fileSync?.locallyModifiedReplaced ?? [];
+        if (replacedLocally.length && !dto.acknowledgeLocalChanges) {
+            throw new BadRequestException({
+                message: `${replacedLocally.length} file(s) changed locally will be replaced by this update (the backup keeps your versions): ${this.summarizePaths(replacedLocally)}. Acknowledge the local changes to continue.`,
+                locallyModifiedReplaced: replacedLocally,
+            });
+        }
+
         const currentState = await this.resolveInstalledState(moduleName);
         if (!currentState.installed || currentState.version !== transaction.installedVersion) {
             throw new BadRequestException(

@@ -33,4 +33,12 @@ export class ConfirmModulePackageImportDto {
     @IsOptional()
     @IsBoolean()
     skipDependencyInstall?: boolean = false;
+
+    @ApiPropertyOptional({
+        description: 'Update mode only. Required when package files were changed locally and the update will replace them (the backup keeps the local versions).',
+        default: false,
+    })
+    @IsOptional()
+    @IsBoolean()
+    acknowledgeLocalChanges?: boolean = false;
 }
