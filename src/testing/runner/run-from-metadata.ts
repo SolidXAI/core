@@ -29,6 +29,7 @@ import type { PlaywrightAdapter as UiAdapter, StorageState } from "../adapters/u
 import {
   expandWithDependencies,
   orderByDependencies,
+  expandRestoreFrom,
   sessionSourceFor,
   usesDependencies,
   validateSessions,
@@ -155,9 +156,11 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
 
   const engine = new TestingEngine(registry, opts.defaults);
   // The reset scenario is setup, not a scenario: it is never selected, run on its own, or counted.
-  const { reset: resetScenario, rest: allScenarios } = splitResetScenario(
+  const { reset: resetScenario, rest: unexpandedScenarios } = splitResetScenario(
     opts.scenarios ?? opts.metadata?.testing?.scenarios ?? [],
   );
+  // restoreFrom becomes dependsOn + session: restore + saveSession on its source, so the rest of the run sees only those.
+  const allScenarios = expandRestoreFrom(unexpandedScenarios, resetScenario?.id);
   const selected = expandWithDependencies(
     allScenarios,
     filterScenarios(allScenarios, {

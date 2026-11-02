@@ -225,4 +225,36 @@ describe("runFromMetadata browser sessions", () => {
       expect.objectContaining({ id: "restored", ok: true }),
     ]);
   }, 60_000);
+
+  it("restoreFrom restores the named scenario's session with no saveSession or dependsOn written", async () => {
+    const events: Event[] = [];
+    await runFromMetadata({
+      scenarios: [
+        {
+          id: "restored",
+          type: "ui",
+          restoreFrom: "login",
+          steps: [
+            { op: "ui.goto", with: { url: "/" } },
+            { op: "ui.expectText", with: { selector: "#who", equals: "t-1" } },
+          ],
+        },
+        {
+          id: "login",
+          type: "ui",
+          steps: [
+            { op: "ui.goto", with: { url: "/" } },
+            { op: "ui.click", with: { selector: "text=Sign in" } },
+            { op: "ui.expectText", with: { selector: "#who", equals: "t-1" } },
+          ],
+        },
+      ],
+      ui: { baseUrl, recordVideo: false },
+      reporter: recordingReporter(events),
+    });
+    expect(events.filter((e) => e.type === "end")).toEqual([
+      expect.objectContaining({ id: "login", ok: true }),
+      expect.objectContaining({ id: "restored", ok: true }),
+    ]);
+  }, 60_000);
 });

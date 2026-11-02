@@ -171,7 +171,7 @@ describe("runtime manifest", () => {
       "mobile.terminate",
       "mobile.type",
     ]);
-    expect(CAPABILITIES).toEqual(expect.arrayContaining(["mobileRuntime", "mobileSelfHealing", "mobileSessionModes", "mobileReset"]));
-    expect(RUNTIME_VERSION).toBe("1.4.0");
+    expect(CAPABILITIES).toEqual(expect.arrayContaining(["mobileRuntime", "mobileSelfHealing", "mobileSessionModes", "mobileReset", "restoreFrom"]));
+    expect(RUNTIME_VERSION).toBe("1.5.0");
   });
 });

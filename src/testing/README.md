@@ -659,6 +659,16 @@ about the app, not a browser:
   app starts from scratch and that scenario's steps run again (and, for a scenario that was itself restored,
   the ones before it). End a login scenario on a check of the logged-in screen to let restores skip it.
 
+**`restoreFrom`: the short way to write a restore.** `"restoreFrom": "login"` on a scenario means three things at once:
+`login` runs before it (it is a dependency, pulled in even when a tag filter leaves it out), `login`'s state is saved (it
+needs no `saveSession`), and the scenario starts from it (`"session": "restore"`, which it must not contradict). It
+takes one scenario id. `dependsOn` is then only for ordering and data (`create-product`), and the two can be combined:
+`{ "id": "edit-product", "restoreFrom": "login-admin", "dependsOn": ["create-product"] }`. Only client state is
+restored (cookies and storage on the web, the signed-in app on mobile), never the page or screen: the scenario's own
+first steps get there. It also settles which login is meant when two are reachable, which the older
+`dependsOn` + `"session": "restore"` form decides by list order. The older form still works. A missing source, the
+scenario itself, the reset scenario, or a `session` other than `"restore"` fails the run before anything starts.
+
 These steps run as setup inside the scenario that needs them. They are reported with the step event's `setup`
 field (`"reset"` or `"restore"`) and keep the id and `steps[n]` paths of the scenario they come from.
 
@@ -668,8 +678,8 @@ that brings the app back to its signed-out start screen from any state. A scenar
 `mobile.launch` with `clearData` (or `mobile.reset`) then starts through it, and that first step only relaunches the
 app. A run on such a device ends before it starts, naming the scenarios, when the file has no reset scenario, or when
 a scenario clears the data partway through. With a build to reinstall none of this applies. It is never run
-as a scenario of its own, selected, or counted; it cannot use `dependsOn`, `saveSession` or `session`, and no
-scenario can depend on it. Use `optional` steps for what only applies in some states:
+as a scenario of its own, selected, or counted; it cannot use `dependsOn`, `restoreFrom`, `saveSession` or `session`, and no
+scenario can depend on or restore from it. Use `optional` steps for what only applies in some states:
 
 ```json
 { "id": "reset-app", "type": "mobile", "reset": true, "steps": [

@@ -218,6 +218,34 @@ describe("mobile session modes and the reset scenario", () => {
     expect(reporter.stepEnds.filter((e) => e.setup).map((e) => [e.scenarioId, e.setup, e.op])).toEqual([["cart", "restore", "mobile.launch"]]);
   });
 
+  it("restoreFrom alone runs the login first and relaunches, with no saveSession or dependsOn written", async () => {
+    const { driver, logIn, inCart, options, reporter } = android();
+    const plainLogin: ScenarioSpec = { id: "login", type: "mobile", steps: [launch(true), tap("Log in")] };
+    const restoring: ScenarioSpec = { id: "cart", type: "mobile", restoreFrom: "login", steps: [tap("Cart")] };
+    // Listed in the wrong order on purpose: the login still runs first.
+    await runFromMetadata({ scenarios: [restoring, plainLogin], mobile: options, reporter });
+    expect(clicks(logIn)).toBe(1);
+    expect(clicks(inCart)).toBe(1);
+    expect(scripts(driver).filter((script) => script === "mobile: clearApp")).toHaveLength(1);
+    expect(reporter.stepEnds.filter((e) => e.setup).map((e) => [e.scenarioId, e.setup, e.op])).toEqual([["cart", "restore", "mobile.launch"]]);
+    expect(reporter.runEnd).toMatchObject({ ok: true, total: 2, passed: 2 });
+  });
+
+  it("restoreFrom runs its source even when only the dependent is selected", async () => {
+    const { logIn, inCart, options, reporter } = android();
+    const plainLogin: ScenarioSpec = { id: "login", type: "mobile", steps: [launch(true), tap("Log in")] };
+    const restoring: ScenarioSpec = { id: "cart", type: "mobile", restoreFrom: "login", tags: ["cart"], steps: [tap("Cart")] };
+    await runFromMetadata({ scenarios: [plainLogin, restoring], includeTags: ["cart"], mobile: options, reporter });
+    expect(clicks(logIn)).toBe(1);
+    expect(clicks(inCart)).toBe(1);
+  });
+
+  it("restoreFrom to a scenario that does not exist fails the run before any session starts", async () => {
+    const { driver, options, reporter } = android();
+    await runFromMetadata({ scenarios: [{ id: "cart", type: "mobile", restoreFrom: "nope", steps: [tap("Cart")] }], mobile: options, reporter }).catch(() => undefined);
+    expect(driver.callsTo("execute")).toHaveLength(0);
+  });
+
   it("restore after another scenario touched the app clears it and logs in again, as setup of the scenario", async () => {
     const { driver, logIn, inCart, options, reporter } = android();
     await runFromMetadata({ scenarios: [login, unrelated, cart], mobile: options, reporter });

@@ -57,6 +57,13 @@ export interface ScenarioSpec {
    * Using it anywhere in a run switches that run from fail-fast to dependency-aware.
    */
   dependsOn?: string[];
+  /**
+   * Start as the identity another scenario signed in as: `restoreFrom: "login"` means `login` runs first, its state is saved
+   * (it needs no `saveSession`), and this scenario starts from it (`session: "restore"`). It is also a dependency, so it need
+   * not be listed in `dependsOn`, which keeps only ordering and data dependencies. Only client state is restored (cookies and
+   * storage on the web, the signed-in app on mobile), never the page or screen. One scenario id, not a list.
+   */
+  restoreFrom?: string;
   /** Keep this scenario's browser storage state (cookies + localStorage) after it passes. */
   saveSession?: boolean;
   /**

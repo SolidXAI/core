@@ -47,10 +47,12 @@ export function splitResetScenario(all: ScenarioSpec[]): { reset?: ScenarioSpec;
     throw new Error(`Only one scenario can set "reset": true, found ${resets.map((s) => `"${s.id}"`).join(", ")}`);
   }
   const reset = resets[0];
-  if (reset.dependsOn?.length || reset.saveSession || (reset.session && reset.session !== "shared")) {
-    throw new Error(`Reset scenario "${reset.id}" cannot use dependsOn, saveSession or session: it has to work from any state`);
+  if (reset.dependsOn?.length || reset.restoreFrom || reset.saveSession || (reset.session && reset.session !== "shared")) {
+    throw new Error(`Reset scenario "${reset.id}" cannot use dependsOn, restoreFrom, saveSession or session: it has to work from any state`);
   }
-  const dependent = all.find((s) => s !== reset && (s.dependsOn ?? []).map(String).includes(reset.id));
+  const dependent = all.find(
+    (s) => s !== reset && ((s.dependsOn ?? []).map(String).includes(reset.id) || s.restoreFrom === reset.id),
+  );
   if (dependent) {
     throw new Error(`Scenario "${dependent.id}" depends on the reset scenario "${reset.id}", which only runs as setup`);
   }
