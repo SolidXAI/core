@@ -3,9 +3,11 @@ import * as os from 'os';
 import * as path from 'path';
 import {
     applyModuleSync,
+    buildInstallAllCommand,
     buildInstallCommand,
     buildInstallRecord,
     checkDependencies,
+    findReservedMetadataKeys,
     INSTALL_RECORD_FILE,
     isProtectedPackagePath,
     listPackageFiles,
@@ -174,6 +176,14 @@ describe('module package sync', () => {
             expect(normalizeUserData(undefined)).toEqual({ solidApiPaths: [], solidUiPaths: [], metadataKeys: [] });
         });
 
+        it('never treats the module definition as user data', () => {
+            const declared = { metadataKeys: ['testHubApplications', 'moduleMetadata', 'modulePackage'] };
+            expect(normalizeUserData(declared).metadataKeys).toEqual(['testHubApplications']);
+            expect(findReservedMetadataKeys(declared)).toEqual(['moduleMetadata', 'modulePackage']);
+            expect(findReservedMetadataKeys({ metadataKeys: ['testHubApplications'] })).toEqual([]);
+            expect(findReservedMetadataKeys(undefined)).toEqual([]);
+        });
+
         it('matches a path only at a folder boundary', () => {
             expect(isProtectedPackagePath(`solid-api/src/${MODULE}/metadata/test-scenarios/a.json`, MODULE, userData)).toBe(true);
             expect(isProtectedPackagePath(`solid-api/src/${MODULE}/metadata/test-scenarios-extra/a.json`, MODULE, userData)).toBe(false);
@@ -230,6 +240,14 @@ describe('module package sync', () => {
 
             await write(root, 'pnpm-lock.yaml', '');
             expect(await buildInstallCommand(root, ['a@^1'])).toEqual({ command: 'pnpm', args: ['add', 'a@^1'] });
+        });
+
+        it('installs everything with the same package manager', async () => {
+            expect(await buildInstallAllCommand(root)).toEqual({ command: 'npm', args: ['install', '--no-audit', '--no-fund'] });
+            await write(root, 'yarn.lock', '');
+            expect(await buildInstallAllCommand(root)).toEqual({ command: 'yarn', args: ['install'] });
+            await write(root, 'pnpm-lock.yaml', '');
+            expect(await buildInstallAllCommand(root)).toEqual({ command: 'pnpm', args: ['install'] });
         });
     });
 });

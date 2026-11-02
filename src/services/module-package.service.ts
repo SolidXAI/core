@@ -19,10 +19,12 @@ import { CommandService } from 'src/helpers/command.service';
 import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
 import {
     applyModuleSync,
+    buildInstallAllCommand,
     buildInstallCommand,
     buildInstallRecord,
     checkDependencies,
     DependencyStatus,
+    findReservedMetadataKeys,
     hasUserData,
     INSTALL_RECORD_FILE,
     isProtectedPackagePath,
@@ -377,6 +379,13 @@ export class ModulePackageService {
             [],
         );
 
+        const reservedKeys = findReservedMetadataKeys(metadataDocument?.modulePackage?.userData);
+        if (reservedKeys.length > 0) {
+            throw new BadRequestException(
+                `modulePackage.userData.metadataKeys cannot list ${reservedKeys.join(', ')}: the module's own definition always comes from the package.`,
+            );
+        }
+
         const currentVersion = this.toValidVersion(metadataDocument?.moduleMetadata?.version);
         const exportVersion = this.resolveExportVersion(currentVersion, dto);
         if (exportVersion !== currentVersion) {
@@ -463,6 +472,11 @@ export class ModulePackageService {
             const metadataFilePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(moduleName);
             const installedMetadata = await this.readJsonFile(metadataFilePath);
             const userData = await this.resolveProtectedUserData(moduleName, transaction.manifest, transaction.metadataDocument);
+
+            // Checked before the backup, the install and any write, so a refusal leaves the project untouched.
+            if (userData.metadataKeys.length > 0 && await this.isInstalledMetadataUnreadable(moduleName)) {
+                throw new BadRequestException(this.unreadableMetadataMessage(moduleName));
+            }
 
             if (isUpdate) {
                 transaction.backup = await this.backupModuleFolders(transactionKey, moduleName, transaction.installedVersion);
@@ -967,6 +981,17 @@ export class ModulePackageService {
                     userData,
                 );
 
+                if (userData.metadataKeys.length > 0 && await this.isInstalledMetadataUnreadable(moduleName)) {
+                    validation.errors.push(this.unreadableMetadataMessage(moduleName));
+                }
+
+                // Only what a package can change counts: files the user added, and ones kept because they were
+                // modified locally, are neither "removed" nor a difference from the package.
+                const plan = await this.planImportSync(moduleName, extractRoot, userData);
+                for (const kept of [...plan.keptOther, ...plan.keptModified]) {
+                    delete installedChecksums[kept];
+                }
+
                 preview.mode = 'update';
                 preview.installedVersion = installedState.version;
                 preview.identicalContent = this.computeContentFingerprint(installedChecksums) === preview.contentFingerprint;
@@ -976,7 +1001,6 @@ export class ModulePackageService {
                 };
                 preview.requiresVersionAcknowledgement = preview.identicalContent
                     || ModulePackageService.VERSION_ACKNOWLEDGEMENT_COMPARISONS.includes(preview.versionComparison);
-                const plan = await this.planImportSync(moduleName, extractRoot, userData);
                 preview.fileSync = this.summarizeSyncPlan(plan, userData);
                 preview.nextActions = [
                     'Review the version change and the files that will change.',
@@ -987,9 +1011,51 @@ export class ModulePackageService {
                 validation.warnings = validation.warnings.filter((warning) => warning !== ModulePackageService.OVERWRITE_CONFIRMATION_WARNING);
                 validation.warnings.push(...this.buildUpdateWarnings(preview));
             }
+
+            validation.warnings.push(...this.buildDependencyWarnings(preview.dependencies));
         }
 
         validation.valid = validation.errors.length === 0;
+    }
+
+    private buildDependencyWarnings(dependencies: ModulePackageDependencyPreview | null): string[] {
+        if (!dependencies) {
+            return [];
+        }
+
+        const warnings: string[] = [];
+        const describe = (statuses: DependencyStatus[], state: DependencyStatus['state']) =>
+            statuses.filter((status) => status.state === state);
+        const all = [...dependencies.solidApi, ...dependencies.solidUi];
+
+        const missing = describe(all, 'missing');
+        if (missing.length > 0) {
+            warnings.push(`Confirming installs ${missing.map((status) => `${status.name}@${status.range}`).join(', ')} (${dependencies.installCommands.join('; ')}).`);
+        }
+        for (const status of describe(all, 'mismatch')) {
+            warnings.push(`${status.name} ${status.installedVersion} is installed but this module needs ${status.range}. It is left as it is; update it yourself if the module misbehaves.`);
+        }
+
+        const prerequisites = dependencies.prerequisites
+            .map((entry) => [entry.name, entry.version].filter((part) => typeof part === 'string' && part).join(' '))
+            .filter(Boolean);
+        if (prerequisites.length > 0) {
+            warnings.push(`This module also needs these on the machine that runs it (never installed for you): ${prerequisites.join(', ')}.`);
+        }
+        return warnings;
+    }
+
+    // True when the installed metadata file exists but is not valid JSON.
+    private async isInstalledMetadataUnreadable(moduleName: string): Promise<boolean> {
+        const metadataFilePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(moduleName);
+        if (!(await this.pathExists(metadataFilePath))) {
+            return false;
+        }
+        return (await this.readJsonFile(metadataFilePath)) === null;
+    }
+
+    private unreadableMetadataMessage(moduleName: string) {
+        return `The installed metadata file for "${moduleName}" can't be read, so the user data in it (such as the application list) can't be kept. Fix or restore the file and upload the package again.`;
     }
 
     private buildUpdateWarnings(preview: PreviewPayload): string[] {
@@ -1226,8 +1292,9 @@ export class ModulePackageService {
 
             if (packageJsonChanged) {
                 try {
-                    await this.commandService.executeCommandWithArgs({ command: 'npm', args: ['install', '--no-audit', '--no-fund'], cwd: dir });
-                    outputs.push(`${name}: npm install finished`);
+                    const { command, args } = await buildInstallAllCommand(dir);
+                    await this.commandService.executeCommandWithArgs({ command, args, cwd: dir });
+                    outputs.push(`${name}: ${command} install finished`);
                 } catch (error: any) {
                     outputs.push(`${name}: npm install failed (${error?.message ?? 'unknown error'}). Run it by hand.`);
                 }

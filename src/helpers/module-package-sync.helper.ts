@@ -58,6 +58,14 @@ export type PackageDependencies = {
     prerequisites: Array<Record<string, unknown>>;
 };
 
+// The module's own definition always comes from the package, so it can never be user data.
+export const RESERVED_METADATA_KEYS = ['moduleMetadata', 'modulePackage'];
+
+// The reserved keys a declaration lists by mistake (empty when it is fine).
+export function findReservedMetadataKeys(raw: any): string[] {
+    return toStringList(raw?.metadataKeys).filter((key) => RESERVED_METADATA_KEYS.includes(key));
+}
+
 export function emptyUserData(): ModulePackageUserData {
     return { solidApiPaths: [], solidUiPaths: [], metadataKeys: [] };
 }
@@ -73,7 +81,7 @@ export function normalizeUserData(raw: any): ModulePackageUserData {
     return {
         solidApiPaths: safe(toStringList(raw?.solidApiPaths)),
         solidUiPaths: safe(toStringList(raw?.solidUiPaths)),
-        metadataKeys: toStringList(raw?.metadataKeys),
+        metadataKeys: toStringList(raw?.metadataKeys).filter((key) => !RESERVED_METADATA_KEYS.includes(key)),
     };
 }
 
@@ -357,6 +365,17 @@ export async function buildInstallCommand(appDir: string, specs: string[]): Prom
         return { command: 'yarn', args: ['add', ...specs] };
     }
     return { command: 'npm', args: ['install', '--save', '--no-audit', '--no-fund', ...specs] };
+}
+
+// Installs everything in package.json with the app's own package manager (used after a restore puts package.json back).
+export async function buildInstallAllCommand(appDir: string): Promise<InstallCommand> {
+    if (await pathExists(path.join(appDir, 'pnpm-lock.yaml'))) {
+        return { command: 'pnpm', args: ['install'] };
+    }
+    if (await pathExists(path.join(appDir, 'yarn.lock'))) {
+        return { command: 'yarn', args: ['install'] };
+    }
+    return { command: 'npm', args: ['install', '--no-audit', '--no-fund'] };
 }
 
 export const PROJECT_FILES_TO_BACK_UP = ['package.json', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock'];
