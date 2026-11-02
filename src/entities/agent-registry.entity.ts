@@ -54,6 +54,9 @@ export class AgentRegistry extends CommonEntity {
     @Column({ type: "integer", nullable: true, default: 1 })
     configVersion?: number = 1;
 
+    @Column({ name: "is_builtin", type: "boolean", default: false })
+    isBuiltin: boolean = false;
+
     @Index()
     @ManyToOne(() => ModuleMetadata, { onDelete: "RESTRICT", nullable: false })
     @JoinColumn({ name: 'module_id', referencedColumnName: 'id' })
