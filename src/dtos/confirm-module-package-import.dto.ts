@@ -25,4 +25,12 @@ export class ConfirmModulePackageImportDto {
     @IsOptional()
     @IsBoolean()
     acknowledgeVersionChange?: boolean = false;
+
+    @ApiPropertyOptional({
+        description: 'Do not install the packages the module declares; the caller installs them. Use after a failed dependency install.',
+        default: false,
+    })
+    @IsOptional()
+    @IsBoolean()
+    skipDependencyInstall?: boolean = false;
 }

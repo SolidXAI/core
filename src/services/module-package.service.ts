@@ -17,6 +17,29 @@ import { RunModulePackageSeedDto } from 'src/dtos/run-module-package-seed.dto';
 import { ModuleMetadata } from 'src/entities/module-metadata.entity';
 import { CommandService } from 'src/helpers/command.service';
 import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
+import {
+    applyModuleSync,
+    buildInstallCommand,
+    buildInstallRecord,
+    checkDependencies,
+    DependencyStatus,
+    hasUserData,
+    INSTALL_RECORD_FILE,
+    isProtectedPackagePath,
+    listPackageFiles,
+    mergeProtectedMetadataKeys,
+    mergeUserData,
+    ModulePackageUserData,
+    normalizePackageDependencies,
+    normalizeUserData,
+    PackageDependencies,
+    planModuleSync,
+    PROJECT_FILES_TO_BACK_UP,
+    readInstallRecord,
+    SyncPlan,
+    withEmptiedMetadataKeys,
+    writeInstallRecord,
+} from 'src/helpers/module-package-sync.helper';
 import { DataSource } from 'typeorm';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -42,6 +65,10 @@ type ModulePackageManifest = {
         uiModulePath: string;
     };
     compatibility?: Record<string, unknown>;
+    // Paths and metadata keys that hold end-user data; an update never touches them. Mirrors modulePackage.userData.
+    userData?: Partial<ModulePackageUserData>;
+    // Packages the module needs in the host app. Mirrors modulePackage.packageDependencies.
+    dependencies?: Partial<PackageDependencies>;
     postImport?: Record<string, unknown>;
     checksums?: Record<string, string>;
 };
@@ -105,6 +132,30 @@ type PreviewPayload = {
     conflicts: string[];
     fileTree: string[];
     nextActions: string[];
+    // Update mode: what the update will do to files (null on a fresh install).
+    fileSync: ModulePackageFileSyncSummary | null;
+    // Packages the module declares, checked against the host app (null when it declares none).
+    dependencies: ModulePackageDependencyPreview | null;
+};
+
+type ModulePackageFileSyncSummary = {
+    legacyInstall: boolean;
+    keptUserFiles: number;
+    keptOtherFiles: string[];
+    removedUpstream: string[];
+    keptModifiedFiles: string[];
+    locallyModifiedReplaced: string[];
+    droppedProtected: string[];
+    protectedMetadataKeys: string[];
+};
+
+type ModulePackageDependencyPreview = {
+    solidApi: DependencyStatus[];
+    solidUi: DependencyStatus[];
+    prerequisites: Array<Record<string, unknown>>;
+    missingCount: number;
+    mismatchCount: number;
+    installCommands: string[];
 };
 
 type ParsedArchive = {
@@ -195,6 +246,8 @@ enum ModulePackageStatus {
 export class ModulePackageService {
     private readonly logger = new Logger(ModulePackageService.name);
     private static readonly SUPPORTED_SCHEMA_VERSION = '1.0';
+    // 1.1 packages declare userData and/or dependencies; an older core refuses them rather than overwrite user data.
+    private static readonly SUPPORTED_SCHEMA_VERSIONS = ['1.0', '1.1'];
     private static readonly SUPPORTED_PACKAGE_TYPE = 'solidx-module';
     private static readonly OVERWRITE_CONFIRMATION_WARNING = 'The target module already exists locally and will require overwrite confirmation.';
     private static readonly VERSION_ACKNOWLEDGEMENT_COMPARISONS: ModulePackageVersionComparison[] = ['same', 'downgrade', 'legacy_package'];
@@ -343,6 +396,7 @@ export class ModulePackageService {
 
         await fs.cp(solidApiModulePath, path.join(stagingDir, 'solid-api', 'src', moduleName), { recursive: true });
         await fs.cp(solidUiModulePath, path.join(stagingDir, 'solid-ui', 'src', moduleName), { recursive: true });
+        await this.removeUserDataFromStaging(stagingDir, moduleName, metadataDocument);
 
         const manifest = await this.buildExportManifest(moduleName, metadataDocument, stagingDir);
         await fs.writeFile(
@@ -406,27 +460,36 @@ export class ModulePackageService {
             await this.assertPathExists(solidApiSource, 'solid-api module source');
             await this.assertPathExists(solidUiSource, 'solid-ui module source');
 
+            const metadataFilePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(moduleName);
+            const installedMetadata = await this.readJsonFile(metadataFilePath);
+            const userData = await this.resolveProtectedUserData(moduleName, transaction.manifest, transaction.metadataDocument);
+
             if (isUpdate) {
                 transaction.backup = await this.backupModuleFolders(transactionKey, moduleName, transaction.installedVersion);
                 await this.writeStatusFile(transactionKey, transaction);
             }
 
-            if (overwriteExisting) {
-                await fs.rm(solidApiTarget, { recursive: true, force: true });
-                await fs.rm(solidUiTarget, { recursive: true, force: true });
+            // Packages first: new code that imports a missing package would otherwise fail to compile under a watching dev server.
+            const dependencyOutputs = await this.installDeclaredDependencies(transaction.manifest, dto.skipDependencyInstall ?? false);
+
+            const previousRecord = await readInstallRecord(solidApiTarget);
+            const plan = await this.planImportSync(moduleName, extractRoot, userData);
+            await fs.mkdir(solidApiTarget, { recursive: true });
+            await fs.mkdir(solidUiTarget, { recursive: true });
+            await applyModuleSync(plan, moduleName, solidApiTarget, solidUiTarget);
+
+            // The metadata file carries the user's own entries (e.g. their applications); keep those, whatever the package shipped.
+            if (userData.metadataKeys.length > 0) {
+                const incomingDocument = await this.readJsonFile(metadataFilePath);
+                const merged = mergeProtectedMetadataKeys(incomingDocument, installedMetadata, userData.metadataKeys);
+                if (merged && JSON.stringify(merged) !== JSON.stringify(incomingDocument)) {
+                    await fs.writeFile(metadataFilePath, JSON.stringify(merged, null, 2));
+                }
             }
 
-            await fs.mkdir(path.dirname(solidApiTarget), { recursive: true });
-            await fs.mkdir(path.dirname(solidUiTarget), { recursive: true });
-
-            await fs.cp(solidApiSource, solidApiTarget, { recursive: true, force: overwriteExisting });
-            await fs.cp(solidUiSource, solidUiTarget, { recursive: true, force: overwriteExisting });
-
             // The installed metadata file records the installed version, whichever tool produced the package.
-            await this.writeModuleVersion(
-                await this.moduleMetadataHelperService.getModuleMetadataFilePath(moduleName),
-                transaction.incomingVersion,
-            );
+            await this.writeModuleVersion(metadataFilePath, transaction.incomingVersion);
+            await writeInstallRecord(solidApiTarget, buildInstallRecord(plan, previousRecord, transaction.incomingVersion));
 
             if (transaction.extractDirPath) {
                 await fs.rm(transaction.extractDirPath, { recursive: true, force: true });
@@ -442,6 +505,10 @@ export class ModulePackageService {
                 `Placed solid-api module at ${solidApiTarget}`,
                 `Placed solid-ui module at ${solidUiTarget}`,
                 `Metadata file placed at ${preview.requiredPaths.metadataPath}`,
+                `Wrote ${plan.write.length} file(s), removed ${plan.remove.length}, kept ${plan.keptUserFiles.length} user-data and ${plan.keptOther.length} other file(s)`,
+                plan.keptModified.length ? `Kept ${plan.keptModified.length} locally modified file(s) the package no longer ships: ${this.summarizePaths(plan.keptModified)}` : null,
+                plan.droppedProtected.length ? `Ignored ${plan.droppedProtected.length} package file(s) under user-data paths: ${this.summarizePaths(plan.droppedProtected)}` : null,
+                ...dependencyOutputs,
                 transaction.backup ? `Backed up the previous module folders to ${transaction.backup.path}` : null,
             ].filter(Boolean).join('\n');
             await this.writeStatusFile(transactionKey, transaction);
@@ -633,22 +700,47 @@ export class ModulePackageService {
         await this.writeStatusFile(transactionKey, transaction);
 
         try {
-            const targets = [
-                { label: 'solid-api', source: path.join(backup.path, 'solid-api'), target: this.getSolidApiModuleTargetPath(moduleName) },
-                { label: 'solid-ui', source: path.join(backup.path, 'solid-ui'), target: this.getSolidUiModuleTargetPath(moduleName) },
-            ];
-            const outputs: string[] = [`Restored ${moduleName} ${this.formatVersion(backup.version)} from ${backup.path}`];
+            // Same rules as an update, with the backup as the incoming side: files the update added go, the user's own files
+            // and user data (even ones created after the update) stay, and the backed-up files come back.
+            const apiTarget = this.getSolidApiModuleTargetPath(moduleName);
+            const uiTarget = this.getSolidUiModuleTargetPath(moduleName);
+            const backupApi = path.join(backup.path, 'solid-api');
+            const backupUi = path.join(backup.path, 'solid-ui');
+            const metadataFilePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(moduleName);
+            const currentMetadata = await this.readJsonFile(metadataFilePath);
+            const backupMetadata = await this.readJsonFile(path.join(backupApi, 'metadata', `${moduleName}-metadata.json`));
+            const userData = mergeUserData(
+                normalizeUserData(currentMetadata?.modulePackage?.userData),
+                normalizeUserData(backupMetadata?.modulePackage?.userData),
+            );
 
-            for (const { label, source, target } of targets) {
-                await fs.rm(target, { recursive: true, force: true });
-                if (await this.pathExists(source)) {
-                    await fs.mkdir(path.dirname(target), { recursive: true });
-                    await fs.cp(source, target, { recursive: true });
-                    outputs.push(`Restored ${label} module at ${target}`);
-                } else {
-                    outputs.push(`Removed ${label} module at ${target} (it did not exist before the update)`);
+            const plan = await planModuleSync({
+                moduleName,
+                incoming: await this.listModuleFiles(moduleName, backupApi, backupUi),
+                current: await this.listModuleFiles(moduleName, apiTarget, uiTarget),
+                record: await readInstallRecord(apiTarget),
+                userData,
+                metadataPackagePath: this.buildExpectedPaths(moduleName).metadataPath,
+            });
+            await fs.mkdir(apiTarget, { recursive: true });
+            await fs.mkdir(uiTarget, { recursive: true });
+            await applyModuleSync(plan, moduleName, apiTarget, uiTarget);
+
+            if (userData.metadataKeys.length > 0) {
+                const restoredDocument = await this.readJsonFile(metadataFilePath);
+                const merged = mergeProtectedMetadataKeys(restoredDocument, currentMetadata, userData.metadataKeys);
+                if (merged && JSON.stringify(merged) !== JSON.stringify(restoredDocument)) {
+                    await fs.writeFile(metadataFilePath, JSON.stringify(merged, null, 2));
                 }
             }
+            // The record goes back to what the backed-up version had (none for a legacy install).
+            await writeInstallRecord(apiTarget, await readInstallRecord(backupApi));
+
+            const outputs: string[] = [
+                `Restored ${moduleName} ${this.formatVersion(backup.version)} from ${backup.path}`,
+                `Wrote ${plan.write.length} file(s), removed ${plan.remove.length}, kept ${plan.keptUserFiles.length} user-data and ${plan.keptOther.length} other file(s)`,
+                ...(await this.restoreProjectFiles(backup.path)),
+            ];
 
             transaction.status = ModulePackageStatus.awaiting_restart;
             transaction.currentStep = 'restart';
@@ -724,6 +816,8 @@ export class ModulePackageService {
                     conflicts: [],
                     fileTree: normalizedEntries,
                     nextActions: ['Fix archive structure and upload again.'],
+                    fileSync: null,
+                    dependencies: null,
                 },
             };
         }
@@ -731,8 +825,8 @@ export class ModulePackageService {
         if (manifest.packageType !== ModulePackageService.SUPPORTED_PACKAGE_TYPE) {
             validationErrors.push(`manifest.json packageType must be "${ModulePackageService.SUPPORTED_PACKAGE_TYPE}".`);
         }
-        if (manifest.schemaVersion !== ModulePackageService.SUPPORTED_SCHEMA_VERSION) {
-            validationErrors.push(`manifest.json schemaVersion must be "${ModulePackageService.SUPPORTED_SCHEMA_VERSION}".`);
+        if (!ModulePackageService.SUPPORTED_SCHEMA_VERSIONS.includes(manifest.schemaVersion)) {
+            validationErrors.push(`manifest.json schemaVersion must be one of ${ModulePackageService.SUPPORTED_SCHEMA_VERSIONS.map((version) => `"${version}"`).join(', ')}.`);
         }
         if (!manifest.module?.name) {
             validationErrors.push('manifest.json module.name is required.');
@@ -812,6 +906,8 @@ export class ModulePackageService {
                 'Confirm import to place files locally.',
                 'Wait for service restart, then run build and seed.',
             ],
+            fileSync: null,
+            dependencies: null,
         };
 
         return {
@@ -850,14 +946,17 @@ export class ModulePackageService {
         if (moduleName) {
             validation.errors.push(...await this.verifyArchiveChecksums(parsed.manifest, extractRoot));
 
+            const installedState = await this.resolveInstalledState(moduleName);
+            const userData = await this.resolveProtectedUserData(moduleName, parsed.manifest, parsed.metadataDocument);
+
             const incomingChecksums = await this.computeModuleContentChecksums(
                 path.join(extractRoot, 'solid-api', 'src', moduleName),
                 path.join(extractRoot, 'solid-ui', 'src', moduleName),
                 moduleName,
+                userData,
             );
             preview.contentFingerprint = this.computeContentFingerprint(incomingChecksums);
-
-            const installedState = await this.resolveInstalledState(moduleName);
+            preview.dependencies = await this.buildDependencyPreview(parsed.manifest);
             preview.versionComparison = this.compareModuleVersions(installedState, preview.incomingVersion);
 
             if (installedState.installed) {
@@ -865,6 +964,7 @@ export class ModulePackageService {
                     this.getSolidApiModuleTargetPath(moduleName),
                     this.getSolidUiModuleTargetPath(moduleName),
                     moduleName,
+                    userData,
                 );
 
                 preview.mode = 'update';
@@ -876,9 +976,11 @@ export class ModulePackageService {
                 };
                 preview.requiresVersionAcknowledgement = preview.identicalContent
                     || ModulePackageService.VERSION_ACKNOWLEDGEMENT_COMPARISONS.includes(preview.versionComparison);
+                const plan = await this.planImportSync(moduleName, extractRoot, userData);
+                preview.fileSync = this.summarizeSyncPlan(plan, userData);
                 preview.nextActions = [
                     'Review the version change and the files that will change.',
-                    'Approve the update to replace the module folders. The current folders are backed up first.',
+                    'Approve the update. Files the package installed are updated; your own files and user data are left alone. The current folders are backed up first.',
                     'Wait for service restart, then run build and seed.',
                 ];
 
@@ -909,7 +1011,20 @@ export class ModulePackageService {
             warnings.push('The package content is identical to the installed module.');
         }
 
-        warnings.push('Updating replaces the solid-api and solid-ui module folders. Local changes inside them are kept only in the backup.');
+        const sync = preview.fileSync;
+        if (sync?.locallyModifiedReplaced.length) {
+            warnings.push(`${sync.locallyModifiedReplaced.length} package file(s) were changed locally and will be replaced (the backup keeps your version): ${this.summarizePaths(sync.locallyModifiedReplaced)}.`);
+        }
+        if (sync?.keptModifiedFiles.length) {
+            warnings.push(`${sync.keptModifiedFiles.length} file(s) removed from the package were changed locally and will be kept: ${this.summarizePaths(sync.keptModifiedFiles)}.`);
+        }
+        if (sync?.droppedProtected.length) {
+            warnings.push(`The package contains ${sync.droppedProtected.length} file(s) under user-data paths; they will be ignored: ${this.summarizePaths(sync.droppedProtected)}.`);
+        }
+        if (sync?.legacyInstall) {
+            warnings.push('No install record was found for this module, so no files will be deleted. Files removed from the package may remain; remove stale ones by hand.');
+        }
+        warnings.push('Updating writes the package files over the installed module. Files you added and declared user data are not touched; the current folders are backed up first.');
         return warnings;
     }
 
@@ -1000,7 +1115,9 @@ export class ModulePackageService {
 
     // Checksums keyed by package path (solid-api/src/<m>/..., solid-ui/src/<m>/...). The metadata file is
     // hashed without its version so a version bump alone does not count as a content change.
-    private async computeModuleContentChecksums(solidApiDir: string, solidUiDir: string, moduleName: string): Promise<Record<string, string>> {
+    // User-data files and the install record are left out, and protected metadata keys are emptied before hashing,
+    // so only what a package can change counts.
+    private async computeModuleContentChecksums(solidApiDir: string, solidUiDir: string, moduleName: string, userData: ModulePackageUserData = normalizeUserData(null)): Promise<Record<string, string>> {
         const checksums: Record<string, string> = {};
         const roots: Array<[string, string]> = [
             [`solid-api/src/${moduleName}`, solidApiDir],
@@ -1014,7 +1131,10 @@ export class ModulePackageService {
 
             const rootChecksums = await this.computeDirectoryChecksums(rootDir);
             for (const [relativePath, checksum] of Object.entries(rootChecksums)) {
-                if (this.isMacOsMetadataEntry(relativePath) || path.posix.basename(relativePath) === '.DS_Store') {
+                if (this.isMacOsMetadataEntry(relativePath) || path.posix.basename(relativePath) === '.DS_Store' || relativePath === INSTALL_RECORD_FILE) {
+                    continue;
+                }
+                if (isProtectedPackagePath(`${prefix}/${relativePath}`, moduleName, userData)) {
                     continue;
                 }
                 checksums[`${prefix}/${relativePath}`] = checksum;
@@ -1025,7 +1145,7 @@ export class ModulePackageService {
         if (checksums[metadataKey]) {
             const metadataText = await fs.readFile(path.join(solidApiDir, 'metadata', `${moduleName}-metadata.json`), 'utf-8');
             try {
-                const versionless = this.withModuleVersion(JSON.parse(metadataText), null);
+                const versionless = withEmptiedMetadataKeys(this.withModuleVersion(JSON.parse(metadataText), null), userData.metadataKeys);
                 checksums[metadataKey] = createHash('sha256').update(JSON.stringify(versionless)).digest('hex');
             } catch (error) {
                 // Unparseable metadata keeps its raw checksum.
@@ -1069,9 +1189,51 @@ export class ModulePackageService {
             }
         }
 
+        // package.json and lock files, so a restore can undo the packages an update installed.
+        for (const { name, dir } of await this.dependencyAppDirs()) {
+            for (const file of PROJECT_FILES_TO_BACK_UP) {
+                if (await this.pathExists(path.join(dir, file))) {
+                    await fs.mkdir(path.join(backupPath, 'project-files', name), { recursive: true });
+                    await fs.copyFile(path.join(dir, file), path.join(backupPath, 'project-files', name, file));
+                }
+            }
+        }
+
         const backup: ModulePackageBackup = { path: backupPath, version, createdAt: new Date().toISOString() };
         await fs.writeFile(path.join(backupPath, 'backup.json'), JSON.stringify({ moduleName, ...backup }, null, 2));
         return backup;
+    }
+
+    // Puts package.json and the lock file back when an update changed them, then lets the package manager settle node_modules.
+    private async restoreProjectFiles(backupPath: string): Promise<string[]> {
+        const outputs: string[] = [];
+        for (const { name, dir } of await this.dependencyAppDirs()) {
+            const backedUpDir = path.join(backupPath, 'project-files', name);
+            let packageJsonChanged = false;
+            for (const file of PROJECT_FILES_TO_BACK_UP) {
+                const backedUp = path.join(backedUpDir, file);
+                if (!(await this.pathExists(backedUp))) {
+                    continue;
+                }
+                const current = path.join(dir, file);
+                const changed = !(await this.pathExists(current)) || (await fs.readFile(backedUp, 'utf-8')) !== (await fs.readFile(current, 'utf-8'));
+                if (changed) {
+                    await fs.copyFile(backedUp, current);
+                    outputs.push(`Restored ${name}/${file}`);
+                    packageJsonChanged = packageJsonChanged || file === 'package.json';
+                }
+            }
+
+            if (packageJsonChanged) {
+                try {
+                    await this.commandService.executeCommandWithArgs({ command: 'npm', args: ['install', '--no-audit', '--no-fund'], cwd: dir });
+                    outputs.push(`${name}: npm install finished`);
+                } catch (error: any) {
+                    outputs.push(`${name}: npm install failed (${error?.message ?? 'unknown error'}). Run it by hand.`);
+                }
+            }
+        }
+        return outputs;
     }
 
     private resolveExportVersion(currentVersion: string | null, dto: ExportModulePackageDto): string | null {
@@ -1669,9 +1831,13 @@ export class ModulePackageService {
     private async buildExportManifest(moduleName: string, metadataDocument: any, stagingDir: string): Promise<ModulePackageManifest> {
         const expectedPaths = this.buildExpectedPaths(moduleName);
         const checksums = await this.computeDirectoryChecksums(stagingDir, ['manifest.json']);
+        const userData = normalizeUserData(metadataDocument?.modulePackage?.userData);
+        const dependencies = normalizePackageDependencies(metadataDocument?.modulePackage?.packageDependencies);
+        const declaresModulePackage = hasUserData(userData) || !!dependencies;
 
         return {
-            schemaVersion: ModulePackageService.SUPPORTED_SCHEMA_VERSION,
+            // 1.1 tells an older core, which would replace the whole module folder, to refuse the package.
+            schemaVersion: declaresModulePackage ? '1.1' : ModulePackageService.SUPPORTED_SCHEMA_VERSION,
             packageType: ModulePackageService.SUPPORTED_PACKAGE_TYPE,
             exportedAt: new Date().toISOString(),
             generatedBy: {
@@ -1684,11 +1850,166 @@ export class ModulePackageService {
                 description: metadataDocument?.moduleMetadata?.description,
             },
             contents: expectedPaths,
+            ...(hasUserData(userData) ? { userData } : {}),
+            ...(dependencies ? { dependencies } : {}),
             postImport: {
                 recommendedSteps: ['restart', 'build', 'seed'],
             },
             checksums,
         };
+    }
+
+    // The package never carries the developer's own user data: declared paths are dropped, protected metadata keys
+    // are emptied, and the install record (which describes this project, not the package) is left out.
+    private async removeUserDataFromStaging(stagingDir: string, moduleName: string, metadataDocument: any) {
+        const userData = normalizeUserData(metadataDocument?.modulePackage?.userData);
+        const stagedApi = path.join(stagingDir, 'solid-api', 'src', moduleName);
+        const stagedUi = path.join(stagingDir, 'solid-ui', 'src', moduleName);
+
+        for (const entry of userData.solidApiPaths) {
+            await fs.rm(path.join(stagedApi, entry), { recursive: true, force: true });
+        }
+        for (const entry of userData.solidUiPaths) {
+            await fs.rm(path.join(stagedUi, entry), { recursive: true, force: true });
+        }
+        await fs.rm(path.join(stagedApi, INSTALL_RECORD_FILE), { force: true });
+
+        if (userData.metadataKeys.length > 0) {
+            const stagedMetadata = path.join(stagingDir, this.buildExpectedPaths(moduleName).metadataPath);
+            const document = JSON.parse(await fs.readFile(stagedMetadata, 'utf-8'));
+            await fs.writeFile(stagedMetadata, JSON.stringify(withEmptiedMetadataKeys(document, userData.metadataKeys), null, 2));
+        }
+    }
+
+    // The user data to protect on an update: what the installed module declares plus what the incoming package declares.
+    // The incoming side covers installs from before the module declared anything.
+    private async resolveProtectedUserData(moduleName: string, manifest: ModulePackageManifest | null, incomingMetadata: any): Promise<ModulePackageUserData> {
+        const installedMetadata = await this.readInstalledMetadata(moduleName);
+        return mergeUserData(
+            normalizeUserData(installedMetadata?.modulePackage?.userData),
+            normalizeUserData(manifest?.userData),
+            normalizeUserData(incomingMetadata?.modulePackage?.userData),
+        );
+    }
+
+    private async readInstalledMetadata(moduleName: string): Promise<any | null> {
+        const metadataFilePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(moduleName);
+        return this.readJsonFile(metadataFilePath);
+    }
+
+    private async readJsonFile(filePath: string): Promise<any | null> {
+        try {
+            return JSON.parse(await fs.readFile(filePath, 'utf-8'));
+        } catch {
+            return null;
+        }
+    }
+
+    private async listModuleFiles(moduleName: string, apiDir: string | null, uiDir: string | null) {
+        return {
+            ...(await listPackageFiles(`solid-api/src/${moduleName}`, apiDir)),
+            ...(await listPackageFiles(`solid-ui/src/${moduleName}`, uiDir)),
+        };
+    }
+
+    private async planImportSync(moduleName: string, extractRoot: string, userData: ModulePackageUserData): Promise<SyncPlan> {
+        const apiTarget = this.getSolidApiModuleTargetPath(moduleName);
+        return planModuleSync({
+            moduleName,
+            incoming: await this.listModuleFiles(moduleName, path.join(extractRoot, 'solid-api', 'src', moduleName), path.join(extractRoot, 'solid-ui', 'src', moduleName)),
+            current: await this.listModuleFiles(moduleName, apiTarget, this.getSolidUiModuleTargetPath(moduleName)),
+            record: await readInstallRecord(apiTarget),
+            userData,
+            metadataPackagePath: this.buildExpectedPaths(moduleName).metadataPath,
+        });
+    }
+
+    private summarizeSyncPlan(plan: SyncPlan, userData: ModulePackageUserData): ModulePackageFileSyncSummary {
+        return {
+            legacyInstall: plan.legacyInstall,
+            keptUserFiles: plan.keptUserFiles.length,
+            keptOtherFiles: plan.keptOther,
+            removedUpstream: plan.remove,
+            keptModifiedFiles: plan.keptModified,
+            locallyModifiedReplaced: plan.replacedModified,
+            droppedProtected: plan.droppedProtected,
+            protectedMetadataKeys: userData.metadataKeys,
+        };
+    }
+
+    private async dependencyAppDirs() {
+        const dirs: Array<{ label: 'solidApi' | 'solidUi'; name: string; dir: string }> = [
+            { label: 'solidApi', name: 'solid-api', dir: this.getSolidApiRoot() },
+            { label: 'solidUi', name: 'solid-ui', dir: this.getSolidUiRoot() },
+        ];
+        const present = [];
+        for (const entry of dirs) {
+            if (await this.pathExists(path.join(entry.dir, 'package.json'))) {
+                present.push(entry);
+            }
+        }
+        return present;
+    }
+
+    private async buildDependencyPreview(manifest: ModulePackageManifest | null): Promise<ModulePackageDependencyPreview | null> {
+        const declared = normalizePackageDependencies(manifest?.dependencies);
+        if (!declared) {
+            return null;
+        }
+
+        const preview: ModulePackageDependencyPreview = { solidApi: [], solidUi: [], prerequisites: declared.prerequisites, missingCount: 0, mismatchCount: 0, installCommands: [] };
+        for (const { label, name, dir } of await this.dependencyAppDirs()) {
+            const statuses = await checkDependencies(dir, declared[label]);
+            preview[label] = statuses;
+            preview.missingCount += statuses.filter((status) => status.state === 'missing').length;
+            preview.mismatchCount += statuses.filter((status) => status.state === 'mismatch').length;
+            const missing = statuses.filter((status) => status.state === 'missing').map((status) => `${status.name}@${status.range}`);
+            if (missing.length > 0) {
+                const { command, args } = await buildInstallCommand(dir, missing);
+                preview.installCommands.push(`cd ${name} && ${command} ${args.join(' ')}`);
+            }
+        }
+        return preview;
+    }
+
+    // Installs the declared packages the host app lacks. Runs before any module file is placed, so a failure leaves the
+    // project as it was and the import can be retried, or retried with skipDependencyInstall once the packages are installed by hand.
+    private async installDeclaredDependencies(manifest: ModulePackageManifest | null, skip: boolean): Promise<string[]> {
+        const declared = normalizePackageDependencies(manifest?.dependencies);
+        if (!declared) {
+            return [];
+        }
+
+        const outputs: string[] = [];
+        for (const { label, name, dir } of await this.dependencyAppDirs()) {
+            const statuses = await checkDependencies(dir, declared[label]);
+            for (const status of statuses.filter((entry) => entry.state === 'mismatch')) {
+                outputs.push(`${name}: ${status.name} ${status.installedVersion} does not satisfy ${status.range}; left as it is.`);
+            }
+
+            const missing = statuses.filter((status) => status.state === 'missing').map((status) => `${status.name}@${status.range}`);
+            if (missing.length === 0) {
+                continue;
+            }
+
+            const { command, args } = await buildInstallCommand(dir, missing);
+            const commandLine = `${command} ${args.join(' ')}`;
+            if (skip) {
+                outputs.push(`${name}: skipped installing ${missing.join(', ')}. Run in ${dir}: ${commandLine}`);
+                continue;
+            }
+
+            try {
+                const output = await this.commandService.executeCommandWithArgs({ command, args, cwd: dir });
+                outputs.push(`${name}: installed ${missing.join(', ')}\n${output}`.trim());
+            } catch (error: any) {
+                throw new BadRequestException({
+                    message: `Installing ${missing.join(', ')} in ${name} failed. Nothing was imported. Retry, or install them yourself (${commandLine}) and confirm with skipDependencyInstall.`,
+                    output: error?.message ?? '',
+                });
+            }
+        }
+        return outputs;
     }
 
     private async computeDirectoryChecksums(rootDir: string, excludedRelativePaths: string[] = []): Promise<Record<string, string>> {
