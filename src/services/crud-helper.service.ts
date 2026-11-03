@@ -298,6 +298,16 @@ export class CrudHelperService {
             case '$between':
                 qb.andWhere(`${colExpr} BETWEEN :${uniqueFieldAlias}0 AND :${uniqueFieldAlias}1`, { [`${uniqueFieldAlias}0`]: normalizedPrimaryOperatorObj.$between[0], [`${uniqueFieldAlias}1`]: normalizedPrimaryOperatorObj.$between[1] });
                 break;
+            case '$thisWeek':
+            case '$thisMonth': {
+                const period = operator === '$thisWeek' ? 'week' : 'month';
+                const [start, end] = this.resolveDynamicDateRange(normalizedPrimaryOperatorObj[operator], period);
+                qb.andWhere(`${colExpr} BETWEEN :${uniqueFieldAlias}0 AND :${uniqueFieldAlias}1`, {
+                    [`${uniqueFieldAlias}0`]: start,
+                    [`${uniqueFieldAlias}1`]: end,
+                });
+                break;
+            }
             case '$startsWith':
                 qb.andWhere(`${colExpr} LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `${normalizedPrimaryOperatorObj.$startsWith}%` });
                 break;
@@ -317,6 +327,61 @@ export class CrudHelperService {
             default:
                 throw new Error(`Operator ${operator} is not supported`);
         }
+    }
+
+    /**
+     * Resolve symbolic date operators at query-build time.
+     *
+     * The marker value is the field type supplied by the filter builder:
+     * `date` produces calendar-date strings, while `datetime` produces UTC ISO values.
+     * Bound values are used so the operator remains database-agnostic and cannot inject SQL.
+     */
+    private resolveDynamicDateRange(fieldType: unknown, period: 'week' | 'month'): [string, string] {
+        const type = String(fieldType ?? 'datetime').toLowerCase();
+        if (type !== 'date' && type !== 'datetime') {
+            throw new BadRequestException(`Dynamic date operators require a date or datetime field.`);
+        }
+
+        const now = new Date();
+        let start: Date;
+        let end: Date;
+
+        if (period === 'week') {
+            // Start with today at 00:00 UTC, then move back to Monday.
+            start = new Date(Date.UTC(
+                now.getUTCFullYear(),
+                now.getUTCMonth(),
+                now.getUTCDate(),
+            ));
+
+            const daysSinceMonday = (start.getUTCDay() + 6) % 7;
+            start.setUTCDate(start.getUTCDate() - daysSinceMonday);
+
+            // End at Sunday 23:59:59.999 UTC.
+            end = new Date(start);
+            end.setUTCDate(end.getUTCDate() + 7);
+            end.setUTCMilliseconds(-1);
+        } else {
+            // Start at the first day of the current month.
+            start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+
+            // End at the last millisecond of the current month.
+            end = new Date(Date.UTC(
+                now.getUTCFullYear(),
+                now.getUTCMonth() + 1,
+                1,
+            ));
+            end.setUTCMilliseconds(-1);
+        }
+
+        if (type === 'date') {
+            return [
+                start.toISOString().slice(0, 10),
+                end.toISOString().slice(0, 10),
+            ];
+        }
+
+        return [start.toISOString(), end.toISOString()];
     }
 
     normalize(value: string | string[]): string[] {
