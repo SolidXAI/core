@@ -1,14 +1,10 @@
 import type { TestContext } from "../../contracts/runtime-context.types";
 import type { OpStep } from "../../contracts/testing-metadata.types";
 import { StepRegistry } from "../../core/step-registry";
+import { resolveTarget, type TargetInput } from "../../adapters/ui/resolve-target";
 
-type VisibleInput = { selector: string; timeoutMs?: number };
-type ExpectTextInput = {
-  selector: string;
-  equals?: string;
-  contains?: string;
-  timeoutMs?: number;
-};
+type VisibleInput = TargetInput;
+type ExpectTextInput = TargetInput & { equals?: string; contains?: string };
 
 function requirePage(ctx: TestContext, op: string) {
   if (!ctx.ui || !ctx.ui.page) {
@@ -24,7 +20,8 @@ export function registerAssertionSteps(registry: StepRegistry): void {
     if (!input.selector) {
       throw new Error('Missing "selector" in step.with for op "ui.expectVisible"');
     }
-    await page.waitForSelector(input.selector, {
+    const selector = await resolveTarget(ctx, step, input);
+    await page.waitForSelector(selector, {
       state: "visible",
       timeout: ctx.ui?.resolveTimeout(input.timeoutMs),
     });
@@ -49,8 +46,9 @@ export function registerAssertionSteps(registry: StepRegistry): void {
       throw new Error('Missing "selector" in step.with for op "ui.expectText"');
     }
 
+    const selector = await resolveTarget(ctx, step, input);
     const text = await page
-      .locator(input.selector)
+      .locator(selector)
       .innerText({ timeout: ctx.ui?.resolveTimeout(input.timeoutMs) });
     if (input.equals !== undefined) {
       if (text !== input.equals) {
