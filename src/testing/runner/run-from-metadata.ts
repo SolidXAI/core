@@ -24,6 +24,7 @@ import {
   withoutLeadingClear,
 } from "./lifecycle";
 import { ensureChromiumInstalled } from "../adapters/ui/browser-provisioner";
+import { RunCanceledError } from "./run-cancellation";
 import { ConsoleReporter } from "../reporter/console-reporter";
 import type { PlaywrightAdapter as UiAdapter, StorageState } from "../adapters/ui/playwright-adapter";
 import {
@@ -103,6 +104,11 @@ export type RunnerOptions = {
    * scenario actually references a secret.
    */
   resolveSecrets?: (keys: string[]) => Promise<Record<string, any>>;
+  /**
+   * Aborting this stops the run: the browser (or device session) is closed at once, so a step in flight fails
+   * and the window disappears, and no further scenario starts. The caller gets a RunCanceledError.
+   */
+  signal?: AbortSignal;
 };
 
 /**
@@ -205,6 +211,24 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
   const outcomes = new Map<string, "passed" | "failed" | "skipped">();
   const savedSessions = new Map<string, StorageState>();
   const mobileState: MobileSessionState = {};
+  // When the run is canceled, close what it opened right away rather than waiting for the step in flight, so a
+  // headed browser window goes away. The `finally` below skips closing them a second time.
+  let uiClosedOnCancel = false;
+  let mobileClosedOnCancel = false;
+  const closeOnCancel = () => {
+    if (uiStarted.value) {
+      uiClosedOnCancel = true;
+      void ui.stop({ keepVideo: false }).catch(() => undefined);
+    }
+    if (mobile && mobileStarted.value) {
+      mobileClosedOnCancel = true;
+      void mobile.stop({ keepVideo: false }).catch(() => undefined);
+    }
+  };
+  opts.signal?.addEventListener("abort", closeOnCancel, { once: true });
+  const throwIfCanceled = () => {
+    if (opts.signal?.aborted) throw new RunCanceledError();
+  };
 
   reporter.onRunStart?.({
     total: scenarios.length,
@@ -238,6 +262,7 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
     );
 
     for (const scenario of scenarios) {
+      throwIfCanceled();
       if (dependencyMode) {
         const blocked = (scenario.dependsOn ?? []).find((dep) => outcomes.get(String(dep)) !== "passed");
         if (blocked !== undefined) {
@@ -321,6 +346,7 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
         // Keep going; the first failure is rethrown once every scenario has run.
         // A dependsOn run always keeps going and skips the failed scenario's dependents.
         runError ??= error;
+        throwIfCanceled();
         if (!dependencyMode && opts.failFast !== false) throw error;
       }
     }
@@ -339,7 +365,8 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
       ...(dependencyMode ? { skipped } : {}),
       durationMs: Date.now() - startedAt,
     });
-    if (uiStarted.value) {
+    opts.signal?.removeEventListener("abort", closeOnCancel);
+    if (uiStarted.value && !uiClosedOnCancel) {
       // Only KEEP the whole-run video when the run FAILED — passing runs discard it unread.
       const keepVideo = !!runError;
       await ui.stop({ keepVideo });
@@ -351,7 +378,7 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
         }
       }
     }
-    if (mobile && mobileStarted.value) {
+    if (mobile && mobileStarted.value && !mobileClosedOnCancel) {
       // Same policy as the browser video: only keep the recording when the run failed.
       const keepVideo = !!runError;
       await mobile.stop({ keepVideo });
