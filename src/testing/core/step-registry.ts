@@ -41,4 +41,8 @@ export class StepRegistry {
   rawWithFields(op: string): string[] {
     return this.rawWith.get(op) ?? [];
   }
+
+  ops(): string[] {
+    return [...this.handlers.keys()].sort();
+  }
 }

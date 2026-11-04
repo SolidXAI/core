@@ -12,6 +12,7 @@ import type {
 } from "./lifecycle-events.types";
 import type { OpStep, ScenarioSpec, ScenarioType } from "../contracts/testing-metadata.types";
 import type { StepPhase } from "../contracts/runtime-context.types";
+import type { ScenarioResult, ScenarioSkipInfo } from "./reporter.types";
 
 /**
  * Pluggable POST function so the reporter stays DI-agnostic. The default uses the
@@ -96,6 +97,7 @@ export class LifecycleWebhookReporter extends ConsoleReporter {
   private scenarioIndex = 0;
   private passed = 0;
   private failed = 0;
+  private skipped = 0;
   private currentSteps: StepResultData[] = [];
   private currentArtifacts: ArtifactRef[] = [];
   /** Run-level artifacts (e.g. the whole-run video); emitted on run.end. */
@@ -155,12 +157,18 @@ export class LifecycleWebhookReporter extends ConsoleReporter {
     ok: boolean;
     error?: unknown;
     durationMs: number;
+    stepPath?: string;
+    slowestCallMs?: number;
+    setup?: string;
   }): void {
     super.onStepEnd(args);
     this.currentSteps.push({
       phase: String(args.phase),
       operation: args.step.op,
       name: args.step.name,
+      ...(args.stepPath ? { stepPath: args.stepPath } : {}),
+      ...(args.slowestCallMs ? { slowestCallMs: args.slowestCallMs } : {}),
+      ...(args.setup ? { setup: args.setup } : {}),
       ok: args.ok,
       durationMs: args.durationMs,
       error: args.error ? formatError(args.error) : undefined,
@@ -246,7 +254,7 @@ export class LifecycleWebhookReporter extends ConsoleReporter {
 
   override onScenarioEnd(
     scenario: ScenarioSpec,
-    result: { ok: boolean; error?: unknown; durationMs: number },
+    result: ScenarioResult,
   ): void {
     super.onScenarioEnd(scenario, result);
     if (result.ok) {
@@ -258,10 +266,30 @@ export class LifecycleWebhookReporter extends ConsoleReporter {
       scenarioId: scenario.id,
       name: scenario.name,
       ok: result.ok,
+      status: result.ok ? "passed" : "failed",
       durationMs: result.durationMs,
       error: result.error ? formatError(result.error) : undefined,
       steps: [...this.currentSteps],
       artifacts: [...this.currentArtifacts],
+      ...(result.heals?.length ? { heals: result.heals } : {}),
+    };
+    this.emit("scenario.end", data);
+  }
+
+  override onScenarioSkipped(scenario: ScenarioSpec, info: ScenarioSkipInfo): void {
+    super.onScenarioSkipped(scenario, info);
+    this.skipped += 1;
+    this.scenarioIndex += 1;
+    const data: ScenarioEndData = {
+      scenarioId: scenario.id,
+      name: scenario.name,
+      ok: false,
+      status: "skipped",
+      skip: { reason: info.reason, dependency: info.dependency },
+      durationMs: 0,
+      error: `Skipped: dependency "${info.dependency}" did not pass`,
+      steps: [],
+      artifacts: [],
     };
     this.emit("scenario.end", data);
   }
@@ -341,9 +369,10 @@ export class LifecycleWebhookReporter extends ConsoleReporter {
       // A non-zero exitCode (e.g. the runner threw before any scenario ran) must
       // mark the run failed even when failed === 0.
       ok: this.failed === 0 && (exitCode === undefined || exitCode === 0),
-      total: this.total || this.passed + this.failed,
+      total: this.total || this.passed + this.failed + this.skipped,
       passed: this.passed,
       failed: this.failed,
+      ...(this.skipped ? { skipped: this.skipped } : {}),
       durationMs: Date.now() - this.startedAtMs,
       exitCode,
       error,
