@@ -1,5 +1,7 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { plainToInstance } from 'class-transformer';
+import { ValidationError, validate } from 'class-validator';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -263,6 +265,14 @@ export class ModuleMetadataSeederService {
                     if (!moduleMetadata?.name) {
                         this.logger.warn(`Skipping seed metadata file because moduleMetadata.name is missing.`);
                         continue;
+                    }
+
+                    // Agent-generated consuming modules should conform to the create DTOs.
+                    // Solid Core's built-in seed metadata predates those request constraints
+                    // and intentionally includes reserved model names and legacy shapes.
+                    if (moduleMetadata.name !== 'solid-core') {
+                        currentStep = 'validateModuleModelFieldMetadata';
+                        await this.validateModuleModelFieldMetadata(moduleMetadata);
                     }
 
                     console.log(`▶ Seeding Metadata for Module: ${moduleMetadata.name}`);
@@ -2096,6 +2106,150 @@ export class ModuleMetadataSeederService {
             });
         }
         return { pruned, upserted };
+    }
+
+    private async validateModuleModelFieldMetadata(moduleMetadata: CreateModuleMetadataDto): Promise<void> {
+        const dto = plainToInstance(CreateModuleMetadataDto, moduleMetadata, {
+            excludeExtraneousValues: false,
+        });
+        const errors = await validate(dto, {
+            // The metadata JSON is an extensible schema. Validate decorated DTO
+            // properties without rejecting or stripping schema-specific keys.
+            whitelist: false,
+            forbidNonWhitelisted: false,
+            forbidUnknownValues: false,
+        });
+        if (errors.length > 0) {
+            const details = this.formatModuleModelFieldValidationErrors(moduleMetadata, errors);
+            throw new Error(
+                `Metadata validation failed for module "${moduleMetadata.name}" before seeding:\n${details}`,
+            );
+        }
+    }
+
+    private formatModuleModelFieldValidationErrors(
+        moduleMetadata: CreateModuleMetadataDto,
+        errors: ValidationError[],
+    ): string {
+        const issues = this.collectModuleMetadataValidationIssues(errors);
+        const models = Array.isArray(moduleMetadata.models) ? moduleMetadata.models : [];
+        const groups = new Map<string, { heading: string; issues: string[] }>();
+
+        for (const issue of issues) {
+            const modelIndex = issue.path[0] === 'models' && /^\d+$/.test(issue.path[1] ?? '')
+                ? Number(issue.path[1])
+                : undefined;
+            const model = modelIndex === undefined ? undefined : models[modelIndex];
+            const fieldsPosition = issue.path.indexOf('fields');
+            const fieldIndex = fieldsPosition >= 0 && /^\d+$/.test(issue.path[fieldsPosition + 1] ?? '')
+                ? Number(issue.path[fieldsPosition + 1])
+                : undefined;
+            const field = model && fieldIndex !== undefined && Array.isArray(model.fields)
+                ? model.fields[fieldIndex]
+                : undefined;
+            const jsonPath = this.formatValidationJsonPath(issue.path);
+
+            let groupKey: string;
+            let heading: string;
+            if (model && modelIndex !== undefined && field && fieldIndex !== undefined) {
+                groupKey = `model:${modelIndex}:field:${fieldIndex}`;
+                heading = `Model ${this.describeMetadataName(model.singularName, model.displayName)} — Field ${this.describeMetadataName(field.name, field.displayName)} [models[${modelIndex}].fields[${fieldIndex}]]`;
+            } else if (model && modelIndex !== undefined) {
+                groupKey = `model:${modelIndex}`;
+                heading = `Model ${this.describeMetadataName(model.singularName, model.displayName)} [models[${modelIndex}]]`;
+            } else {
+                groupKey = 'module';
+                heading = `Module "${moduleMetadata.name}"`;
+            }
+
+            const group = groups.get(groupKey) ?? { heading, issues: [] };
+            group.issues.push(`  - ${this.describeValidationIssue(issue, moduleMetadata)} (JSON path: ${jsonPath})`);
+            groups.set(groupKey, group);
+        }
+
+        return [...groups.values()]
+            .map(({ heading, issues: groupIssues }) => `${heading}\n${groupIssues.join('\n')}`)
+            .join('\n');
+    }
+
+    private collectModuleMetadataValidationIssues(
+        errors: ValidationError[],
+        parentPath: string[] = [],
+    ): Array<{ path: string[]; constraints: Record<string, string> }> {
+        return errors.flatMap((error) => {
+            const path = [...parentPath, error.property];
+            const constraints = error.constraints ?? {};
+            const ownIssues = Object.keys(constraints).length > 0 ? [{ path, constraints }] : [];
+            return [...ownIssues, ...this.collectModuleMetadataValidationIssues(error.children ?? [], path)];
+        });
+    }
+
+    private describeValidationIssue(
+        issue: { path: string[]; constraints: Record<string, string> },
+        moduleMetadata: CreateModuleMetadataDto,
+    ): string {
+        const property = issue.path[issue.path.length - 1];
+        const value = this.getModuleMetadataPathValue(moduleMetadata, issue.path);
+        const missing = value === undefined;
+        const valueDescription = this.describeValidationValue(property, value);
+        const expected = this.describeExpectedValidationValue(property, issue.constraints);
+        const fieldPosition = issue.path.indexOf('fields');
+        const scope = fieldPosition >= 0 ? 'Field' : issue.path[0] === 'models' ? 'Model' : 'Module';
+
+        if (property === 'type' && typeof value === 'string' && value.toLowerCase() === 'timestamp') {
+            return `${scope} property "type": received ${valueDescription}; expected a supported SolidX field type. Use "datetime" for a timestamp value.`;
+        }
+        if (missing) {
+            return `${scope} property "${property}": missing; expected ${expected}.`;
+        }
+        return `${scope} property "${property}": received ${valueDescription}; expected ${expected}.`;
+    }
+
+    private describeExpectedValidationValue(property: string, constraints: Record<string, string>): string {
+        const constraintNames = Object.keys(constraints);
+        if (property === 'type' && constraintNames.includes('isEnum')) return 'a supported SolidX field type';
+        if (constraintNames.includes('isNotInEnum')) return 'a value that is not reserved by SolidX';
+        if (constraintNames.includes('isBoolean')) return 'a boolean';
+        if (constraintNames.includes('isString')) return 'a string';
+        if (constraintNames.includes('isArray')) return 'an array';
+        if (constraintNames.includes('isInt')) return 'an integer';
+        if (constraintNames.includes('isNumber')) return 'a number';
+        if (constraintNames.includes('isEnum')) return 'one of the supported values';
+        if (constraintNames.includes('isIn')) return 'one of the configured values';
+        return Object.values(constraints).join('; ');
+    }
+
+    private describeValidationValue(property: string, value: unknown): string {
+        if (/password|secret|token|authorization|api.?key/i.test(property)) return '<redacted>';
+        let serialized: string;
+        try {
+            serialized = JSON.stringify(value) ?? String(value);
+        } catch {
+            serialized = String(value);
+        }
+        return serialized.length > 120 ? `${serialized.slice(0, 117)}...` : serialized;
+    }
+
+    private describeMetadataName(name: unknown, displayName: unknown): string {
+        const safeName = typeof name === 'string' && name ? `"${name}"` : '"<unnamed>"';
+        return typeof displayName === 'string' && displayName && displayName !== name
+            ? `${safeName} — "${displayName}"`
+            : safeName;
+    }
+
+    private formatValidationJsonPath(path: string[]): string {
+        return path.reduce((formatted, segment) => /^\d+$/.test(segment)
+            ? `${formatted}[${segment}]`
+            : formatted ? `${formatted}.${segment}` : segment, '');
+    }
+
+    private getModuleMetadataPathValue(moduleMetadata: CreateModuleMetadataDto, path: string[]): unknown {
+        let value: any = moduleMetadata;
+        for (const segment of path) {
+            if (value === null || value === undefined) return undefined;
+            value = value[segment];
+        }
+        return value;
     }
 
     private getSeedArray<T>(value: T[] | null | undefined): T[] {
