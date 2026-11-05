@@ -103,6 +103,14 @@ export class MediaMigrationJob extends CommonEntity {
   @Column({ nullable: true, ...getColumnType('datetime') })
   finishedAt: Date | null;
 
+  // Lease held by the worker running this job. Only the holder may change the job. An expired
+  // lease means the worker stopped (for example, the process restarted) and the job can be resumed.
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  leaseToken: string | null;
+
+  @Column({ nullable: true, ...getColumnType('datetime') })
+  leaseExpiresAt: Date | null;
+
   @OneToMany('MediaMigrationItem', (item: MediaMigrationItem) => item.job)
   mediaMigrationItems: MediaMigrationItem[];
 }

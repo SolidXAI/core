@@ -1370,6 +1370,31 @@
             "isSystem": true
           },
           {
+            "name": "leaseToken",
+            "displayName": "Worker Lease Token",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 64,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "leaseExpiresAt",
+            "displayName": "Worker Lease Expires At",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
             "name": "mediaMigrationItems",
             "displayName": "Files",
             "type": "relation",

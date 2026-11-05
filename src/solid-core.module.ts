@@ -54,6 +54,10 @@ import { MediaService } from "./services/media.service";
 import { MediaDownloadUrlService } from "./services/media-download-url.service";
 import { MediaFileStorageService } from "./services/media-file-storage.service";
 import { MediaTransferService } from "./services/media-migration/media-transfer.service";
+import { MediaMigrationRunnerService } from "./services/media-migration/media-migration-runner.service";
+import { MediaMigrationService } from "./services/media-migration/media-migration.service";
+import { MediaMigrationPublisherDatabase } from "./jobs/database/media-migration-publisher-database.service";
+import { MediaMigrationSubscriberDatabase } from "./jobs/database/media-migration-subscriber-database.service";
 import { ModelMetadataService } from "./services/model-metadata.service";
 import { ModuleMetadataExplorerService } from "./services/module-metadata-explorer.service";
 import { ModuleMetadataService } from "./services/module-metadata.service";
@@ -828,6 +832,10 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     MediaDownloadUrlService,
     MediaFileStorageService,
     MediaTransferService,
+    MediaMigrationRunnerService,
+    MediaMigrationService,
+    MediaMigrationPublisherDatabase,
+    MediaMigrationSubscriberDatabase,
     // MediaStorageProviderMetadataSeederService,
     ModuleMetadataSeederService,
     ModuleTestDataService,
