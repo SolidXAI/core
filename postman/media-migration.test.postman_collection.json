@@ -1,0 +1,906 @@
+{
+  "info": {
+    "name": "SolidX - Media migration (tests)",
+    "description": "Test collection for the media migration API. Each request has assertions.\n\nSetup: set baseUrl, token, sourceProviderName, targetProviderName and fieldId in the collection variables. Use a small test field on a test provider, never production data.\n\nOrder: run 'Happy path' first, then wait for the job to finish (repeat '3. Get job'), then 'Negative checks'. 'Control' requests depend on the job's state and report 400 when the state does not allow them; that is expected.\n\nCleanup deletes source files and cannot be undone.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "sourceProviderName",
+      "value": "default-filesystem"
+    },
+    {
+      "key": "targetProviderName",
+      "value": "default-aws-s3"
+    },
+    {
+      "key": "fieldId",
+      "value": "0"
+    },
+    {
+      "key": "jobId",
+      "value": "0"
+    }
+  ],
+  "item": [
+    {
+      "name": "Happy path",
+      "item": [
+        {
+          "name": "1. Preview",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('preview returns 200', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('counts are numbers', () => { pm.expect(b.totalFiles).to.be.a('number'); pm.expect(b.totalBytes).to.be.a('number'); });",
+                  "pm.test('warnings and fields on source are lists', () => { pm.expect(b.warnings).to.be.an('array'); pm.expect(b.fieldsOnSourceProvider).to.be.an('array'); });",
+                  "pm.test('preview wrote nothing (no job id in response)', () => pm.expect(b.id).to.be.undefined);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/preview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "preview"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Read-only. Check the counts before creating a job. Expect fieldsOnSourceProvider to list the field until it is linked to the target in the metadata.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceProviderName\": \"{{sourceProviderName}}\",\n  \"targetProviderName\": \"{{targetProviderName}}\",\n  \"fieldMetadataIds\": [\n    \"{{fieldId}}\"\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "2. Create job",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('create returns 202', () => pm.response.to.have.status(202));",
+                  "const b = pm.response.json();",
+                  "pm.test('job is pending with an id', () => { pm.expect(b.id).to.be.a('number'); pm.expect(b.status).to.eql('pending'); });",
+                  "pm.collectionVariables.set('jobId', b.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Queues the job. The worker runs it in the background; use '3. Get job' to watch it.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceProviderName\": \"{{sourceProviderName}}\",\n  \"targetProviderName\": \"{{targetProviderName}}\",\n  \"fieldMetadataIds\": [\n    \"{{fieldId}}\"\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "3. Get job",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('job exists', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('progress is a percentage', () => pm.expect(b.progressPercent).to.be.within(0, 100));",
+                  "pm.test('status is known', () => pm.expect(['pending','running','cancelling','completed','completed_with_errors','failed','cancelled','rolled_back']).to.include(b.status));",
+                  "if (['completed','completed_with_errors','failed','cancelled','rolled_back'].includes(b.status)) { console.log('job finished with status ' + b.status); } else { console.log('job still ' + b.status + ', run this request again'); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "{{jobId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Run again until status is completed, completed_with_errors or failed. Use the Postman Runner with a delay to poll."
+          }
+        },
+        {
+          "name": "4. List job files",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('items returned', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('records is a list with a total', () => { pm.expect(b.records).to.be.an('array'); pm.expect(b.totalRecords).to.be.a('number'); });",
+                  "pm.test('every completed file has a size and a target name', () => b.records.filter(r => r.status === 'completed').forEach(r => { pm.expect(r.targetKey).to.be.a('string'); pm.expect(r.mediaIds.length).to.be.above(0); }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/items?limit=200",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "{{jobId}}",
+                "items?limit=200"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Per-file results: status, error code and the media rows affected."
+          }
+        },
+        {
+          "name": "5. List failed files",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('failed files have an error code and message', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.response.json().records.forEach(r => { pm.expect(r.errorCode).to.be.a('string'); pm.expect(r.errorMessage).to.be.a('string'); });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/items?status=failed",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "{{jobId}}",
+                "items?status=failed"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Empty on a clean run. Each failed file must say why."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Negative checks",
+      "item": [
+        {
+          "name": "Create with entityIds is refused",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('removed option is refused with 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "entityIds was removed. Expect 400 so an old client cannot silently migrate a whole field.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceProviderName\": \"{{sourceProviderName}}\",\n  \"targetProviderName\": \"{{targetProviderName}}\",\n  \"fieldMetadataIds\": [\n    \"{{fieldId}}\"\n  ],\n  \"entityIds\": [\n    1\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Create to the same provider is refused",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('same provider is 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceProviderName\": \"{{sourceProviderName}}\",\n  \"targetProviderName\": \"{{sourceProviderName}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create with unknown provider is refused",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('unknown provider is 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceProviderName\": \"no-such-provider\",\n  \"targetProviderName\": \"{{targetProviderName}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create with a non-numeric id is refused",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('bad id is 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceProviderId\": \"abc\",\n  \"targetProviderName\": \"{{targetProviderName}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Cleanup without confirmation is refused",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('wrong confirmation is 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/cleanup-source",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "{{jobId}}",
+                "cleanup-source"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirm\": \"yes\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Unknown job is 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('unknown job is 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "999999"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Cancel an unknown job is 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('unknown job is 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/999999/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "999999",
+                "cancel"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Removed repoint endpoint is gone",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('repoint endpoint no longer exists', () => pm.expect([404, 405]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/repoint-fields",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "{{jobId}}",
+                "repoint-fields"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Field switching was removed; fields are linked in the metadata instead."
+          }
+        },
+        {
+          "name": "Requests need a token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('no token is refused', () => pm.expect([401, 403]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Run with an empty token variable to check this. Expect 401 or 403."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Control (state dependent)",
+      "item": [
+        {
+          "name": "Cancel job",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('cancel is accepted or refused for a finished job', () => pm.expect([200, 400]).to.include(pm.response.code));",
+                  "if (pm.response.code === 200) { pm.expect(pm.response.json().status).to.be.oneOf(['cancelled', 'cancelling']); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "{{jobId}}",
+                "cancel"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Only for a pending or running job. A finished job returns 400."
+          }
+        },
+        {
+          "name": "Resume job",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('resume is accepted or refused by state', () => pm.expect([200, 400]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/resume",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "{{jobId}}",
+                "resume"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Only for a failed or cancelled job."
+          }
+        },
+        {
+          "name": "Retry failed files",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('retry is accepted or refused by state', () => pm.expect([200, 400]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/retry-failed",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "{{jobId}}",
+                "retry-failed"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Only for a job that finished with failures."
+          }
+        },
+        {
+          "name": "Rollback",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rollback is accepted or refused by state', () => pm.expect([200, 400]).to.include(pm.response.code));",
+                  "if (pm.response.code === 200) { pm.expect(pm.response.json().job.status).to.eql('rolled_back'); pm.expect(pm.response.json().targetFilesLeft).to.be.a('number'); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/rollback",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "{{jobId}}",
+                "rollback"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Moves rows back to the old provider. Refused once source files are deleted. Target copies are left and counted."
+          }
+        },
+        {
+          "name": "Cleanup source files",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('cleanup is accepted or refused by state', () => pm.expect([200, 400]).to.include(pm.response.code));",
+                  "if (pm.response.code === 200) { const b = pm.response.json(); pm.expect(b.deleted).to.be.a('number'); pm.expect(b.skipped).to.be.an('array'); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/cleanup-source",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "{{jobId}}",
+                "cleanup-source"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "DELETES SOURCE FILES AND CANNOT BE UNDONE. Only after the job completed and the results were checked.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirm\": \"DELETE_SOURCE_FILES\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

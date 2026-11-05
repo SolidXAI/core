@@ -25,6 +25,10 @@ import { TestController } from "./controllers/test.controller";
 import { FieldMetadata } from "./entities/field-metadata.entity";
 import { ListOfValues } from "./entities/list-of-values.entity";
 import { MediaStorageProviderMetadata } from "./entities/media-storage-provider-metadata.entity";
+import { MediaMigrationJob } from "./entities/media-migration-job.entity";
+import { MediaMigrationItem } from "./entities/media-migration-item.entity";
+import { MediaMigrationJobRepository } from "./repository/media-migration-job.repository";
+import { MediaMigrationItemRepository } from "./repository/media-migration-item.repository";
 import { Media } from "./entities/media.entity";
 import { ModelMetadata } from "./entities/model-metadata.entity";
 import { ModuleMetadata } from "./entities/module-metadata.entity";
@@ -48,6 +52,17 @@ import { ListOfValuesService } from "./services/list-of-values.service";
 import { MediaStorageProviderMetadataService } from "./services/media-storage-provider-metadata.service";
 import { MediaService } from "./services/media.service";
 import { MediaDownloadUrlService } from "./services/media-download-url.service";
+import { MediaFileStorageService } from "./services/media-file-storage.service";
+import { MediaTransferService } from "./services/media-migration/media-transfer.service";
+import { MediaMigrationRunnerService } from "./services/media-migration/media-migration-runner.service";
+import { MediaMigrationService } from "./services/media-migration/media-migration.service";
+import { MediaMigrationPublisherDatabase } from "./jobs/database/media-migration-publisher-database.service";
+import { MediaMigrationSubscriberDatabase } from "./jobs/database/media-migration-subscriber-database.service";
+import { MediaMigrationPublisherRedis } from "./jobs/redis/media-migration-publisher-redis.service";
+import { MediaMigrationSubscriberRedis } from "./jobs/redis/media-migration-subscriber-redis.service";
+import { MediaMigrationPublisher } from "./jobs/rabbitmq/media-migration-publisher.service";
+import { MediaMigrationSubscriber } from "./jobs/rabbitmq/media-migration-subscriber.service";
+import { MediaMigrationController } from "./controllers/media-migration.controller";
 import { ModelMetadataService } from "./services/model-metadata.service";
 import { ModuleMetadataExplorerService } from "./services/module-metadata-explorer.service";
 import { ModuleMetadataService } from "./services/module-metadata.service";
@@ -218,6 +233,8 @@ import { ChatterMessageArchiveController } from './controllers/chatter-message-a
 
 import { ExportTemplateController } from './controllers/export-template.controller';
 import { ExportTransactionController } from './controllers/export-transaction.controller';
+import { MediaMigrationJobController } from './controllers/media-migration-job.controller';
+import { MediaMigrationItemController } from './controllers/media-migration-item.controller';
 import { ImportTransactionErrorLogController } from './controllers/import-transaction-error-log.controller';
 import { ImportTransactionController } from './controllers/import-transaction.controller';
 import { ListOfValuesController } from './controllers/list-of-values.controller';
@@ -355,6 +372,8 @@ import { CsvService } from './services/csv.service';
 import { ExcelService } from './services/excel.service';
 import { ExportTemplateService } from './services/export-template.service';
 import { ExportTransactionService } from './services/export-transaction.service';
+import { MediaMigrationJobService } from './services/media-migration-job.service';
+import { MediaMigrationItemService } from './services/media-migration-item.service';
 import { ImportTransactionErrorLogService } from './services/import-transaction-error-log.service';
 import { ImportTransactionService } from './services/import-transaction.service';
 import { LocaleService } from './services/locale.service';
@@ -564,6 +583,8 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
       Locale,
       Media,
       MediaStorageProviderMetadata,
+      MediaMigrationJob,
+      MediaMigrationItem,
       MenuItemMetadata,
       ModelMetadata,
       ModuleMetadata,
@@ -685,6 +706,7 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     TypeOrmModule.forFeature([DashboardUserLayout]),
   ],
   controllers: [
+    MediaMigrationController,
     ActionMetadataController,
     AuthenticationController,
     ChatterMessageController,
@@ -693,6 +715,8 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     EmailTemplateController,
     ExportTemplateController,
     ExportTransactionController,
+    MediaMigrationJobController,
+    MediaMigrationItemController,
     FieldMetadataController,
     DashboardController,
     DatasourceManagementController,
@@ -812,6 +836,16 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     MediaStorageProviderMetadataService,
     MediaService,
     MediaDownloadUrlService,
+    MediaFileStorageService,
+    MediaTransferService,
+    MediaMigrationRunnerService,
+    MediaMigrationService,
+    MediaMigrationPublisherDatabase,
+    MediaMigrationSubscriberDatabase,
+    MediaMigrationPublisherRedis,
+    MediaMigrationSubscriberRedis,
+    MediaMigrationPublisher,
+    MediaMigrationSubscriber,
     // MediaStorageProviderMetadataSeederService,
     ModuleMetadataSeederService,
     ModuleTestDataService,
@@ -1017,6 +1051,8 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     AuditSubscriber,
     ExportTemplateService,
     ExportTransactionService,
+    MediaMigrationJobService,
+    MediaMigrationItemService,
     ExcelService,
     CsvService,
     DatasourceManagementService,
@@ -1076,6 +1112,8 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     ModuleMetadataRepository,
     ActionMetadataRepository,
     MediaStorageProviderMetadataRepository,
+    MediaMigrationJobRepository,
+    MediaMigrationItemRepository,
     FixturesService,
     FixturesSetupCommand,
     FixturesTearDownCommand,

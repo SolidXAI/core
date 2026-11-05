@@ -1,0 +1,406 @@
+{
+  "info": {
+    "name": "SolidX — Media migration",
+    "description": "Moves stored media between storage providers, buckets and public/private folders.\n\nRun in this order: link the fields to the new provider in the metadata and deploy, then preview, then migrate one small field as a test and check the result (roll it back if anything looks wrong), then the larger fields or the whole provider. Preview and finished jobs list any media fields still on the old provider. Each job is queued and runs in the background; watch it with 'Get job'. Replace {{jobId}} with the id returned when you create a job.\n\nCleanup deletes source files and cannot be undone: run it only after the job has finished cleanly and you have checked the results.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "jobId",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "Preview a whole-provider migration",
+      "item": [
+        {
+          "name": "Preview (no changes made)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/preview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "preview"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Counts files and bytes, lists the fields that would switch, and warns about shared files and name clashes. Writes nothing.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceProviderName\": \"default-filesystem\",\n  \"targetProviderName\": \"default-aws-s3\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Start migrations",
+      "item": [
+        {
+          "name": "Start: whole application",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Moves every file on the source provider to the target. Returns 202 with the job.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceProviderName\": \"default-filesystem\",\n  \"targetProviderName\": \"default-aws-s3\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Start: one field",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Moves the files of one media field. Replace fieldMetadataIds with the field's id.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceProviderName\": \"default-filesystem\",\n  \"targetProviderName\": \"default-aws-s3\",\n  \"fieldMetadataIds\": [\n    45\n  ]\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Watch jobs",
+      "item": [
+        {
+          "name": "List jobs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration?limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration?limit=20&offset=0"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Get job",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "{{jobId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Status, counts and progressPercent."
+          }
+        },
+        {
+          "name": "List files of a job",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/items?status=failed&limit=50&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "{{jobId}}",
+                "items?status=failed&limit=50&offset=0"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Per-file results. Use status=failed to see what went wrong and why."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Control a job",
+      "item": [
+        {
+          "name": "Cancel",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "{{jobId}}",
+                "cancel"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Stops after the current batch. A pending job is cancelled at once."
+          }
+        },
+        {
+          "name": "Resume",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/resume",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "{{jobId}}",
+                "resume"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Continues a failed or cancelled job from where it stopped."
+          }
+        },
+        {
+          "name": "Retry failed files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/retry-failed",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "{{jobId}}",
+                "retry-failed"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Runs again only the files that failed."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Undo and clean up",
+      "item": [
+        {
+          "name": "Rollback",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/rollback",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "{{jobId}}",
+                "rollback"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Moves rows and fields back to the source. Possible until source files are deleted. Target copies are left and reported as targetFilesLeft."
+          }
+        },
+        {
+          "name": "Cleanup: delete source files",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/cleanup-source",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "{{jobId}}",
+                "cleanup-source"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Deletes source files only where the target copy is verified and no row still uses them. Cannot be undone.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirm\": \"DELETE_SOURCE_FILES\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

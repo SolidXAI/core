@@ -4,9 +4,10 @@ import { MediaStorageProviderType } from 'src/dtos/create-media-storage-provider
 import { MediaStorageProviderMetadata } from 'src/entities/media-storage-provider-metadata.entity';
 import { SettingService } from 'src/services/setting.service';
 import type { SolidCoreSetting } from 'src/services/settings/default-settings-provider.service';
-import { getEffectiveS3Region } from './media-storage.utils';
+import { buildDiskMediaPath, getEffectiveS3Region, resolveMediaIsPublic } from './media-storage.utils';
 import { ConfigService } from '@nestjs/config';
-import { S3FileService } from './file';
+import { DiskFileService, S3FileService } from './file';
+import { Media } from 'src/entities/media.entity';
 
 export const MEDIA_DOWNLOAD_TOKEN_AUDIENCE = 'media-download';
 const DEFAULT_SIGNED_URL_EXPIRY_MINUTES = 60;
@@ -22,6 +23,7 @@ export class MediaDownloadUrlService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly s3FileService: S3FileService,
+    private readonly diskFileService: DiskFileService,
     private readonly settingService: SettingService,
     private readonly configService: ConfigService,
   ) { }
@@ -54,6 +56,35 @@ export class MediaDownloadUrlService {
 
   async getPrivateUrl(mediaId: number, relativeUri: string, storageProvider?: MediaStorageProviderMetadata): Promise<string> {
     return this.resolveDownloadUrl(mediaId, relativeUri, storageProvider);
+  }
+
+  /**
+   * Builds the URL for one media row using the provider recorded on that row
+   * (not the field's provider), so rows split across providers each get a working link.
+   */
+  async buildFullUrl(media: Media): Promise<string> {
+    const provider = media.mediaStorageProviderMetadata;
+    if (!provider) {
+      this.logger.warn(`Media id ${media.id}: no mediaStorageProviderMetadata loaded; returning relativeUri`);
+      return media.relativeUri;
+    }
+
+    if (resolveMediaIsPublic(provider) === false) {
+      return this.getPrivateUrl(media.id, media.relativeUri, provider);
+    }
+
+    switch (provider.type as MediaStorageProviderType) {
+      case MediaStorageProviderType.Filesystem:
+        return this.diskFileService.getUrl(buildDiskMediaPath(media.relativeUri, this.settingService, provider));
+      case MediaStorageProviderType.AwsS3:
+        return this.s3FileService.getUrl(
+          `${provider.bucketName}:${media.relativeUri}`,
+          { region: getEffectiveS3Region(this.configService, provider.region), expiresIn: 0 },
+        );
+      default:
+        this.logger.warn(`Media id ${media.id}: unknown storage provider type ${provider.type}; returning relativeUri`);
+        return media.relativeUri;
+    }
   }
 
   async verifyDownloadToken(token: string): Promise<MediaDownloadTokenPayload> {
