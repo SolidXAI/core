@@ -9,7 +9,7 @@ import { MediaMigrationItem } from 'src/entities/media-migration-item.entity';
 import { MediaMigrationJob, MediaMigrationJobStatus } from 'src/entities/media-migration-job.entity';
 import { MediaStorageProviderMetadata } from 'src/entities/media-storage-provider-metadata.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
-import { MediaMigrationPublisherDatabase } from 'src/jobs/database/media-migration-publisher-database.service';
+import { PublisherFactory } from 'src/services/queues/publisher-factory.service';
 import { findTargetKeyCollisions, normalizeTargetKey, resolveLocation, sameLocation } from './media-location';
 import { MigrationError } from './migration-error';
 import { MediaTransferService } from './media-transfer.service';
@@ -51,7 +51,7 @@ export class MediaMigrationService {
     private readonly dataSource: DataSource,
     private readonly transfer: MediaTransferService,
     private readonly configService: ConfigService,
-    private readonly publisher: MediaMigrationPublisherDatabase,
+    private readonly publisherFactory: PublisherFactory<{ jobId: number }>,
   ) { }
 
   // ---- preview ----
@@ -172,7 +172,7 @@ export class MediaMigrationService {
       warnings: preview.warnings,
     } as any) as unknown as MediaMigrationJob);
 
-    await this.publisher.publish({ payload: { jobId: job.id } } as any);
+    await this.publish(job.id);
     this.logger.log(`Queued media migration job ${job.id} (${source.name} -> ${target.name})`);
     return job;
   }
@@ -200,7 +200,7 @@ export class MediaMigrationService {
       throw new BadRequestException(`Job #${jobId} is ${job.status} and cannot be resumed.`);
     }
     await this.updateJob(jobId, { status: 'pending', errorMessage: null, leaseToken: null, leaseExpiresAt: null });
-    await this.publisher.publish({ payload: { jobId } } as any);
+    await this.publish(jobId);
     return this.loadJob(jobId);
   }
 
@@ -215,7 +215,7 @@ export class MediaMigrationService {
       { status: 'pending', errorCode: null, errorMessage: null },
     );
     await this.updateJob(jobId, { status: 'pending', lastProcessedMediaId: 0, errorMessage: null, finishedAt: null });
-    await this.publisher.publish({ payload: { jobId } } as any);
+    await this.publish(jobId);
     return this.loadJob(jobId);
   }
 
@@ -431,6 +431,11 @@ export class MediaMigrationService {
       throw new NotFoundException(`Media migration job #${jobId} not found`);
     }
     return job;
+  }
+
+  // Publishes through the configured broker (database, redis or rabbitmq), by publisher name.
+  private async publish(jobId: number): Promise<void> {
+    await this.publisherFactory.publish({ payload: { jobId } } as any, 'MediaMigrationPublisher');
   }
 
   private async updateJob(jobId: number, fields: Partial<MediaMigrationJob>): Promise<void> {

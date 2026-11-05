@@ -160,7 +160,7 @@ describeIfDb('media migration end to end', () => {
 
     writeSource('delta.txt', 'delta');
     await service.retryFailed(job.id);
-    expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({ payload: { jobId: job.id } }));
+    expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({ payload: { jobId: job.id } }), 'MediaMigrationPublisher');
     expect((await runner.run(job.id)).status).toBe('completed');
     expect((await rowOn(row.id)).mediaStorageProviderMetadata.id).toBe(privateProvider.id);
   });
@@ -215,7 +215,7 @@ describeIfDb('media migration end to end', () => {
     expect(job.status).toBe('pending');
     expect(job.batchSize).toBe(1000);
     expect(job.concurrency).toBe(1);
-    expect(publisher.publish).toHaveBeenLastCalledWith(expect.objectContaining({ payload: { jobId: job.id } }));
+    expect(publisher.publish).toHaveBeenLastCalledWith(expect.objectContaining({ payload: { jobId: job.id } }), 'MediaMigrationPublisher');
 
     await expect(service.create({ sourceProviderId: publicProvider.id, targetProviderId: privateProvider.id, fieldMetadataIds: [field.id], entityIds: [9] }))
       .rejects.toThrow(/already pending/);
