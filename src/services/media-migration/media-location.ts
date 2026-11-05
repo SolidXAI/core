@@ -112,6 +112,31 @@ export function findTargetKeyCollisions(sourceKeys: Iterable<string>): { targetK
     .map(([targetKey, sources]) => ({ targetKey, sourceKeys: [...sources] }));
 }
 
+/**
+ * The ways a media row's relativeUri can refer to this stored file. On disk, one file can be written
+ * as "x.png", "media-files-storage/x.png" or an absolute path (see resolveDiskMediaPath). This is a
+ * superset: a spelling may belong to a different file (the other folder), so each row found with these
+ * keys must still be resolved with its own provider and compared. Used to find every row that uses a
+ * file before it is deleted.
+ */
+export function equivalentKeys(location: MediaLocation): string[] {
+  if (location.kind === 's3') {
+    return [location.key];
+  }
+  const keys = new Set<string>([location.absolutePath]);
+  const dirName = getMediaStorageDirName();
+  for (const root of [getPublicMediaStorageDir(), getPrivateMediaStorageDir()]) {
+    const relative = path.relative(root, location.absolutePath);
+    if (relative && !relative.startsWith('..') && !path.isAbsolute(relative)) {
+      const key = relative.split(path.sep).join('/');
+      keys.add(key);
+      keys.add(`${dirName}/${key}`);
+      keys.add(`${dirName}-private/${key}`);
+    }
+  }
+  return [...keys];
+}
+
 /** True when both locations point at the same stored object, so no copy is needed. */
 export function sameLocation(a: MediaLocation, b: MediaLocation): boolean {
   if (a.kind === 'disk' && b.kind === 'disk') {

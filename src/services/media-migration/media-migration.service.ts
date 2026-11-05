@@ -13,7 +13,7 @@ import { PublisherFactory } from 'src/services/queues/publisher-factory.service'
 import { findTargetKeyCollisions, normalizeTargetKey, resolveLocation, sameLocation } from './media-location';
 import { MigrationError } from './migration-error';
 import { MediaTransferService } from './media-transfer.service';
-import { scopedMediaQuery, sharedRowsOutsideScope, MigrationScope } from './media-migration-scope';
+import { countSharedRowsOutsideScope, MigrationScope, rowsUsingLocation, scopedMediaQuery } from './media-migration-scope';
 
 export const CLEANUP_CONFIRMATION = 'DELETE_SOURCE_FILES';
 
@@ -105,7 +105,7 @@ export class MediaMigrationService {
     });
 
     const collisions = findTargetKeyCollisions(distinctFiles.keys());
-    const sharedOutside = await sharedRowsOutsideScope(this.dataSource, scope, [...distinctFiles.keys()]);
+    const sharedOutside = await countSharedRowsOutsideScope(this.dataSource, scope);
     const nullSizeRows = await scopedMediaQuery(this.dataSource, scope).andWhere('media.fileSize IS NULL').getCount();
 
     const warnings: string[] = [];
@@ -115,8 +115,8 @@ export class MediaMigrationService {
     if (source.isPublic === false && target.isPublic !== false) {
       warnings.push('Files from a private provider will become publicly reachable.');
     }
-    if (sharedOutside.length > 0) {
-      warnings.push(`${sharedOutside.length} media row(s) outside this scope use the same files. They will be moved too.`);
+    if (sharedOutside > 0) {
+      warnings.push(`${sharedOutside} media row(s) outside this scope use the same files. They will be moved too.`);
     }
     if (collisions.length > 0) {
       warnings.push(`${collisions.length} target file name(s) are shared by different source files. The migration will fail for those files until they are renamed.`);
@@ -172,34 +172,68 @@ export class MediaMigrationService {
       warnings: preview.warnings,
     } as any) as unknown as MediaMigrationJob);
 
-    await this.publish(job.id);
+    try {
+      await this.publish(job.id);
+    } catch (error: any) {
+      // A job that was never queued would wait forever and block this provider, so close it.
+      const reason = `The job could not be queued: ${error?.message ?? error}`;
+      await this.updateJob(job.id, { status: 'failed', finishedAt: new Date(), errorMessage: reason });
+      throw new BadRequestException(`${reason} Check the queue settings (QUEUES_DEFAULT_BROKER and QUEUES_SERVICE_ROLE) and try again.`);
+    }
     this.logger.log(`Queued media migration job ${job.id} (${source.name} -> ${target.name})`);
     return job;
   }
 
   // ---- control ----
 
-  /** Stops a job. A pending job is cancelled at once; a running one stops after its current batch. */
+  /**
+   * Stops a job. A pending job, or one whose worker is gone, is cancelled at once; a running one stops
+   * after its current batch. Each change only applies if the job is still in the state it was read in,
+   * so a worker starting at the same moment cannot undo it.
+   */
   async cancel(jobId: number): Promise<MediaMigrationJob> {
     const job = await this.loadJob(jobId);
+    const repo = this.dataSource.getRepository(MediaMigrationJob);
+    const cancelled = { status: 'cancelled' as const, finishedAt: new Date(), leaseToken: null, leaseExpiresAt: null };
+
     if (job.status === 'pending') {
-      await this.updateJob(jobId, { status: 'cancelled', finishedAt: new Date() });
-    } else if (job.status === 'running') {
-      await this.updateJob(jobId, { status: 'cancelling' });
+      const result = await repo.update({ id: jobId, status: 'pending' }, cancelled);
+      if ((result.affected ?? 0) === 0) {
+        // A worker took the job in the meantime: ask it to stop instead.
+        return this.cancel(jobId);
+      }
+    } else if (job.status === 'running' || job.status === 'cancelling') {
+      if (this.hasLiveWorker(job)) {
+        await repo.update({ id: jobId, status: In(['running', 'cancelling']) }, { status: 'cancelling' });
+      } else {
+        // The worker is gone, so nothing would ever see a "cancelling" request.
+        await repo.update({ id: jobId, status: In(['running', 'cancelling']) }, cancelled);
+      }
     } else {
       throw new BadRequestException(`Job #${jobId} is ${job.status} and cannot be cancelled.`);
     }
     return this.loadJob(jobId);
   }
 
-  /** Continues a failed or cancelled job from where it stopped. */
+  // A worker is alive while it keeps renewing the job's lease.
+  private hasLiveWorker(job: MediaMigrationJob): boolean {
+    return !!job.leaseToken && !!job.leaseExpiresAt && job.leaseExpiresAt > new Date();
+  }
+
+  /**
+   * Continues a job from where it stopped: a failed or cancelled job, one whose worker is gone, or a
+   * pending job whose queue message never arrived (it is queued again; only one worker can run it).
+   */
   async resume(jobId: number): Promise<MediaMigrationJob> {
     const job = await this.loadJob(jobId);
-    const staleRunning = job.status === 'running' && (!job.leaseExpiresAt || job.leaseExpiresAt < new Date());
-    if (!['failed', 'cancelled'].includes(job.status) && !staleRunning) {
+    const orphaned = ['running', 'cancelling'].includes(job.status) && !this.hasLiveWorker(job);
+    if (!['failed', 'cancelled', 'pending'].includes(job.status) && !orphaned) {
       throw new BadRequestException(`Job #${jobId} is ${job.status} and cannot be resumed.`);
     }
-    await this.updateJob(jobId, { status: 'pending', errorMessage: null, leaseToken: null, leaseExpiresAt: null });
+    if (job.status !== 'pending') {
+      // A pending job may be starting right now, so only clear the lease of one that is truly orphaned or finished.
+      await this.updateJob(jobId, { status: 'pending', errorMessage: null, leaseToken: null, leaseExpiresAt: null });
+    }
     await this.publish(jobId);
     return this.loadJob(jobId);
   }
@@ -293,13 +327,9 @@ export class MediaMigrationService {
           skipped.push({ itemId: item.id, reason: 'The target copy is missing or has a different size.' });
           continue;
         }
-        const stillUsed = await this.dataSource.getRepository(Media).createQueryBuilder('media').withDeleted()
-          .innerJoin('media.mediaStorageProviderMetadata', 'provider')
-          .where('provider.id = :sourceId', { sourceId: job.sourceProvider.id })
-          .andWhere('media.relativeUri = :key', { key: item.sourceKey })
-          .getCount();
-        if (stillUsed > 0) {
-          skipped.push({ itemId: item.id, reason: `${stillUsed} media row(s) still use the source file.` });
+        const stillUsed = await rowsUsingLocation(this.dataSource, source, defaultRegion);
+        if (stillUsed.length > 0) {
+          skipped.push({ itemId: item.id, reason: `${stillUsed.length} media row(s) still use the source file.` });
           continue;
         }
         await this.transfer.delete(source, 'source');

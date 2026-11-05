@@ -2,6 +2,7 @@ import { DataSource, SelectQueryBuilder } from 'typeorm';
 import { Media } from 'src/entities/media.entity';
 import { MEDIA_MIGRATION_KEY_MAX_LENGTH } from 'src/entities/media-migration-item.entity';
 import * as crypto from 'crypto';
+import { equivalentKeys, MediaLocation, resolveLocation, sameLocation } from './media-location';
 
 export interface MigrationScope {
   sourceProviderId: number;
@@ -35,31 +36,47 @@ export function scopedMediaQuery(dataSource: DataSource, scope: MigrationScope, 
 }
 
 /**
- * Rows on the source provider whose file is also used by a row in the scope but are outside it,
- * such as a draft/publish version. Moving the file moves them too, so the run reports them.
+ * How many rows on the source provider use a file that is also used by a row in the scope but are
+ * outside it, such as a draft/publish version. Moving the file moves them too, so the preview reports
+ * them. Counted in the database: a whole-provider scope has no "outside", and a narrower one never
+ * passes file names as query parameters, which would fail above the database's parameter limit.
  */
-export function sharedRowsOutsideScope(dataSource: DataSource, scope: MigrationScope, fileKeys: string[]): Promise<Media[]> {
-  if (fileKeys.length === 0) {
-    return Promise.resolve([]);
+export async function countSharedRowsOutsideScope(dataSource: DataSource, scope: MigrationScope): Promise<number> {
+  if (!scope.modelMetadataIds?.length && !scope.fieldMetadataIds?.length && !scope.entityIds?.length) {
+    return 0;
   }
+  const scopedKeys = scopedMediaQuery(dataSource, scope, 'scopedKeys').select('scopedKeys.relativeUri');
+  const scopedIds = scopedMediaQuery(dataSource, scope, 'scopedIds').select('scopedIds.id');
   return dataSource.getRepository(Media).createQueryBuilder('media').withDeleted()
-    .innerJoin('media.mediaStorageProviderMetadata', 'source')
-    .leftJoinAndSelect('media.modelMetadata', 'modelMetadata')
-    .leftJoinAndSelect('media.fieldMetadata', 'fieldMetadata')
-    .where('source.id = :sourceProviderId', { sourceProviderId: scope.sourceProviderId })
-    .andWhere('media.relativeUri IN (:...keys)', { keys: fileKeys })
-    .getMany()
-    .then(rows => rows.filter(row => !matchesScope(row, scope)));
+    .innerJoin('media.mediaStorageProviderMetadata', 'sourceProvider')
+    .where('sourceProvider.id = :sourceProviderId', { sourceProviderId: scope.sourceProviderId })
+    .andWhere(`media.relativeUri IN (${scopedKeys.getQuery()})`)
+    .andWhere(`media.id NOT IN (${scopedIds.getQuery()})`)
+    .setParameters(scopedKeys.getParameters())
+    .getCount();
 }
 
-function matchesScope(row: Media, scope: MigrationScope): boolean {
-  const modelIds = scope.modelMetadataIds ?? [];
-  const fieldIds = scope.fieldMetadataIds ?? [];
-  const entityIds = scope.entityIds ?? [];
-  if (modelIds.length && !modelIds.includes(row.modelMetadata?.id)) return false;
-  if (fieldIds.length && !fieldIds.includes(row.fieldMetadata?.id)) return false;
-  if (entityIds.length && !entityIds.includes(row.entityId)) return false;
-  return true;
+/**
+ * Every media row, on any provider, that uses this stored file. A row counts if its own provider and
+ * key resolve to the same file, however the key is spelled and whichever provider record it uses
+ * (for example two S3 providers on one bucket). Soft-deleted rows are included.
+ */
+export async function rowsUsingLocation(
+  dataSource: DataSource,
+  location: MediaLocation,
+  defaultRegion?: string,
+): Promise<Media[]> {
+  const rows = await dataSource.getRepository(Media).createQueryBuilder('media').withDeleted()
+    .innerJoinAndSelect('media.mediaStorageProviderMetadata', 'provider')
+    .where('media.relativeUri IN (:...keys)', { keys: equivalentKeys(location) })
+    .getMany();
+  return rows.filter(row => {
+    try {
+      return sameLocation(resolveLocation(row.mediaStorageProviderMetadata, row.relativeUri, defaultRegion), location);
+    } catch {
+      return false; // a provider that cannot be resolved cannot be using this file
+    }
+  });
 }
 
 /**

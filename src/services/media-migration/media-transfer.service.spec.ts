@@ -177,6 +177,33 @@ describe('MediaTransferService', () => {
     });
   });
 
+  describe('sameContent', () => {
+    it('is true for identical files and false for different files of the same size', async () => {
+      fs.writeFileSync(diskAt('same-a.txt').absolutePath, 'abcd');
+      fs.writeFileSync(diskAt('same-b.txt').absolutePath, 'abcd');
+      fs.writeFileSync(diskAt('same-c.txt').absolutePath, 'abce');
+
+      await expect(service.sameContent(diskAt('same-a.txt'), diskAt('same-b.txt'))).resolves.toBe(true);
+      await expect(service.sameContent(diskAt('same-a.txt'), diskAt('same-c.txt'))).resolves.toBe(false);
+    });
+
+    it('compares a disk file with an S3 object', async () => {
+      fs.writeFileSync(diskAt('s3-compare.txt').absolutePath, 'abcd');
+      s3FileService.readStream.mockImplementation(async () => Readable.from([Buffer.from('ab'), Buffer.from('cd')]));
+      await expect(service.sameContent(diskAt('s3-compare.txt'), s3At('b', 'k'))).resolves.toBe(true);
+
+      s3FileService.readStream.mockImplementation(async () => Readable.from([Buffer.from('xxxx')]));
+      await expect(service.sameContent(diskAt('s3-compare.txt'), s3At('b', 'k'))).resolves.toBe(false);
+    });
+
+    it('reports a read problem on the side that failed', async () => {
+      s3FileService.readStream.mockRejectedValue({ name: 'AccessDenied' });
+      fs.writeFileSync(diskAt('s3-denied.txt').absolutePath, 'x');
+      await expect(service.sameContent(diskAt('s3-denied.txt'), s3At('b', 'k'))).rejects.toMatchObject({ code: 'TARGET_WRITE_DENIED' });
+      await expect(service.sameContent(s3At('a', 'k'), diskAt('s3-denied.txt'))).rejects.toMatchObject({ code: 'SOURCE_READ_DENIED' });
+    });
+  });
+
   describe('assertBucketReachable', () => {
     it('passes for a bucket that exists and ignores disk locations', async () => {
       await expect(service.assertBucketReachable(s3At('a', 'k'), 'source')).resolves.toBeUndefined();

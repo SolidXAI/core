@@ -2,7 +2,7 @@ import * as path from 'path';
 import { MigrationError } from './migration-error';
 import { getPrivateMediaStorageDir, getPublicMediaStorageDir } from 'src/services/file/media-storage-paths';
 import { MEDIA_MIGRATION_KEY_MAX_LENGTH } from 'src/entities/media-migration-item.entity';
-import { assertStorableKey, findTargetKeyCollisions, normalizeTargetKey, resolveLocation, sameLocation } from './media-location';
+import { assertStorableKey, equivalentKeys, findTargetKeyCollisions, normalizeTargetKey, resolveLocation, sameLocation } from './media-location';
 
 const disk = { name: 'fs', type: 'filesystem', isPublic: true } as any;
 const privateDisk = { name: 'fs-private', type: 'filesystem', isPublic: false } as any;
@@ -40,6 +40,32 @@ describe('normalizeTargetKey', () => {
   it('refuses names too long to record', () => {
     expect(() => normalizeTargetKey('a'.repeat(MEDIA_MIGRATION_KEY_MAX_LENGTH + 1))).toThrow(/longer than/);
     expect(() => normalizeTargetKey('a'.repeat(MEDIA_MIGRATION_KEY_MAX_LENGTH))).not.toThrow();
+  });
+});
+
+describe('equivalentKeys', () => {
+  it('lists every way a disk file can be written in a media row, so no user of the file is missed', () => {
+    const location = resolveLocation(disk, 'x.png');
+    const keys = equivalentKeys(location);
+    expect(keys).toEqual(expect.arrayContaining(['x.png', 'media-files-storage/x.png', 'media-files-storage-private/x.png']));
+    expect(keys).toContain(location.kind === 'disk' ? location.absolutePath : '');
+  });
+
+  it('uses just the key for S3', () => {
+    expect(equivalentKeys(resolveLocation(s3, 'abc.png'))).toEqual(['abc.png']);
+  });
+
+  it('never misses a spelling that reaches the file, on either a public or a private provider', () => {
+    const location = resolveLocation(disk, 'sub/x.png');
+    const keys = equivalentKeys(location);
+    const spellings = ['sub/x.png', 'media-files-storage/sub/x.png', 'media-files-storage-private/sub/x.png', location.kind === 'disk' ? location.absolutePath : ''];
+    for (const provider of [disk, privateDisk]) {
+      for (const spelling of spellings) {
+        if (sameLocation(location, resolveLocation(provider, spelling))) {
+          expect(keys).toContain(spelling);
+        }
+      }
+    }
   });
 });
 

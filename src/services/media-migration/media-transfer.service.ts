@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as fs from 'fs';
 import * as fsPromises from 'fs/promises';
 import * as path from 'path';
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 import { Readable } from 'stream';
 import { DiskFileService, S3FileService } from 'src/services/file';
 import { MediaLocation } from './media-location';
@@ -190,12 +190,38 @@ export class MediaTransferService {
 
   // Always releases the stream, even when the consumer fails before reading it. The no-op
   // listener only stops an unhandled 'error' event; the consumer still sees and reports the error.
-  private async useStream(stream: Readable, use: (stream: Readable) => Promise<unknown>): Promise<void> {
+  private async useStream<T>(stream: Readable, use: (stream: Readable) => Promise<T>): Promise<T> {
     stream.on('error', () => undefined);
     try {
-      await use(stream);
+      return await use(stream);
     } finally {
       stream.destroy();
+    }
+  }
+
+  /**
+   * Whether two stored files have identical content. Same size does not mean same file, so a
+   * target that already holds a same-named file is compared by SHA-256 before it is trusted.
+   */
+  async sameContent(source: MediaLocation, target: MediaLocation): Promise<boolean> {
+    const [sourceHash, targetHash] = await Promise.all([this.contentHash(source, 'source'), this.contentHash(target, 'target')]);
+    return sourceHash === targetHash;
+  }
+
+  private async contentHash(location: MediaLocation, role: StorageRole): Promise<string> {
+    try {
+      const stream = location.kind === 'disk'
+        ? fs.createReadStream(location.absolutePath)
+        : await this.s3FileService.readStream(objectPath(location), { region: location.region });
+      return await this.useStream(stream, async readable => {
+        const hash = createHash('sha256');
+        for await (const chunk of readable) {
+          hash.update(chunk);
+        }
+        return hash.digest('hex');
+      });
+    } catch (error) {
+      throw toMigrationError(error, role, describe(location));
     }
   }
 
