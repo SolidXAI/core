@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
 import { Media } from "src/entities/media.entity";
@@ -8,13 +8,12 @@ import { BasicFilterDto } from "../dtos/basic-filters.dto";
 import { UpdateMediaStorageProviderMetadataDto } from "../dtos/update-media-storage-provider.dto";
 import { MediaStorageProviderMetadata } from "../entities/media-storage-provider-metadata.entity";
 import { CrudHelperService } from "./crud-helper.service";
-
-// Provider settings that decide where existing files are found. Changing any of them
-// while files exist on the provider would make those files unreachable.
-const LOCATION_FIELDS = ['type', 'bucketName', 'isPublic', 'region'] as const;
+import { describeProviderLocationChanges, findProviderLocationChanges } from "./media-storage-provider-changes";
 
 @Injectable()
 export class MediaStorageProviderMetadataService {
+    private readonly logger = new Logger(MediaStorageProviderMetadataService.name);
+
     constructor(
         // @InjectRepository(MediaStorageProviderMetadata)
         // private readonly mediaStorageProviderRepo: Repository<MediaStorageProviderMetadata>,
@@ -25,39 +24,19 @@ export class MediaStorageProviderMetadataService {
     ) { }
 
     /**
-     * Rejects a change to a location field of a provider that still has media rows.
-     * Only fields present in `incoming` are compared, so partial updates and seeder upserts
-     * that omit a field are not blocked.
+     * Finds changes in `incoming` that would make files already stored on this provider
+     * unreachable. Returns an empty list if nothing risky changes or the provider holds no media.
      */
-    private async assertSafeProviderChange(existing: MediaStorageProviderMetadata, incoming: Record<string, any>): Promise<void> {
-        const changes = LOCATION_FIELDS
-            .filter(field => field in incoming && incoming[field] !== undefined)
-            .filter(field => this.normalizeLocationValue(field, existing[field]) !== this.normalizeLocationValue(field, incoming[field]))
-            .map(field => `${field} from "${existing[field] ?? ''}" to "${incoming[field] ?? ''}"`);
-
+    private async findBlockedLocationChanges(existing: MediaStorageProviderMetadata, incoming: Record<string, any>) {
+        const changes = findProviderLocationChanges(existing, incoming);
         if (changes.length === 0) {
-            return;
+            return { changes, mediaCount: 0 };
         }
 
         const mediaCount = await this.dataSource.getRepository(Media).count({
             where: { mediaStorageProviderMetadata: { id: existing.id } },
         });
-        if (mediaCount === 0) {
-            return;
-        }
-
-        throw new BadRequestException(
-            `Media storage provider "${existing.name}" has ${mediaCount} media files. Changing ${changes.join(' and ')} ` +
-            `would break them. Create a new provider with the new settings and move the files with the media migration API (POST /api/media-migration).`
-        );
-    }
-
-    // Matches how the app reads these values: a missing isPublic counts as public.
-    private normalizeLocationValue(field: typeof LOCATION_FIELDS[number], value: any): any {
-        if (field === 'isPublic') {
-            return value !== false;
-        }
-        return value ?? null;
+        return { changes: mediaCount > 0 ? changes : [], mediaCount };
     }
 
     async find(basicFilterDto: BasicFilterDto) {
@@ -150,8 +129,20 @@ export class MediaStorageProviderMetadataService {
 
         // if found
         if (existingMediaStorageProvider) {
-            await this.assertSafeProviderChange(existingMediaStorageProvider, updateMediaStorageProviderDto);
-            const updatedMediaStorageProviderDto = { ...existingMediaStorageProvider, ...updateMediaStorageProviderDto };
+            // The seeder calls this on every run. Throwing here would stop seeding for the whole
+            // module, so keep the stored location settings and warn instead.
+            const { changes, mediaCount } = await this.findBlockedLocationChanges(existingMediaStorageProvider, updateMediaStorageProviderDto);
+            const safeDto = { ...updateMediaStorageProviderDto };
+            for (const change of changes) {
+                delete safeDto[change.field];
+            }
+            if (changes.length > 0) {
+                this.logger.warn(
+                    `Seed data differs from media storage provider "${existingMediaStorageProvider.name}" (${describeProviderLocationChanges(changes)}), ` +
+                    `but it holds ${mediaCount} media files, so the stored values were kept.`
+                );
+            }
+            const updatedMediaStorageProviderDto = { ...existingMediaStorageProvider, ...safeDto };
             return this.mediaStorageProviderRepo.save(updatedMediaStorageProviderDto);
         }
         // if not found - create new 
@@ -165,7 +156,13 @@ export class MediaStorageProviderMetadataService {
 
         const existing = await this.mediaStorageProviderRepo.findOne({ where: { id } });
         if (existing) {
-            await this.assertSafeProviderChange(existing, updateMediaStorageProviderMetadataDto);
+            const { changes, mediaCount } = await this.findBlockedLocationChanges(existing, updateMediaStorageProviderMetadataDto);
+            if (changes.length > 0) {
+                throw new BadRequestException(
+                    `Media storage provider "${existing.name}" has ${mediaCount} media files. Changing ${describeProviderLocationChanges(changes)} ` +
+                    `would make them unreachable. Automatic media migration is coming soon; until then, leave this setting unchanged.`
+                );
+            }
         }
 
         const entity = await this.mediaStorageProviderRepo.preload({
