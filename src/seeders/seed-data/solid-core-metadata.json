@@ -1119,19 +1119,6 @@
             "isMultiSelect": false
           },
           {
-            "name": "repointFields",
-            "displayName": "Repoint Fields After Success",
-            "type": "boolean",
-            "ormType": "boolean",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true,
-            "defaultValue": "true"
-          },
-          {
             "name": "overwriteExisting",
             "displayName": "Overwrite Existing Files",
             "type": "boolean",
@@ -1276,30 +1263,6 @@
           {
             "name": "fieldMetadataIds",
             "displayName": "Field Ids In Scope",
-            "type": "json",
-            "ormType": "simple-json",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
-            "name": "repointedFieldIds",
-            "displayName": "Repointed Field Ids",
-            "type": "json",
-            "ormType": "simple-json",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
-            "name": "updatedMetadataFiles",
-            "displayName": "Updated Metadata Files",
             "type": "json",
             "ormType": "simple-json",
             "required": false,
@@ -15403,12 +15366,6 @@
                           {
                             "type": "field",
                             "attrs": {
-                              "name": "repointFields"
-                            }
-                          },
-                          {
-                            "type": "field",
-                            "attrs": {
                               "name": "overwriteExisting"
                             }
                           },
@@ -15548,18 +15505,6 @@
                             "type": "field",
                             "attrs": {
                               "name": "warnings"
-                            }
-                          },
-                          {
-                            "type": "field",
-                            "attrs": {
-                              "name": "repointedFieldIds"
-                            }
-                          },
-                          {
-                            "type": "field",
-                            "attrs": {
-                              "name": "updatedMetadataFiles"
                             }
                           }
                         ]

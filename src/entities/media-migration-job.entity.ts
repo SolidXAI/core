@@ -45,10 +45,6 @@ export class MediaMigrationJob extends CommonEntity {
   @Column({ type: 'varchar', default: 'pending' })
   status: MediaMigrationJobStatus;
 
-  // Repoint the fields to the target provider once the job has no failures.
-  @Column({ ...getColumnType('boolean'), default: true })
-  repointFields: boolean;
-
   // Replace a file at the target only if it differs from the source. Off by default.
   @Column({ ...getColumnType('boolean'), default: false })
   overwriteExisting: boolean;
@@ -81,12 +77,6 @@ export class MediaMigrationJob extends CommonEntity {
   // Keyset cursor: the highest media id processed so far. Lets a job resume.
   @Column({ type: 'int', default: 0 })
   lastProcessedMediaId: number;
-
-  @Column({ type: 'simple-json', nullable: true, ...getColumnType('simpleJsonLargeText') })
-  repointedFieldIds: number[] | null;
-
-  @Column({ type: 'simple-json', nullable: true, ...getColumnType('simpleJsonLargeText') })
-  updatedMetadataFiles: string[] | null;
 
   @Column({ type: 'simple-json', nullable: true, ...getColumnType('simpleJsonLargeText') })
   warnings: string[] | null;

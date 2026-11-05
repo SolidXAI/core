@@ -1,4 +1,5 @@
 import { Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import { IsArray, IsBoolean, IsInt, IsOptional, IsString } from 'class-validator';
 
 /**
@@ -36,13 +37,16 @@ export class CreateMediaMigrationDto {
   @IsInt({ each: true })
   fieldMetadataIds?: number[];
 
-  // Switch the media fields to the target after a clean run. Defaults to true.
-  @IsOptional()
-  @IsBoolean()
-  repointFields?: boolean;
-
   // Replace a same-named file at the target that has different content. Defaults to false.
+  // Form posts send "false" as text, which implicit conversion would turn into true, so read the raw value.
   @IsOptional()
+  @Transform(({ obj, key }) => {
+    const raw = obj[key];
+    if (raw === 'true') return true;
+    if (raw === 'false') return false;
+    if (raw === '') return undefined;
+    return raw;
+  })
   @IsBoolean()
   overwriteExisting?: boolean;
 

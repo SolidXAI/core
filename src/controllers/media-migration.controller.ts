@@ -109,12 +109,6 @@ export class MediaMigrationController {
   }
 
   @ApiBearerAuth('jwt')
-  @Post(':id/repoint-fields')
-  async repointFields(@Param('id', ParseIntPipe) id: number) {
-    return this.service.repoint(id);
-  }
-
-  @ApiBearerAuth('jwt')
   @Post(':id/rollback')
   async rollback(@Param('id', ParseIntPipe) id: number) {
     const { job, targetFilesLeft } = await this.service.rollback(id);

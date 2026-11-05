@@ -1,4 +1,5 @@
 import { DataSource, SelectQueryBuilder } from 'typeorm';
+import { FieldMetadata } from 'src/entities/field-metadata.entity';
 import { Media } from 'src/entities/media.entity';
 import { MEDIA_MIGRATION_KEY_MAX_LENGTH } from 'src/entities/media-migration-item.entity';
 import * as crypto from 'crypto';
@@ -97,4 +98,39 @@ export async function runWithConcurrency<T>(items: T[], limit: number, fn: (item
     }
   });
   await Promise.all(workers);
+}
+
+export interface MediaFieldOnProvider {
+  id: number;
+  name: string;
+  modelName: string;
+  isSystem: boolean;
+}
+
+const MEDIA_FIELD_TYPES = ['mediaSingle', 'mediaMultiple'];
+
+/**
+ * Media fields, within the scope, whose storage provider is the source provider. A job does not change
+ * these; they are reported so that linking them to the target provider is not forgotten.
+ */
+export async function findMediaFieldsOnProvider(dataSource: DataSource, scope: MigrationScope): Promise<MediaFieldOnProvider[]> {
+  const qb = dataSource.getRepository(FieldMetadata).createQueryBuilder('field')
+    .innerJoin('field.mediaStorageProvider', 'provider')
+    .innerJoin('field.model', 'model')
+    .select(['field.id', 'field.name', 'field.isSystem', 'model.singularName'])
+    .where('provider.id = :providerId', { providerId: scope.sourceProviderId })
+    .andWhere('field.type IN (:...types)', { types: MEDIA_FIELD_TYPES });
+  if (scope.fieldMetadataIds?.length) {
+    qb.andWhere('field.id IN (:...fieldIds)', { fieldIds: scope.fieldMetadataIds });
+  }
+  if (scope.modelMetadataIds?.length) {
+    qb.andWhere('model.id IN (:...modelIds)', { modelIds: scope.modelMetadataIds });
+  }
+  const fields = await qb.getMany();
+  return fields.map(field => ({
+    id: field.id,
+    name: field.name,
+    modelName: field.model?.singularName ?? '',
+    isSystem: !!field.isSystem,
+  }));
 }

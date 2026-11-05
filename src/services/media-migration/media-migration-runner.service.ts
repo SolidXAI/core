@@ -11,8 +11,7 @@ import { MediaStorageProviderMetadata } from 'src/entities/media-storage-provide
 import { MediaTransferService } from './media-transfer.service';
 import { MediaLocation, normalizeTargetKey, resolveLocation, sameLocation } from './media-location';
 import { MigrationError, toMigrationError } from './migration-error';
-import { itemKeyFor, rowsUsingLocation, runWithConcurrency, scopedMediaQuery } from './media-migration-scope';
-import { MediaMigrationFieldsService } from './media-migration-fields.service';
+import { findMediaFieldsOnProvider, itemKeyFor, rowsUsingLocation, runWithConcurrency, scopedMediaQuery } from './media-migration-scope';
 
 export const LEASE_DURATION_MS = 10 * 60 * 1000;
 const LEASE_RENEW_INTERVAL_MS = 60 * 1000;
@@ -54,7 +53,6 @@ export class MediaMigrationRunnerService {
     private readonly dataSource: DataSource,
     private readonly transfer: MediaTransferService,
     private readonly configService: ConfigService,
-    private readonly fields: MediaMigrationFieldsService,
   ) { }
 
   /** Runs the job until it finishes, fails, or is cancelled. Never throws: failures are recorded on the job. */
@@ -107,14 +105,16 @@ export class MediaMigrationRunnerService {
         );
       }
 
-      // Fields move only when every file succeeded, so a half-migrated provider never takes new uploads.
-      let repointed: Partial<MediaMigrationJob> = {};
-      if (job.repointFields && finalStatus === 'completed') {
-        const outcome = await this.repointJobFields(job);
-        warnings.push(...outcome.warnings);
-        repointed = { repointedFieldIds: outcome.movedFieldIds, updatedMetadataFiles: outcome.updatedMetadataFiles };
+      if (finalStatus === 'completed') {
+        warnings.push(...await this.fieldsStillOnSource(job));
       }
-      await this.updateJob(jobId, token, { status: finalStatus, finishedAt: new Date(), warnings, ...repointed });
+      // Only a job still running may be marked finished. A cancel that arrived after the last batch
+      // check has already set "cancelling"; honour it instead of overwriting it.
+      const finished = await this.updateJobIf(jobId, token, ['running'], { status: finalStatus, finishedAt: new Date(), warnings });
+      if (!finished) {
+        await this.updateJob(jobId, token, { status: 'cancelled', finishedAt: new Date() });
+        return { jobId, status: 'cancelled' };
+      }
       this.logger.log(`Media migration job ${jobId} finished: ${finalStatus} (${counts.completed} migrated, ${counts.failed} failed, ${counts.skipped} skipped)`);
       return { jobId, status: finalStatus };
     } catch (error: any) {
@@ -128,45 +128,34 @@ export class MediaMigrationRunnerService {
     }
   }
 
-  /**
-   * Switches the fields of a finished job to the target provider, for jobs that did not do it when they
-   * finished (created with repointFields off, or retried). Takes the job's lease, so it cannot run while
-   * a worker is migrating the same job.
-   */
-  async repoint(jobId: number): Promise<{ jobId: number; movedFieldIds: number[]; updatedMetadataFiles: string[]; warnings: string[] }> {
-    const token = randomUUID();
-    if (!(await this.acquireLease(jobId, token, ['completed']))) {
-      throw new MigrationError('PROVIDER_MISCONFIGURED', 'The job must be completed, and not already being run, before its fields can be switched.');
+  // Media fields in the job's scope that still store uploads on the source provider. This is reported,
+  // not changed: linking a field to a provider belongs to the app's metadata, which a job does not edit.
+  private async fieldsStillOnSource(job: MediaMigrationJob): Promise<string[]> {
+    const fields = await findMediaFieldsOnProvider(this.dataSource, this.scopeOf(job));
+    if (fields.length === 0) {
+      return [];
     }
-    try {
-      const job = await this.loadJob(jobId);
-      const outcome = await this.repointJobFields(job);
-      const warnings = [...(job.warnings ?? []).filter(w => !w.startsWith('Fields were not switched')), ...outcome.warnings];
-      await this.updateJob(jobId, token, {
-        warnings,
-        repointedFieldIds: outcome.movedFieldIds,
-        updatedMetadataFiles: outcome.updatedMetadataFiles,
-      });
-      return { jobId, ...outcome };
-    } finally {
-      await this.releaseLease(jobId, token);
+    const names = fields.map(field => `${field.modelName}.${field.name}`).join(', ');
+    const warnings = [
+      `These media fields still store new uploads on "${job.sourceProvider.name}": ${names}. ` +
+      `Link them to "${job.targetProvider.name}" in the metadata, commit and deploy.`,
+    ];
+    if (fields.some(field => field.isSystem)) {
+      warnings.push(
+        'Some of these fields are system fields set by the package metadata. A seed resets them to the source provider, ' +
+        'so the package itself must change them.',
+      );
     }
-  }
-
-  // Fields in the job's scope that still use the source provider, moved to the target provider.
-  private async repointJobFields(job: MediaMigrationJob) {
-    const fieldIds = await this.fields.findFieldsToMove(this.scopeOf(job));
-    const moved = await this.fields.moveFields(fieldIds, job.sourceProvider.id, job.targetProvider);
-    return { movedFieldIds: moved.movedFieldIds, updatedMetadataFiles: moved.updatedMetadataFiles, warnings: moved.warnings };
+    return warnings;
   }
 
   // ---- lease ----
 
-  private async acquireLease(jobId: number, token: string, statuses: MediaMigrationJobStatus[] = RUNNABLE_STATUSES): Promise<boolean> {
+  private async acquireLease(jobId: number, token: string): Promise<boolean> {
     return this.dataSource.transaction(async manager => {
       const job = await manager.findOne(MediaMigrationJob, { where: { id: jobId }, lock: { mode: 'pessimistic_write' } });
       if (!job) return false;
-      if (!statuses.includes(job.status)) return false;
+      if (!RUNNABLE_STATUSES.includes(job.status)) return false;
       const now = new Date();
       if (job.leaseToken && job.leaseExpiresAt && job.leaseExpiresAt > now) return false;
       await manager.update(MediaMigrationJob, { id: jobId }, {

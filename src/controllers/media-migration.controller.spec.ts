@@ -24,7 +24,7 @@ describe('MediaMigrationController routes', () => {
     expect(has(RequestMethod.GET, '/')).toBe(true);
     expect(has(RequestMethod.GET, ':id')).toBe(true);
     expect(has(RequestMethod.GET, ':id/items')).toBe(true);
-    for (const action of ['cancel', 'resume', 'retry-failed', 'repoint-fields', 'rollback', 'cleanup-source']) {
+    for (const action of ['cancel', 'resume', 'retry-failed', 'rollback', 'cleanup-source']) {
       expect(has(RequestMethod.POST, `:id/${action}`)).toBe(true);
     }
   });
@@ -53,6 +53,16 @@ describe('request bodies', () => {
 
   it('rejects a scope list that contains something other than whole numbers', () => {
     expect(create({ fieldMetadataIds: [1, 'x'] }).map(error => error.property)).toContain('fieldMetadataIds');
+  });
+
+  it('reads the text "false" for overwriteExisting as false, not true', () => {
+    const dto = plainToInstance(CreateMediaMigrationDto, { overwriteExisting: 'false' }, { enableImplicitConversion: true });
+    expect(dto.overwriteExisting).toBe(false);
+    expect(validateSync(dto)).toEqual([]);
+  });
+
+  it('no longer accepts repointFields', () => {
+    expect(Object.keys(new CreateMediaMigrationDto())).not.toContain('repointFields');
   });
 
   it('requires the confirmation text to be given for cleanup', () => {

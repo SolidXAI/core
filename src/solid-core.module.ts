@@ -63,7 +63,6 @@ import { MediaMigrationSubscriberRedis } from "./jobs/redis/media-migration-subs
 import { MediaMigrationPublisher } from "./jobs/rabbitmq/media-migration-publisher.service";
 import { MediaMigrationSubscriber } from "./jobs/rabbitmq/media-migration-subscriber.service";
 import { MediaMigrationController } from "./controllers/media-migration.controller";
-import { MediaMigrationFieldsService } from "./services/media-migration/media-migration-fields.service";
 import { ModelMetadataService } from "./services/model-metadata.service";
 import { ModuleMetadataExplorerService } from "./services/module-metadata-explorer.service";
 import { ModuleMetadataService } from "./services/module-metadata.service";
@@ -841,7 +840,6 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     MediaTransferService,
     MediaMigrationRunnerService,
     MediaMigrationService,
-    MediaMigrationFieldsService,
     MediaMigrationPublisherDatabase,
     MediaMigrationSubscriberDatabase,
     MediaMigrationPublisherRedis,

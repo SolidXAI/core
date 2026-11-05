@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "SolidX — Media migration",
-    "description": "Moves stored media between storage providers, buckets and public/private folders.\n\nRun in this order: preview, then migrate one small field as a test and check the result (roll it back if anything looks wrong), then the larger fields or the whole provider. Each job is queued and runs in the background; watch it with 'Get job'. Replace {{jobId}} with the id returned when you create a job.\n\nCleanup deletes source files and cannot be undone: run it only after the job has finished cleanly and you have checked the results.",
+    "description": "Moves stored media between storage providers, buckets and public/private folders.\n\nRun in this order: link the fields to the new provider in the metadata and deploy, then preview, then migrate one small field as a test and check the result (roll it back if anything looks wrong), then the larger fields or the whole provider. Preview and finished jobs list any media fields still on the old provider. Each job is queued and runs in the background; watch it with 'Get job'. Replace {{jobId}} with the id returned when you create a job.\n\nCleanup deletes source files and cannot be undone: run it only after the job has finished cleanly and you have checked the results.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -56,7 +56,7 @@
             "description": "Counts files and bytes, lists the fields that would switch, and warns about shared files and name clashes. Writes nothing.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"sourceProviderName\": \"default-filesystem\",\n  \"targetProviderName\": \"default-aws-s3\",\n  \"repointFields\": true\n}"
+              "raw": "{\n  \"sourceProviderName\": \"default-filesystem\",\n  \"targetProviderName\": \"default-aws-s3\"\n}"
             }
           }
         }
@@ -98,7 +98,7 @@
             "description": "Moves every file on the source provider to the target. Returns 202 with the job.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"sourceProviderName\": \"default-filesystem\",\n  \"targetProviderName\": \"default-aws-s3\",\n  \"repointFields\": true\n}"
+              "raw": "{\n  \"sourceProviderName\": \"default-filesystem\",\n  \"targetProviderName\": \"default-aws-s3\"\n}"
             }
           }
         },
@@ -135,7 +135,7 @@
             "description": "Moves the files of one media field. Replace fieldMetadataIds with the field's id.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"sourceProviderName\": \"default-filesystem\",\n  \"targetProviderName\": \"default-aws-s3\",\n  \"fieldMetadataIds\": [\n    45\n  ],\n  \"repointFields\": true\n}"
+              "raw": "{\n  \"sourceProviderName\": \"default-filesystem\",\n  \"targetProviderName\": \"default-aws-s3\",\n  \"fieldMetadataIds\": [\n    45\n  ]\n}"
             }
           }
         }
@@ -324,36 +324,6 @@
               ]
             },
             "description": "Runs again only the files that failed."
-          }
-        },
-        {
-          "name": "Switch fields now",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/repoint-fields",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "media-migration",
-                "{{jobId}}",
-                "repoint-fields"
-              ]
-            },
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "For a finished job created without repointing. Updates the field and its metadata file."
           }
         }
       ]
