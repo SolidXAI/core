@@ -53,6 +53,7 @@ import { MediaStorageProviderMetadataService } from "./services/media-storage-pr
 import { MediaService } from "./services/media.service";
 import { MediaDownloadUrlService } from "./services/media-download-url.service";
 import { MediaFileStorageService } from "./services/media-file-storage.service";
+import { MediaTransferService } from "./services/media-migration/media-transfer.service";
 import { ModelMetadataService } from "./services/model-metadata.service";
 import { ModuleMetadataExplorerService } from "./services/module-metadata-explorer.service";
 import { ModuleMetadataService } from "./services/module-metadata.service";
@@ -820,6 +821,7 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     MediaService,
     MediaDownloadUrlService,
     MediaFileStorageService,
+    MediaTransferService,
     // MediaStorageProviderMetadataSeederService,
     ModuleMetadataSeederService,
     ModuleTestDataService,
