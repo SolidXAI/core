@@ -7,6 +7,7 @@ import {
   HeadObjectCommand,
   CopyObjectCommand,
 } from '@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Readable } from 'stream';
 import { IFileService, WriteOptions, CopyOptions, UrlOptions, ReadOptions, DeleteOptions, ExistsOptions } from './file-service.interface';
@@ -169,24 +170,42 @@ export class S3FileService implements IFileService, OnModuleInit {
     const s3Client = this.getS3Client(region);
     const { bucket, key } = this.parsePath(path);
 
-    // For streaming uploads, we need to collect the stream into a buffer
-    // For very large files, consider using @aws-sdk/lib-storage Upload class
-    const chunks: Buffer[] = [];
-    for await (const chunk of stream) {
-      chunks.push(Buffer.from(chunk));
-    }
-    const buffer = Buffer.concat(chunks);
-
-    const command = new PutObjectCommand({
-      Bucket: bucket,
-      Key: key,
-      Body: buffer,
-      ContentType: options?.contentType,
+    // Multipart upload: only ~partSize * queueSize bytes are held in memory at once,
+    // and objects larger than the single PutObject limit (5 GB) are supported.
+    const upload = new Upload({
+      client: s3Client,
+      params: {
+        Bucket: bucket,
+        Key: key,
+        Body: stream,
+        ContentType: options?.contentType,
+      },
+      queueSize: 4,
+      partSize: 8 * 1024 * 1024,
     });
 
-    await s3Client.send(command);
+    await upload.done();
     this.logger.debug(`File uploaded to S3 via stream: ${bucket}/${key}`);
     return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
+  }
+
+  /**
+   * Get size and content type of an object without downloading it.
+   * @returns null if the object does not exist
+   */
+  async stat(path: string, options?: ExistsOptions): Promise<{ size: number; contentType?: string } | null> {
+    const s3Client = this.getS3Client(options?.region);
+    const { bucket, key } = this.parsePath(path);
+
+    try {
+      const response = await s3Client.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+      return { size: Number(response.ContentLength ?? 0), contentType: response.ContentType };
+    } catch (error: any) {
+      if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
+        return null;
+      }
+      throw error;
+    }
   }
 
   /**
@@ -239,7 +258,8 @@ export class S3FileService implements IFileService, OnModuleInit {
     const command = new CopyObjectCommand({
       Bucket: destination.bucket,
       Key: destination.key,
-      CopySource: `${source.bucket}/${source.key}`,
+      // Keys with spaces or special characters must be URL-encoded; "/" separators are kept.
+      CopySource: `${source.bucket}/${encodeURIComponent(source.key).replace(/%2F/g, '/')}`,
       ContentType: options?.contentType,
     });
 

@@ -39,16 +39,16 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
 
         for (const [stream, fileName, extraMeta] of streamPairs) {
             const bucketName = storageProvider.bucketName;
+            const objectPath = `${bucketName}:${fileName}`;
 
-            // Buffer the stream so we can get the byte count and upload in one pass
-            const chunks: Buffer[] = [];
-            for await (const chunk of stream) {
-                chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+            // Streamed multipart upload; the file is never fully held in memory.
+            await this.s3FileService.writeStream(objectPath, stream, { region, contentType: extraMeta?.mimeType });
+
+            const uploaded = await this.s3FileService.stat(objectPath, { region });
+            if (!uploaded) {
+                throw new Error(`Upload finished but ${objectPath} was not found in S3`);
             }
-            const fileData = Buffer.concat(chunks);
-            const fileSize = fileData.length;
-
-            await this.s3FileService.write(`${bucketName}:${fileName}`, fileData, { region, contentType: extraMeta?.mimeType });
+            const fileSize = uploaded.size;
 
             const mediaEntity = await this.mediaRepository.createMedia(
                 buildMediaRecordCreateInput(entityId, mediaFieldMetadata, storageProvider, {
