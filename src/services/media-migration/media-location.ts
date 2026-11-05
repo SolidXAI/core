@@ -1,7 +1,13 @@
 import * as path from 'path';
 import { MediaStorageProviderType } from 'src/dtos/create-media-storage-provider-metadata.dto';
 import { MediaStorageProviderMetadata } from 'src/entities/media-storage-provider-metadata.entity';
-import { resolveDiskMediaPath } from 'src/services/file/media-storage-paths';
+import { MEDIA_MIGRATION_KEY_MAX_LENGTH } from 'src/entities/media-migration-item.entity';
+import {
+  getMediaStorageDirName,
+  getPrivateMediaStorageDir,
+  getPublicMediaStorageDir,
+  resolveDiskMediaPath,
+} from 'src/services/file/media-storage-paths';
 import { MigrationError } from './migration-error';
 
 export type MediaLocation =
@@ -35,13 +41,75 @@ export function resolveLocation(
   }
 }
 
+// Removes the storage folder that older stored values carry, so the target provider decides the folder.
+function stripStorageFolder(value: string): string {
+  const normalized = value.replace(/\\/g, '/');
+
+  if (path.isAbsolute(normalized)) {
+    // Inside the media storage folders: keep the part below them. Anywhere else on disk,
+    // only the file name can be kept.
+    for (const root of [getPrivateMediaStorageDir(), getPublicMediaStorageDir()]) {
+      const relative = path.relative(root, normalized);
+      if (relative && !relative.startsWith('..') && !path.isAbsolute(relative)) {
+        return relative.split(path.sep).join('/');
+      }
+    }
+    return path.basename(normalized);
+  }
+
+  const dirName = getMediaStorageDirName();
+  for (const prefix of [`${dirName}-private/`, `${dirName}/`]) {
+    if (normalized.startsWith(prefix)) {
+      return normalized.slice(prefix.length);
+    }
+  }
+  return normalized;
+}
+
 /**
- * The name a file gets on the target. Stored names never contain folders, but older values
- * may carry one ("media-files-storage/x.png", "media-files-storage-private/x.png") or be
- * absolute paths. Only the file name is kept, so the folder choice comes from the target provider.
+ * Throws if a file key cannot be used safely: empty, too long to record, or able to leave the
+ * storage folder (".." segments, a leading slash).
+ */
+export function assertStorableKey(key: string): void {
+  const segments = key.split('/');
+  if (!key || key.includes('\0') || key.startsWith('/') || segments.some(segment => segment === '..' || segment === '.' || segment === '')) {
+    throw new MigrationError('INVALID_FILE_KEY', `"${key}" is not a valid file name for media storage.`);
+  }
+  if (key.length > MEDIA_MIGRATION_KEY_MAX_LENGTH) {
+    throw new MigrationError('INVALID_FILE_KEY', `The file name "${key.slice(0, 60)}..." is longer than ${MEDIA_MIGRATION_KEY_MAX_LENGTH} characters and cannot be migrated.`);
+  }
+}
+
+/**
+ * The name a file gets on the target. Stored names normally have no folder, but older values may
+ * carry the storage folder ("media-files-storage/x.png") or be absolute paths; that part is dropped
+ * because the target provider decides the folder. Any other folder in the name is kept, so
+ * "a/report.pdf" and "b/report.pdf" stay different files.
+ *
+ * Different source keys can still map to one target ("x.png" and "media-files-storage/x.png").
+ * Use findTargetKeyCollisions to detect that before copying.
  */
 export function normalizeTargetKey(relativeUri: string): string {
-  return path.basename(relativeUri.replace(/\\/g, '/'));
+  const key = stripStorageFolder(relativeUri);
+  assertStorableKey(key);
+  return key;
+}
+
+/** Groups of different source keys that would be stored under the same target name. */
+export function findTargetKeyCollisions(sourceKeys: Iterable<string>): { targetKey: string; sourceKeys: string[] }[] {
+  const byTarget = new Map<string, Set<string>>();
+  for (const sourceKey of sourceKeys) {
+    let targetKey: string;
+    try {
+      targetKey = normalizeTargetKey(sourceKey);
+    } catch {
+      continue; // invalid keys are reported on their own
+    }
+    byTarget.set(targetKey, (byTarget.get(targetKey) ?? new Set()).add(sourceKey));
+  }
+  return [...byTarget.entries()]
+    .filter(([, sources]) => sources.size > 1)
+    .map(([targetKey, sources]) => ({ targetKey, sourceKeys: [...sources] }));
 }
 
 /** True when both locations point at the same stored object, so no copy is needed. */

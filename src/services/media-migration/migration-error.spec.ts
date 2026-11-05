@@ -13,6 +13,11 @@ describe('toMigrationError', () => {
     expect(toMigrationError({ $metadata: { httpStatusCode: 403 } }, 'source', 'a').code).toBe('SOURCE_READ_DENIED');
   });
 
+  it('reports a refused delete as DELETE_DENIED, on either side', () => {
+    expect(toMigrationError({ name: 'AccessDenied' }, 'target', 'a', 'delete').code).toBe('DELETE_DENIED');
+    expect(toMigrationError({ name: 'AccessDenied' }, 'source', 'a', 'delete').code).toBe('DELETE_DENIED');
+  });
+
   it('maps a full disk', () => {
     expect(toMigrationError({ code: 'ENOSPC', message: 'x' }, 'target', 'a').code).toBe('DISK_FULL');
   });
