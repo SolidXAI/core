@@ -93,11 +93,24 @@ describeIfDb('media migration end to end', () => {
     fs.writeFileSync(full, content);
   };
 
-  const addRow = (relativeUri: string, entityId: number, provider = publicProvider) =>
+  // Each test keeps its media in its own field (named by a number), so a job scoped to that field
+  // sees only that test's rows.
+  const fieldsByKey = new Map<number, FieldMetadata>();
+  const fieldFor = async (key: number): Promise<FieldMetadata> => {
+    let existing = fieldsByKey.get(key);
+    if (!existing) {
+      existing = await ds.getRepository(FieldEntity).save({ name: `testField${key}`, displayName: `Test field ${key}`, type: 'mediaSingle', model } as any) as unknown as FieldMetadata;
+      fieldsByKey.set(key, existing);
+    }
+    return existing;
+  };
+  const inField = async (key: number) => ({ fieldMetadataIds: [(await fieldFor(key)).id] });
+
+  const addRow = async (relativeUri: string, key: number, provider = publicProvider) =>
     ds.getRepository(Media).save({
-      entityId, relativeUri, fileSize: fs.existsSync(path.join(publicDir, relativeUri)) ? fs.statSync(path.join(publicDir, relativeUri)).size : 1,
-      mimeType: 'text/plain', originalFileName: relativeUri, modelMetadata: model, fieldMetadata: field, mediaStorageProviderMetadata: provider,
-    } as any) as unknown as Promise<Media>;
+      entityId: key, relativeUri, fileSize: fs.existsSync(path.join(publicDir, relativeUri)) ? fs.statSync(path.join(publicDir, relativeUri)).size : 1,
+      mimeType: 'text/plain', originalFileName: relativeUri, modelMetadata: model, fieldMetadata: await fieldFor(key), mediaStorageProviderMetadata: provider,
+    } as any) as unknown as Media;
 
   const createJob = (overrides: Partial<MediaMigrationJob> = {}) =>
     ds.getRepository(MediaMigrationJob).save({
@@ -108,14 +121,14 @@ describeIfDb('media migration end to end', () => {
   const rowOn = async (id: number) => ds.getRepository(Media).findOneOrFail({ where: { id }, relations: ['mediaStorageProviderMetadata'], withDeleted: true });
   const jobOf = (id: number) => ds.getRepository(MediaMigrationJob).findOneOrFail({ where: { id } });
 
-  it('moves one entity\'s file to the private provider, moves the shared row with it, and keeps the source', async () => {
+  it('moves one field\'s file to the private provider, moves the shared row with it, and keeps the source', async () => {
     writeSource('alpha.txt', 'alpha');
     const own = await addRow('alpha.txt', 1);
-    const other = await addRow('alpha.txt', 99); // a draft/publish version outside the scope
+    const other = await addRow('alpha.txt', 99); // a row in another field (such as a draft/publish version) that uses the same file
     const untouched = await addRow('beta.txt', 2);
     writeSource('beta.txt', 'beta!');
 
-    const job = await createJob({ entityIds: [1] });
+    const job = await createJob(await inField(1));
     const result = await runner.run(job.id);
 
     expect(result.status).toBe('completed');
@@ -147,7 +160,7 @@ describeIfDb('media migration end to end', () => {
   it('rollback moves the rows back to the source when the source file still exists', async () => {
     writeSource('gamma.txt', 'gamma');
     const row = await addRow('gamma.txt', 3);
-    const job = await createJob({ entityIds: [3] });
+    const job = await createJob(await inField(3));
     expect((await runner.run(job.id)).status).toBe('completed');
     expect((await rowOn(row.id)).mediaStorageProviderMetadata.id).toBe(privateProvider.id);
 
@@ -160,7 +173,7 @@ describeIfDb('media migration end to end', () => {
 
   it('records a missing source file as a failed item, and a retry migrates it once the file is back', async () => {
     const row = await addRow('delta.txt', 4); // the file is not written yet
-    const job = await createJob({ entityIds: [4] });
+    const job = await createJob(await inField(4));
 
     expect((await runner.run(job.id)).status).toBe('completed_with_errors');
     const failed = await ds.getRepository(MediaMigrationItem).findOneOrFail({ where: { sourceKey: 'delta.txt' } });
@@ -187,7 +200,7 @@ describeIfDb('media migration end to end', () => {
     const elsewhere = writeElsewhere('epsilon.txt', 'another file');
     await addRow('epsilon.txt', 5);
     await addRow(elsewhere, 5);
-    const job = await createJob({ entityIds: [5], concurrency: 1 });
+    const job = await createJob({ ...(await inField(5)), concurrency: 1 });
 
     expect((await runner.run(job.id)).status).toBe('completed_with_errors');
     const items = await ds.getRepository(MediaMigrationItem).find({ where: { job: { id: job.id } } });
@@ -196,7 +209,7 @@ describeIfDb('media migration end to end', () => {
   });
 
   it('does not run a job while another worker holds its lease', async () => {
-    const job = await createJob({ entityIds: [6] });
+    const job = await createJob(await inField(6));
     await ds.getRepository(MediaMigrationJob).update({ id: job.id }, { leaseToken: 'someone-else', leaseExpiresAt: new Date(Date.now() + 60_000) });
     expect((await runner.run(job.id)).status).toBe('not_started');
   });
@@ -207,7 +220,7 @@ describeIfDb('media migration end to end', () => {
     await addRow('zeta.txt', 80); // shared, outside the previewed scope
     const jobsBefore = await ds.getRepository(MediaMigrationJob).count();
 
-    const preview = await service.preview({ sourceProviderId: publicProvider.id, targetProviderId: privateProvider.id, fieldMetadataIds: [field.id], entityIds: [8] });
+    const preview = await service.preview({ sourceProviderId: publicProvider.id, targetProviderId: privateProvider.id, fieldMetadataIds: [(await fieldFor(8)).id] });
 
     expect(preview.totalFiles).toBe(1);
     expect(preview.totalMediaRows).toBe(1);
@@ -222,21 +235,27 @@ describeIfDb('media migration end to end', () => {
     await addRow('eta.txt', 9);
 
     await expect(service.create({ sourceProviderId: publicProvider.id, targetProviderId: publicProvider.id })).rejects.toThrow(/same/);
-    await expect(service.create({ sourceProviderId: publicProvider.id, targetProviderId: privateProvider.id, modelMetadataIds: [model.id], fieldMetadataIds: [field.id], entityIds: [9] }))
-      .rejects.toThrow(/exactly one model or exactly one field/);
+    await expect(service.create({ sourceProviderId: publicProvider.id, targetProviderId: privateProvider.id, fieldMetadataIds: [999999] }))
+      .rejects.toThrow(/do not exist/);
 
-    const job = await service.create({ sourceProviderId: publicProvider.id, targetProviderId: privateProvider.id, fieldMetadataIds: [field.id], entityIds: [9], batchSize: 5000, concurrency: 0 });
+    const job = await service.create({ sourceProviderId: publicProvider.id, targetProviderId: privateProvider.id, fieldMetadataIds: [(await fieldFor(9)).id], batchSize: 5000, concurrency: 0 });
     expect(job.status).toBe('pending');
     expect(job.batchSize).toBe(1000);
     expect(job.concurrency).toBe(1);
     expect(publisher.publish).toHaveBeenLastCalledWith(expect.objectContaining({ payload: { jobId: job.id } }), 'MediaMigrationPublisher');
 
-    await expect(service.create({ sourceProviderId: publicProvider.id, targetProviderId: privateProvider.id, fieldMetadataIds: [field.id], entityIds: [9] }))
+    await expect(service.create({ sourceProviderId: publicProvider.id, targetProviderId: privateProvider.id, fieldMetadataIds: [(await fieldFor(9)).id] }))
       .rejects.toThrow(/already pending/);
   });
 
+  it('refuses the removed entityIds option instead of quietly migrating the whole field', async () => {
+    const request = { sourceProviderId: publicProvider.id, targetProviderId: privateProvider.id, fieldMetadataIds: [(await fieldFor(9)).id], entityIds: [1] } as any;
+    await expect(service.preview(request)).rejects.toThrow(/entityIds is no longer supported/);
+    await expect(service.create(request)).rejects.toThrow(/entityIds is no longer supported/);
+  });
+
   it('cancels a pending job immediately', async () => {
-    const job = await createJob({ entityIds: [7] });
+    const job = await createJob(await inField(7));
     expect((await service.cancel(job.id)).status).toBe('cancelled');
   });
 
@@ -254,13 +273,13 @@ describeIfDb('media migration end to end', () => {
       fs.writeFileSync(path.join(privateDir, 'twin-size.txt'), 'BBBB');
       const row = await addRow('twin-size.txt', 20);
 
-      const job = await createJob({ entityIds: [20] });
+      const job = await createJob(await inField(20));
       expect((await runner.run(job.id)).status).toBe('completed_with_errors');
       expect((await itemsOf(job.id))[0]).toMatchObject({ status: 'failed', errorCode: 'TARGET_KEY_CONFLICT' });
       expect((await rowOn(row.id)).mediaStorageProviderMetadata.id).toBe(publicProvider.id);
       expect(fs.readFileSync(path.join(privateDir, 'twin-size.txt'), 'utf8')).toBe('BBBB');
 
-      const overwrite = await createJob({ entityIds: [20], overwriteExisting: true });
+      const overwrite = await createJob({ ...(await inField(20)), overwriteExisting: true });
       expect((await runner.run(overwrite.id)).status).toBe('completed');
       expect(fs.readFileSync(path.join(privateDir, 'twin-size.txt'), 'utf8')).toBe('AAAA');
       expect((await rowOn(row.id)).mediaStorageProviderMetadata.id).toBe(privateProvider.id);
@@ -271,7 +290,7 @@ describeIfDb('media migration end to end', () => {
       fs.writeFileSync(path.join(privateDir, 'same-content.txt'), 'CCCC');
       const row = await addRow('same-content.txt', 21);
 
-      const job = await createJob({ entityIds: [21] });
+      const job = await createJob(await inField(21));
       expect((await runner.run(job.id)).status).toBe('completed');
       expect((await itemsOf(job.id))[0]).toMatchObject({ status: 'completed', copied: false });
       expect((await rowOn(row.id)).mediaStorageProviderMetadata.id).toBe(privateProvider.id);
@@ -285,7 +304,7 @@ describeIfDb('media migration end to end', () => {
       await addRow('shared-folder.txt', 22);
       await addRow('shared-folder.txt', 23, sameFolder);
 
-      const job = await createJob({ entityIds: [22] });
+      const job = await createJob(await inField(22));
       expect((await runner.run(job.id)).status).toBe('completed');
 
       const outcome = await service.cleanupSource(job.id, 'DELETE_SOURCE_FILES');
@@ -299,7 +318,7 @@ describeIfDb('media migration end to end', () => {
       await addRow('alias.txt', 24);
       await addRow('media-files-storage/alias.txt', 24); // the same file on disk, written with the folder prefix
 
-      const job = await createJob({ entityIds: [24] });
+      const job = await createJob(await inField(24));
       expect((await runner.run(job.id)).status).toBe('completed_with_errors');
 
       const outcome = await service.cleanupSource(job.id, 'DELETE_SOURCE_FILES');
@@ -318,7 +337,7 @@ describeIfDb('media migration end to end', () => {
       await addRow(elsewhere, 40);
       winnerContent.set(i, [`public ${i}`, `elsewhere ${i}`]);
     }
-    const job = await createJob({ entityIds: [40], concurrency: 8, batchSize: 100 });
+    const job = await createJob({ ...(await inField(40)), concurrency: 8, batchSize: 100 });
 
     expect((await runner.run(job.id)).status).toBe('completed_with_errors');
     const items = await itemsOf(job.id);
@@ -339,7 +358,7 @@ describeIfDb('media migration end to end', () => {
     expect(longFile.length).toBeGreaterThan(450);
     const row = await addRow(longFile, 25);
 
-    const job = await createJob({ entityIds: [25] });
+    const job = await createJob(await inField(25));
     expect((await runner.run(job.id)).status).toBe('completed_with_errors');
     expect((await itemsOf(job.id))[0]).toMatchObject({ status: 'failed', errorCode: 'INVALID_FILE_KEY' });
     expect((await rowOn(row.id)).mediaStorageProviderMetadata.id).toBe(publicProvider.id);
@@ -354,7 +373,7 @@ describeIfDb('media migration end to end', () => {
       $$ LANGUAGE plpgsql`);
     await ds.query('CREATE TRIGGER block_atomic_item BEFORE UPDATE ON ss_media_migration_item FOR EACH ROW EXECUTE FUNCTION block_atomic_item()');
     try {
-      const job = await createJob({ entityIds: [26] });
+      const job = await createJob(await inField(26));
       expect((await runner.run(job.id)).status).toBe('completed_with_errors');
       // the row did not move without its record saying so
       expect((await rowOn(row.id)).mediaStorageProviderMetadata.id).toBe(publicProvider.id);
@@ -373,7 +392,7 @@ describeIfDb('media migration end to end', () => {
   it('does not start a job that was cancelled just after its lease was taken', async () => {
     writeSource('late-cancel.txt', 'late');
     const row = await addRow('late-cancel.txt', 27);
-    const job = await createJob({ entityIds: [27] });
+    const job = await createJob(await inField(27));
     const original = (runner as any).loadJob.bind(runner);
     jest.spyOn(runner as any, 'loadJob').mockImplementationOnce(async (id: number) => {
       await ds.getRepository(MediaMigrationJob).update({ id }, { status: 'cancelled' });
@@ -429,7 +448,7 @@ describeIfDb('media migration end to end', () => {
     it('closes a job that could not be queued, so it does not block the provider', async () => {
       writeSource('unqueued.txt', 'u');
       await addRow('unqueued.txt', 28);
-      const request = { sourceProviderId: publicProvider.id, targetProviderId: privateProvider.id, fieldMetadataIds: [field.id], entityIds: [28] };
+      const request = { sourceProviderId: publicProvider.id, targetProviderId: privateProvider.id, fieldMetadataIds: [(await fieldFor(28)).id] };
       publisher.publish.mockRejectedValueOnce(new Error('no broker'));
 
       await expect(service.create(request)).rejects.toThrow(/could not be queued: no broker/);
@@ -448,7 +467,7 @@ describeIfDb('media migration end to end', () => {
     const rowTwo = await addRow('unsaved-2.txt', 29);
     jest.spyOn(runner as any, 'findOrCreateItem').mockRejectedValueOnce(new Error('database blip'));
 
-    const job = await createJob({ entityIds: [29], concurrency: 1 });
+    const job = await createJob({ ...(await inField(29)), concurrency: 1 });
     expect((await runner.run(job.id)).status).toBe('completed_with_errors');
 
     expect((await jobOf(job.id)).warnings?.join(' ')).toMatch(/1 file\(s\) could not be recorded/);
@@ -505,20 +524,6 @@ describeIfDb('media migration end to end', () => {
       expect(finished.repointedFieldIds).toEqual([photo.id]);
       expect(finished.updatedMetadataFiles).toEqual([expect.stringContaining('metadata.json')]);
       expect(finished.warnings?.join(' ') ?? '').not.toMatch(/were not switched/);
-    });
-
-    it('does not switch fields for a job limited to some records, and says so', async () => {
-      await clearActiveJobs();
-      writeSource('phase4-b.txt', 'b');
-      const photo = await newField('phase4Records');
-      await ds.getRepository(Media).save({ entityId: 71, relativeUri: 'phase4-b.txt', fileSize: 1, mimeType: 'text/plain', originalFileName: 'b', modelMetadata: model, fieldMetadata: photo, mediaStorageProviderMetadata: publicProvider } as any);
-
-      const job = await createJob({ repointFields: true, fieldMetadataIds: [photo.id], entityIds: [71] });
-      expect((await runner.run(job.id)).status).toBe('completed');
-
-      expect((await fieldOn(photo.id)).mediaStorageProvider.id).toBe(publicProvider.id);
-      expect(modelMetadata.updateInFile).not.toHaveBeenCalled();
-      expect((await jobOf(job.id)).warnings?.join(' ')).toMatch(/Fields were not switched: this job covered only some records/);
     });
 
     it('keeps the database change, and tells the admin what to fix, when the metadata file cannot be written', async () => {

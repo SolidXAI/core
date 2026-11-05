@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "SolidX — Media migration",
-    "description": "Moves stored media between storage providers, buckets and public/private folders.\n\nRun in this order: preview, then a trial run on a few records (entityIds), then the whole scope. Each job is queued and runs in the background; watch it with 'Get job'. Replace {{jobId}} with the id returned when you create a job.\n\nCleanup deletes source files and cannot be undone: run it only after the job has finished cleanly and you have checked the results.",
+    "description": "Moves stored media between storage providers, buckets and public/private folders.\n\nRun in this order: preview, then migrate one small field as a test and check the result (roll it back if anything looks wrong), then the larger fields or the whole provider. Each job is queued and runs in the background; watch it with 'Get job'. Replace {{jobId}} with the id returned when you create a job.\n\nCleanup deletes source files and cannot be undone: run it only after the job has finished cleanly and you have checked the results.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -136,43 +136,6 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"sourceProviderName\": \"default-filesystem\",\n  \"targetProviderName\": \"default-aws-s3\",\n  \"fieldMetadataIds\": [\n    45\n  ],\n  \"repointFields\": true\n}"
-            }
-          }
-        },
-        {
-          "name": "Start: trial run on some records",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/media-migration",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "media-migration"
-              ]
-            },
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Moves only the given records. Fields are not switched for trial runs.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"sourceProviderName\": \"default-filesystem\",\n  \"targetProviderName\": \"default-aws-s3\",\n  \"fieldMetadataIds\": [\n    45\n  ],\n  \"entityIds\": [\n    101,\n    102\n  ],\n  \"repointFields\": false\n}"
             }
           }
         }

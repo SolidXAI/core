@@ -1286,18 +1286,6 @@
             "isSystem": true
           },
           {
-            "name": "entityIds",
-            "displayName": "Record Ids In Scope",
-            "type": "json",
-            "ormType": "simple-json",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
             "name": "repointedFieldIds",
             "displayName": "Repointed Field Ids",
             "type": "json",
@@ -15529,12 +15517,6 @@
                             "type": "field",
                             "attrs": {
                               "name": "fieldMetadataIds"
-                            }
-                          },
-                          {
-                            "type": "field",
-                            "attrs": {
-                              "name": "entityIds"
                             }
                           }
                         ]

@@ -30,7 +30,6 @@ export interface MediaMigrationRequest {
   targetProviderName?: string;
   modelMetadataIds?: number[];
   fieldMetadataIds?: number[];
-  entityIds?: number[];
   repointFields?: boolean;
   overwriteExisting?: boolean;
   batchSize?: number;
@@ -165,7 +164,6 @@ export class MediaMigrationService {
       targetProvider: target,
       modelMetadataIds: scope.modelMetadataIds?.length ? scope.modelMetadataIds : null,
       fieldMetadataIds: scope.fieldMetadataIds?.length ? scope.fieldMetadataIds : null,
-      entityIds: scope.entityIds?.length ? scope.entityIds : null,
       status: 'pending',
       repointFields: options.repointFields,
       overwriteExisting: options.overwriteExisting,
@@ -364,6 +362,15 @@ export class MediaMigrationService {
   // ---- shared ----
 
   private async validate(request: MediaMigrationRequest, options: { checkActiveJobs: boolean } = { checkActiveJobs: true }): Promise<ValidatedRequest> {
+    // The app does not reject unknown request fields, so an old client that still sends entityIds would
+    // silently migrate far more than it meant to. Refuse it instead.
+    if ((request as any).entityIds !== undefined) {
+      throw new BadRequestException(
+        'entityIds is no longer supported. Scope a migration by modelMetadataIds or fieldMetadataIds. ' +
+        'To try a migration first, move one small field and roll it back if anything looks wrong.',
+      );
+    }
+
     const source = await this.findProvider(request.sourceProviderId, request.sourceProviderName, 'source');
     const target = await this.findProvider(request.targetProviderId, request.targetProviderName, 'target');
 
@@ -388,17 +395,8 @@ export class MediaMigrationService {
       sourceProviderId: source.id,
       modelMetadataIds: request.modelMetadataIds?.length ? request.modelMetadataIds : null,
       fieldMetadataIds: request.fieldMetadataIds?.length ? request.fieldMetadataIds : null,
-      entityIds: request.entityIds?.length ? request.entityIds : null,
     };
     await this.assertScopeExists(scope);
-
-    if (scope.entityIds) {
-      const models = scope.modelMetadataIds?.length ?? 0;
-      const fields = scope.fieldMetadataIds?.length ?? 0;
-      if (!((models === 1 && fields === 0) || (models === 0 && fields === 1))) {
-        throw new BadRequestException('entityIds needs exactly one model or exactly one field in scope, and no other scope filters.');
-      }
-    }
 
     // Only one job may run per source provider at a time. Preview only reports, so it skips this check.
     const active = options.checkActiveJobs
@@ -447,12 +445,6 @@ export class MediaMigrationService {
       const found = await this.dataSource.getRepository(entity).count({ where: { id: In(ids) } });
       if (found !== new Set(ids).size) {
         throw new BadRequestException(`Some ${label} ids in the scope do not exist.`);
-      }
-    }
-    if (scope.entityIds?.length) {
-      const found = await this.dataSource.getRepository(Media).count({ where: { entityId: In(scope.entityIds) } });
-      if (found === 0) {
-        throw new BadRequestException('None of the entityIds have media on the source provider.');
       }
     }
   }

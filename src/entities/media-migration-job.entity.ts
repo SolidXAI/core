@@ -34,15 +34,12 @@ export class MediaMigrationJob extends CommonEntity {
   @JoinColumn()
   targetProvider: MediaStorageProviderMetadata;
 
-  // Optional scope. Null or empty means "no filter on this dimension".
+  // Optional scope: models or fields. Null or empty means "no filter on this dimension".
   @Column({ type: 'simple-json', nullable: true, ...getColumnType('simpleJsonLargeText') })
   modelMetadataIds: number[] | null;
 
   @Column({ type: 'simple-json', nullable: true, ...getColumnType('simpleJsonLargeText') })
   fieldMetadataIds: number[] | null;
-
-  @Column({ type: 'simple-json', nullable: true, ...getColumnType('simpleJsonLargeText') })
-  entityIds: number[] | null;
 
   @Index()
   @Column({ type: 'varchar', default: 'pending' })

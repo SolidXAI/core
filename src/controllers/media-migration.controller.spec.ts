@@ -44,7 +44,7 @@ describe('request bodies', () => {
   });
 
   it('accepts numbers sent as text, as multipart and query forms do', () => {
-    expect(create({ sourceProviderId: '1', targetProviderId: '3', entityIds: ['101', '102'] })).toEqual([]);
+    expect(create({ sourceProviderId: '1', targetProviderId: '3', fieldMetadataIds: ['45', '46'] })).toEqual([]);
   });
 
   it('rejects a provider id that is not a whole number', () => {

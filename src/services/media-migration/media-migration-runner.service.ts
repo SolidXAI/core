@@ -154,15 +154,7 @@ export class MediaMigrationRunnerService {
   }
 
   // Fields in the job's scope that still use the source provider, moved to the target provider.
-  // A job limited to individual records cannot switch fields: the other records would be left behind.
   private async repointJobFields(job: MediaMigrationJob) {
-    if (job.entityIds?.length) {
-      return {
-        movedFieldIds: [],
-        updatedMetadataFiles: [],
-        warnings: ['Fields were not switched: this job covered only some records (entityIds). Run a job without entityIds to switch the fields.'],
-      };
-    }
     const fieldIds = await this.fields.findFieldsToMove(this.scopeOf(job));
     const moved = await this.fields.moveFields(fieldIds, job.sourceProvider.id, job.targetProvider);
     return { movedFieldIds: moved.movedFieldIds, updatedMetadataFiles: moved.updatedMetadataFiles, warnings: moved.warnings };
@@ -232,7 +224,6 @@ export class MediaMigrationRunnerService {
       sourceProviderId: job.sourceProvider.id,
       modelMetadataIds: job.modelMetadataIds,
       fieldMetadataIds: job.fieldMetadataIds,
-      entityIds: job.entityIds,
     };
   }
 

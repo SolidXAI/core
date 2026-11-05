@@ -36,12 +36,6 @@ export class CreateMediaMigrationDto {
   @IsInt({ each: true })
   fieldMetadataIds?: number[];
 
-  @IsOptional()
-  @IsArray()
-  @Type(() => Number)
-  @IsInt({ each: true })
-  entityIds?: number[];
-
   // Switch the media fields to the target after a clean run. Defaults to true.
   @IsOptional()
   @IsBoolean()

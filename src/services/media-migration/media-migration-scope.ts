@@ -8,7 +8,6 @@ export interface MigrationScope {
   sourceProviderId: number;
   modelMetadataIds?: number[] | null;
   fieldMetadataIds?: number[] | null;
-  entityIds?: number[] | null;
 }
 
 /**
@@ -29,9 +28,6 @@ export function scopedMediaQuery(dataSource: DataSource, scope: MigrationScope, 
   if (scope.fieldMetadataIds?.length) {
     qb.andWhere('scopeField.id IN (:...fieldIds)', { fieldIds: scope.fieldMetadataIds });
   }
-  if (scope.entityIds?.length) {
-    qb.andWhere(`${alias}.entityId IN (:...entityIds)`, { entityIds: scope.entityIds });
-  }
   return qb;
 }
 
@@ -42,7 +38,7 @@ export function scopedMediaQuery(dataSource: DataSource, scope: MigrationScope, 
  * passes file names as query parameters, which would fail above the database's parameter limit.
  */
 export async function countSharedRowsOutsideScope(dataSource: DataSource, scope: MigrationScope): Promise<number> {
-  if (!scope.modelMetadataIds?.length && !scope.fieldMetadataIds?.length && !scope.entityIds?.length) {
+  if (!scope.modelMetadataIds?.length && !scope.fieldMetadataIds?.length) {
     return 0;
   }
   const scopedKeys = scopedMediaQuery(dataSource, scope, 'scopedKeys').select('scopedKeys.relativeUri');
