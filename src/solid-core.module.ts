@@ -48,6 +48,7 @@ import { ListOfValuesService } from "./services/list-of-values.service";
 import { MediaStorageProviderMetadataService } from "./services/media-storage-provider-metadata.service";
 import { MediaService } from "./services/media.service";
 import { MediaDownloadUrlService } from "./services/media-download-url.service";
+import { MediaFileStorageService } from "./services/media-file-storage.service";
 import { ModelMetadataService } from "./services/model-metadata.service";
 import { ModuleMetadataExplorerService } from "./services/module-metadata-explorer.service";
 import { ModuleMetadataService } from "./services/module-metadata.service";
@@ -812,6 +813,7 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     MediaStorageProviderMetadataService,
     MediaService,
     MediaDownloadUrlService,
+    MediaFileStorageService,
     // MediaStorageProviderMetadataSeederService,
     ModuleMetadataSeederService,
     ModuleTestDataService,

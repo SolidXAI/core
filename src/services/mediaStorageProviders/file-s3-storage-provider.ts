@@ -6,18 +6,26 @@ import { LegacyCommonEntityWithExistingId } from "src/entities/legacy-common.ent
 import { LegacyCommonEntityWithGeneratedId } from "src/entities/legacy-common-with-generated-id.entity";
 import { Media } from "src/entities/media.entity";
 import { MediaStorageProvider } from "src/interfaces";
-import { MediaStorageProviderMetadata } from "src/entities/media-storage-provider-metadata.entity";
-import { MediaStorageProviderType } from "src/dtos/create-media-storage-provider-metadata.dto";
 import { DiskFileService, S3FileService } from "src/services/file";
-import { resolveDiskMediaPath } from "src/services/file/media-storage-paths";
 import { Readable } from "stream";
 import { MediaRepository } from "src/repository/media.repository";
 import { MediaDownloadUrlService } from "src/services/media-download-url.service";
+import { MediaFileStorageService } from "src/services/media-file-storage.service";
 import {
 buildMediaRecordCreateInput,
 buildStoredMediaFileName,
 getEffectiveS3Region,
+MediaRecordCreateInput,
 } from "src/services/media-storage.utils";
+
+// Passes the source through unchanged while counting its bytes, so the size is known
+// without buffering the file or asking S3 for it afterwards.
+async function* countBytes(source: AsyncIterable<Buffer | string>, onBytes: (count: number) => void) {
+    for await (const chunk of source) {
+        onBytes(chunk.length);
+        yield chunk;
+    }
+}
 
 @Injectable()
 export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
@@ -29,6 +37,7 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         readonly s3FileService: S3FileService,
         readonly mediaRepository: MediaRepository,
         private readonly mediaDownloadUrlService: MediaDownloadUrlService,
+        private readonly mediaFileStorageService: MediaFileStorageService,
     ) { }
 
     async storeStreams(streamPairs: [Readable, string, { mimeType?: string; originalFileName?: string }?][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
@@ -42,22 +51,18 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
             const objectPath = `${bucketName}:${fileName}`;
 
             // Streamed multipart upload; the file is never fully held in memory.
-            await this.s3FileService.writeStream(objectPath, stream, { region, contentType: extraMeta?.mimeType });
+            let fileSize = 0;
+            const counted = Readable.from(countBytes(stream, count => { fileSize += count; }));
+            await this.s3FileService.writeStream(objectPath, counted, { region, contentType: extraMeta?.mimeType });
 
-            const uploaded = await this.s3FileService.stat(objectPath, { region });
-            if (!uploaded) {
-                throw new Error(`Upload finished but ${objectPath} was not found in S3`);
-            }
-            const fileSize = uploaded.size;
-
-            const mediaEntity = await this.mediaRepository.createMedia(
+            const mediaEntity = await this.createMediaOrRemoveObject(objectPath, region,
                 buildMediaRecordCreateInput(entityId, mediaFieldMetadata, storageProvider, {
                     relativeUri: fileName,
                     fileSize,
                     mimeType: extraMeta?.mimeType,
                     originalFileName: extraMeta?.originalFileName,
                 })
-            ) as unknown as Media;
+            );
             result.push(mediaEntity);
             this.logger.debug(`Stored media with`, mediaEntity);
         }
@@ -92,10 +97,10 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         for (const file of files) {
             const fileName = buildStoredMediaFileName(file);
             const bucketName = storageProvider.bucketName;
+            const objectPath = `${bucketName}:${fileName}`;
 
-            // Read file from disk and upload to S3
-            const fileData = await this.diskFileService.read(file.path);
-            await this.s3FileService.write(`${bucketName}:${fileName}`, fileData, { contentType: file.mimetype, region });
+            // Stream the uploaded temp file to S3 so large files are not loaded into memory
+            await this.s3FileService.writeStream(objectPath, await this.diskFileService.readStream(file.path), { contentType: file.mimetype, region });
 
             // Delete temp file from disk
             await this.diskFileService.delete(file.path);
@@ -103,14 +108,14 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
             const awsFileUrl = fileName;
 
             // Create an entry in the media table
-            const mediaEntity = await this.mediaRepository.createMedia(
+            const mediaEntity = await this.createMediaOrRemoveObject(objectPath, region,
                 buildMediaRecordCreateInput(entityId, mediaFieldMetadata, storageProvider, {
                     relativeUri: awsFileUrl,
                     mimeType: file.mimetype,
                     fileSize: file.size,
                     originalFileName: file.originalname,
                 })
-            ) as unknown as Media;
+            );
             result.push(mediaEntity);
             this.logger.debug(`Stored media with`, mediaEntity);
         };
@@ -127,18 +132,19 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         await this.mediaRepository.deleteByEntityIdAndFieldIdAndModelMetadataId(entityId, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
         for (const media of existingMedia) {
             // Each row's file lives where its own provider says, which may differ from the field's provider.
-            const rowProvider = media.mediaStorageProviderMetadata || fieldProvider;
-            await this.deleteStoredFile(media, rowProvider);
+            await this.mediaFileStorageService.deleteFile(media, media.mediaStorageProviderMetadata || fieldProvider);
         }
     }
 
-    private async deleteStoredFile(media: Media, provider: MediaStorageProviderMetadata): Promise<void> {
-        if (provider?.type === MediaStorageProviderType.Filesystem) {
-            await this.diskFileService.delete(resolveDiskMediaPath(media.relativeUri, provider.isPublic !== false));
-            return;
+    // If saving the media row fails after the upload, remove the uploaded object so it is not orphaned.
+    private async createMediaOrRemoveObject(objectPath: string, region: string | undefined, input: MediaRecordCreateInput): Promise<Media> {
+        try {
+            return await this.mediaRepository.createMedia(input) as unknown as Media;
+        } catch (error) {
+            await this.s3FileService.delete(objectPath, { region }).catch((cleanupError: any) =>
+                this.logger.warn(`Could not remove ${objectPath} after its media record failed to save: ${cleanupError?.message ?? cleanupError}`));
+            throw error;
         }
-        const region = getEffectiveS3Region(this.configService, provider.region);
-        await this.s3FileService.delete(`${provider.bucketName}:${media.relativeUri}`, { region });
     }
 
     async deleteByMediaRecord(media: Media): Promise<void> {

@@ -4,14 +4,13 @@ import { Media } from "src/entities/media.entity";
 import { MediaStorageProviderMetadata } from "src/entities/media-storage-provider-metadata.entity";
 import { MediaStorageProvider } from "src/interfaces";
 import { MediaRepository } from "src/repository/media.repository";
-import { DiskFileService, S3FileService } from "src/services/file";
+import { DiskFileService } from "src/services/file";
 import { Readable } from "stream";
 import * as fs from "fs";
-import { ConfigService } from "@nestjs/config";
 import { SettingService } from "../setting.service";
 import { MediaDownloadUrlService } from "src/services/media-download-url.service";
-import {buildDiskMediaPath,buildMediaRecordCreateInput,buildStoredMediaFileName,getEffectiveS3Region,} from "src/services/media-storage.utils";
-import { MediaStorageProviderType } from "src/dtos/create-media-storage-provider-metadata.dto";
+import { MediaFileStorageService } from "src/services/media-file-storage.service";
+import {buildDiskMediaPath,buildMediaRecordCreateInput,buildStoredMediaFileName,} from "src/services/media-storage.utils";
 
 @Injectable()
 export class FileStorageProvider<T> implements MediaStorageProvider<T> {
@@ -22,8 +21,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         readonly mediaRepository: MediaRepository,
         private readonly settingService: SettingService,
         private readonly mediaDownloadUrlService: MediaDownloadUrlService,
-        private readonly s3FileService: S3FileService,
-        private readonly configService: ConfigService,
+        private readonly mediaFileStorageService: MediaFileStorageService,
     ) { }
 
     async retrieve(entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
@@ -108,15 +106,9 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         await this.mediaRepository.deleteByEntityIdAndFieldIdAndModelMetadataId(entityId, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
 
         for (const media of existingMedia) {
-            const storageProvider = this.resolveMediaStorageProvider(media, mediaFieldMetadata);
-            // A row may sit on an S3 provider even though this class handles disk storage.
-            if (storageProvider?.type === MediaStorageProviderType.AwsS3) {
-                await this.s3FileService.delete(`${storageProvider.bucketName}:${media.relativeUri}`, {
-                    region: getEffectiveS3Region(this.configService, storageProvider.region),
-                });
-                continue;
-            }
-            await this.fileService.delete(buildDiskMediaPath(media.relativeUri, this.settingService, storageProvider));
+            // A row may live on a different provider type than this class handles, so the shared
+            // service picks disk or S3 from the row's own provider.
+            await this.mediaFileStorageService.deleteFile(media, this.resolveMediaStorageProvider(media, mediaFieldMetadata));
         }
         // existingMedia.forEach(media => {
         // });
