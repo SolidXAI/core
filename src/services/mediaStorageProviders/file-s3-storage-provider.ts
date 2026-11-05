@@ -100,7 +100,7 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
             const objectPath = `${bucketName}:${fileName}`;
 
             // Stream the uploaded temp file to S3 so large files are not loaded into memory
-            await this.s3FileService.writeStream(objectPath, await this.diskFileService.readStream(file.path), { contentType: file.mimetype, region });
+            await this.s3FileService.writeStream(objectPath, await this.diskFileService.readStream(file.path), { contentType: file.mimetype, region, contentLength: file.size });
 
             // Delete temp file from disk
             await this.diskFileService.delete(file.path);

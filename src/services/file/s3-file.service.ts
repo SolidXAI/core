@@ -5,6 +5,7 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
   HeadObjectCommand,
+  HeadBucketCommand,
   CopyObjectCommand,
 } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
@@ -12,6 +13,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Readable } from 'stream';
 import { IFileService, WriteOptions, CopyOptions, UrlOptions, ReadOptions, DeleteOptions, ExistsOptions } from './file-service.interface';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
+import { chooseMultipartPartSize } from './multipart-part-size';
 
 /**
  * S3-based implementation of IFileService.
@@ -181,12 +183,31 @@ export class S3FileService implements IFileService, OnModuleInit {
         ContentType: options?.contentType,
       },
       queueSize: 4,
-      partSize: 8 * 1024 * 1024,
+      partSize: chooseMultipartPartSize(options?.contentLength),
     });
 
     await upload.done();
     this.logger.debug(`File uploaded to S3 via stream: ${bucket}/${key}`);
     return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
+  }
+
+  /**
+   * Whether the bucket exists and can be reached with the current credentials and region.
+   * A permission problem is thrown, not reported as "missing".
+   */
+  async bucketExists(bucket: string, options?: ExistsOptions): Promise<boolean> {
+    const s3Client = this.getS3Client(options?.region);
+    try {
+      await s3Client.send(new HeadBucketCommand({ Bucket: bucket }));
+      return true;
+    } catch (error: any) {
+      const status = error.$metadata?.httpStatusCode;
+      // 301 means the bucket lives in another region than the one used for the request.
+      if (error.name === 'NotFound' || error.name === 'NoSuchBucket' || status === 404 || status === 301) {
+        return false;
+      }
+      throw error;
+    }
   }
 
   /**
