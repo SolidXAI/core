@@ -1049,6 +1049,512 @@
         ]
       },
       {
+        "singularName": "mediaMigrationJob",
+        "tableName": "ss_media_migration_job",
+        "pluralName": "mediaMigrationJobs",
+        "displayName": "Media Migration Jobs",
+        "description": "A run that moves media files from one storage provider to another",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "isSystem": true,
+        "userKeyFieldUserKey": "id",
+        "fields": [
+          {
+            "name": "sourceProvider",
+            "displayName": "Source Provider",
+            "type": "relation",
+            "ormType": "integer",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "mediaStorageProviderMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "restrict",
+            "relationModelModuleName": "solid-core"
+          },
+          {
+            "name": "targetProvider",
+            "displayName": "Target Provider",
+            "type": "relation",
+            "ormType": "integer",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "mediaStorageProviderMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "restrict",
+            "relationModelModuleName": "solid-core"
+          },
+          {
+            "name": "status",
+            "displayName": "Status",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "pending:Pending",
+              "running:Running",
+              "completed:Completed",
+              "completed_with_errors:Completed With Errors",
+              "failed:Failed",
+              "cancelling:Cancelling",
+              "cancelled:Cancelled",
+              "rolled_back:Rolled Back"
+            ],
+            "defaultValue": "pending",
+            "isMultiSelect": false
+          },
+          {
+            "name": "repointFields",
+            "displayName": "Repoint Fields After Success",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "defaultValue": "true"
+          },
+          {
+            "name": "overwriteExisting",
+            "displayName": "Overwrite Existing Files",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "defaultValue": "false"
+          },
+          {
+            "name": "batchSize",
+            "displayName": "Batch Size",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "defaultValue": "200"
+          },
+          {
+            "name": "concurrency",
+            "displayName": "Concurrency",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "defaultValue": "4"
+          },
+          {
+            "name": "totalCount",
+            "displayName": "Total Files",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "defaultValue": "0"
+          },
+          {
+            "name": "migratedCount",
+            "displayName": "Migrated Files",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "defaultValue": "0"
+          },
+          {
+            "name": "skippedCount",
+            "displayName": "Skipped Files",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "defaultValue": "0"
+          },
+          {
+            "name": "failedCount",
+            "displayName": "Failed Files",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "defaultValue": "0"
+          },
+          {
+            "name": "totalBytes",
+            "displayName": "Total Bytes",
+            "type": "bigint",
+            "ormType": "bigint",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "defaultValue": "0"
+          },
+          {
+            "name": "migratedBytes",
+            "displayName": "Migrated Bytes",
+            "type": "bigint",
+            "ormType": "bigint",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "defaultValue": "0"
+          },
+          {
+            "name": "lastProcessedMediaId",
+            "displayName": "Last Processed Media Id",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "defaultValue": "0"
+          },
+          {
+            "name": "modelMetadataIds",
+            "displayName": "Model Ids In Scope",
+            "type": "json",
+            "ormType": "simple-json",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "fieldMetadataIds",
+            "displayName": "Field Ids In Scope",
+            "type": "json",
+            "ormType": "simple-json",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "entityIds",
+            "displayName": "Record Ids In Scope",
+            "type": "json",
+            "ormType": "simple-json",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "repointedFieldIds",
+            "displayName": "Repointed Field Ids",
+            "type": "json",
+            "ormType": "simple-json",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "updatedMetadataFiles",
+            "displayName": "Updated Metadata Files",
+            "type": "json",
+            "ormType": "simple-json",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "warnings",
+            "displayName": "Warnings",
+            "type": "json",
+            "ormType": "simple-json",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "errorMessage",
+            "displayName": "Error Message",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "startedAt",
+            "displayName": "Started At",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "finishedAt",
+            "displayName": "Finished At",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "mediaMigrationItems",
+            "displayName": "Files",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "relationType": "one-to-many",
+            "relationCoModelFieldName": "job",
+            "relationCreateInverse": true,
+            "relationCoModelSingularName": "mediaMigrationItem",
+            "relationCoModelColumnName": "",
+            "relationModelModuleName": "solid-core"
+          }
+        ]
+      },
+      {
+        "singularName": "mediaMigrationItem",
+        "tableName": "ss_media_migration_item",
+        "pluralName": "mediaMigrationItems",
+        "displayName": "Media Migration Files",
+        "description": "One file within a media migration job, with its result",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "isSystem": true,
+        "userKeyFieldUserKey": "id",
+        "fields": [
+          {
+            "name": "job",
+            "displayName": "Migration Job",
+            "type": "relation",
+            "ormType": "integer",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "mediaMigrationJob",
+            "relationCreateInverse": true,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "relationCoModelFieldName": "mediaMigrationItems"
+          },
+          {
+            "name": "sourceKey",
+            "displayName": "Source File",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "length": 450
+          },
+          {
+            "name": "targetKey",
+            "displayName": "Target File",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "length": 450
+          },
+          {
+            "name": "mediaIds",
+            "displayName": "Media Ids",
+            "type": "json",
+            "ormType": "simple-json",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "status",
+            "displayName": "Status",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "pending:Pending",
+              "completed:Completed",
+              "skipped:Skipped",
+              "failed:Failed",
+              "rolled_back:Rolled Back",
+              "source_deleted:Source Deleted"
+            ],
+            "defaultValue": "pending",
+            "isMultiSelect": false
+          },
+          {
+            "name": "copied",
+            "displayName": "Copied By This Job",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "defaultValue": "false"
+          },
+          {
+            "name": "sourceSize",
+            "displayName": "Source Size (Bytes)",
+            "type": "bigint",
+            "ormType": "bigint",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "targetSize",
+            "displayName": "Target Size (Bytes)",
+            "type": "bigint",
+            "ormType": "bigint",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "errorCode",
+            "displayName": "Error Code",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "errorMessage",
+            "displayName": "Error Message",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "attempts",
+            "displayName": "Attempts",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "defaultValue": "0"
+          }
+        ]
+      },
+      {
         "singularName": "viewMetadata",
         "tableName": "ss_view_metadata",
         "pluralName": "viewMetadatas",
@@ -11942,6 +12448,32 @@
       "modelUserKey": "mediaStorageProviderMetadata"
     },
     {
+      "displayName": "Media Migration Jobs",
+      "name": "mediaMigrationJob-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "mediaMigrationJob-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mediaMigrationJob"
+    },
+    {
+      "displayName": "Media Migration Files",
+      "name": "mediaMigrationItem-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "mediaMigrationItem-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mediaMigrationItem"
+    },
+    {
       "displayName": "Chatter Message List Action",
       "name": "chatterMessage-list-action",
       "type": "solid",
@@ -13313,6 +13845,24 @@
       "iconName": "cloud"
     },
     {
+      "displayName": "Migration Jobs",
+      "name": "mediaMigrationJob-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "mediaMigrationJob-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "mediaManagement-menu-item",
+      "iconName": "swap_horiz"
+    },
+    {
+      "displayName": "Migration Files",
+      "name": "mediaMigrationItem-menu-item",
+      "sequenceNumber": 4,
+      "actionUserKey": "mediaMigrationItem-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "mediaManagement-menu-item",
+      "iconName": "description"
+    },
+    {
       "displayName": "IAM",
       "name": "iam-menu-item",
       "sequenceNumber": 4,
@@ -14659,6 +15209,638 @@
                       "name": "signedUrlExpiry",
                       "isSearchable": false
                     }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "mediaMigrationJob-list-view",
+      "displayName": "Media Migration Jobs",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mediaMigrationJob",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id",
+              "label": "ID",
+              "sortable": true,
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "sourceProvider",
+              "label": "From",
+              "isSearchable": true,
+              "searchField": "sourceProvider.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "targetProvider",
+              "label": "To",
+              "isSearchable": true,
+              "searchField": "targetProvider.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status",
+              "label": "Status",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "migratedCount",
+              "label": "Migrated",
+              "sortable": true,
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "failedCount",
+              "label": "Failed",
+              "sortable": true,
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "totalCount",
+              "label": "Total",
+              "sortable": true,
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "startedAt",
+              "label": "Started At",
+              "sortable": true,
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "finishedAt",
+              "label": "Finished At",
+              "sortable": true,
+              "isSearchable": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "mediaMigrationJob-form-view",
+      "displayName": "Media Migration Jobs",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mediaMigrationJob",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Media Migration Jobs",
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "notebook",
+                "attrs": {
+                  "name": "notebook-1"
+                },
+                "children": [
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-1",
+                      "label": "Details"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "sourceProvider"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "targetProvider"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "status"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "repointFields"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "overwriteExisting"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "batchSize"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "concurrency"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-2",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "totalCount"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "migratedCount"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "skippedCount"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "failedCount"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "totalBytes"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "migratedBytes"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "lastProcessedMediaId"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "startedAt"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "finishedAt"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-2",
+                      "label": "Scope"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "modelMetadataIds"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "fieldMetadataIds"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "entityIds"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-3",
+                      "label": "Results"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "errorMessage"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "warnings"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "repointedFieldIds"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "updatedMetadataFiles"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-4",
+                      "label": "Files"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "mediaMigrationItems",
+                              "showLabel": false
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "mediaMigrationItem-list-view",
+      "displayName": "Media Migration Files",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mediaMigrationItem",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id",
+              "label": "ID",
+              "sortable": true,
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "job",
+              "label": "Job",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "sourceKey",
+              "label": "Source File",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "targetKey",
+              "label": "Target File",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status",
+              "label": "Status",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "errorCode",
+              "label": "Error Code",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "attempts",
+              "label": "Attempts",
+              "sortable": true,
+              "isSearchable": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "mediaMigrationItem-form-view",
+      "displayName": "Media Migration Files",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mediaMigrationItem",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Media Migration Files",
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "notebook",
+                "attrs": {
+                  "name": "notebook-1"
+                },
+                "children": [
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-1",
+                      "label": "Details"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "job"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "sourceKey"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "targetKey"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "status"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "copied"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "attempts"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-2",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "sourceSize"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "targetSize"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "errorCode"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-2",
+                      "label": "Details Of Error"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "errorMessage"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-3",
+                      "label": "Media"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "mediaIds"
+                            }
+                          }
+                        ]
+                      }
+                    ]
                   }
                 ]
               }

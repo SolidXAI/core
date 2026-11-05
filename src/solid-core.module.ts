@@ -224,6 +224,8 @@ import { ChatterMessageArchiveController } from './controllers/chatter-message-a
 
 import { ExportTemplateController } from './controllers/export-template.controller';
 import { ExportTransactionController } from './controllers/export-transaction.controller';
+import { MediaMigrationJobController } from './controllers/media-migration-job.controller';
+import { MediaMigrationItemController } from './controllers/media-migration-item.controller';
 import { ImportTransactionErrorLogController } from './controllers/import-transaction-error-log.controller';
 import { ImportTransactionController } from './controllers/import-transaction.controller';
 import { ListOfValuesController } from './controllers/list-of-values.controller';
@@ -361,6 +363,8 @@ import { CsvService } from './services/csv.service';
 import { ExcelService } from './services/excel.service';
 import { ExportTemplateService } from './services/export-template.service';
 import { ExportTransactionService } from './services/export-transaction.service';
+import { MediaMigrationJobService } from './services/media-migration-job.service';
+import { MediaMigrationItemService } from './services/media-migration-item.service';
 import { ImportTransactionErrorLogService } from './services/import-transaction-error-log.service';
 import { ImportTransactionService } from './services/import-transaction.service';
 import { LocaleService } from './services/locale.service';
@@ -701,6 +705,8 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     EmailTemplateController,
     ExportTemplateController,
     ExportTransactionController,
+    MediaMigrationJobController,
+    MediaMigrationItemController,
     FieldMetadataController,
     DashboardController,
     DatasourceManagementController,
@@ -1027,6 +1033,8 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     AuditSubscriber,
     ExportTemplateService,
     ExportTransactionService,
+    MediaMigrationJobService,
+    MediaMigrationItemService,
     ExcelService,
     CsvService,
     DatasourceManagementService,
