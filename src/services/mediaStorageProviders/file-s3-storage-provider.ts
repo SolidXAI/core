@@ -6,7 +6,10 @@ import { LegacyCommonEntityWithExistingId } from "src/entities/legacy-common.ent
 import { LegacyCommonEntityWithGeneratedId } from "src/entities/legacy-common-with-generated-id.entity";
 import { Media } from "src/entities/media.entity";
 import { MediaStorageProvider } from "src/interfaces";
+import { MediaStorageProviderMetadata } from "src/entities/media-storage-provider-metadata.entity";
+import { MediaStorageProviderType } from "src/dtos/create-media-storage-provider-metadata.dto";
 import { DiskFileService, S3FileService } from "src/services/file";
+import { resolveDiskMediaPath } from "src/services/file/media-storage-paths";
 import { Readable } from "stream";
 import { MediaRepository } from "src/repository/media.repository";
 import { MediaDownloadUrlService } from "src/services/media-download-url.service";
@@ -116,17 +119,26 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
 
     async delete(entity: T, mediaFieldMetadata: FieldMetadata): Promise<void> {
         const entityId = this.getSupportedEntityId(entity);
-        const storageProvider = mediaFieldMetadata.mediaStorageProvider;
-        const region = getEffectiveS3Region(this.configService, storageProvider.region);
+        const fieldProvider = mediaFieldMetadata.mediaStorageProvider;
 
         // @ts-ignore
         const existingMedia = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entityId, mediaFieldMetadata.id, mediaFieldMetadata.model.id, ['mediaStorageProviderMetadata']);
         // @ts-ignore
-        this.mediaRepository.deleteByEntityIdAndFieldIdAndModelMetadataId(entityId, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
+        await this.mediaRepository.deleteByEntityIdAndFieldIdAndModelMetadataId(entityId, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
         for (const media of existingMedia) {
-            const bucketName = storageProvider.bucketName;
-            await this.s3FileService.delete(`${bucketName}:${media.relativeUri}`, { region });
+            // Each row's file lives where its own provider says, which may differ from the field's provider.
+            const rowProvider = media.mediaStorageProviderMetadata || fieldProvider;
+            await this.deleteStoredFile(media, rowProvider);
         }
+    }
+
+    private async deleteStoredFile(media: Media, provider: MediaStorageProviderMetadata): Promise<void> {
+        if (provider?.type === MediaStorageProviderType.Filesystem) {
+            await this.diskFileService.delete(resolveDiskMediaPath(media.relativeUri, provider.isPublic !== false));
+            return;
+        }
+        const region = getEffectiveS3Region(this.configService, provider.region);
+        await this.s3FileService.delete(`${provider.bucketName}:${media.relativeUri}`, { region });
     }
 
     async deleteByMediaRecord(media: Media): Promise<void> {
