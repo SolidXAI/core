@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { MediaMigrationJob } from 'src/entities/media-migration-job.entity';
 import { MediaStorageProviderMetadataService } from './media-storage-provider-metadata.service';
 
 describe('MediaStorageProviderMetadataService location guard', () => {
@@ -6,17 +7,21 @@ describe('MediaStorageProviderMetadataService location guard', () => {
 
   let repo: any;
   let mediaCount: number;
+  let jobCount: number;
   let service: MediaStorageProviderMetadataService;
 
   beforeEach(() => {
     mediaCount = 500;
+    jobCount = 0;
     repo = {
       findOne: jest.fn().mockResolvedValue({ ...s3Provider }),
       preload: jest.fn().mockImplementation(async (dto: any) => ({ ...s3Provider, ...dto })),
       save: jest.fn().mockImplementation(async (entity: any) => entity),
       create: jest.fn().mockImplementation((dto: any) => dto),
     };
-    const dataSource: any = { getRepository: () => ({ count: jest.fn().mockImplementation(async () => mediaCount) }) };
+    const dataSource: any = {
+      getRepository: (entity: unknown) => ({ count: jest.fn().mockImplementation(async () => (entity === MediaMigrationJob ? jobCount : mediaCount)) }),
+    };
     service = new MediaStorageProviderMetadataService(repo, {} as any, dataSource);
   });
 
@@ -43,6 +48,31 @@ describe('MediaStorageProviderMetadataService location guard', () => {
       repo.findOne.mockResolvedValue({ ...s3Provider, region: null });
       await service.update(7, { region: '' } as any);
       expect(repo.save).toHaveBeenCalled();
+    });
+  });
+
+  describe('deleting a provider', () => {
+    beforeEach(() => {
+      repo.remove = jest.fn().mockImplementation(async (entity: any) => entity);
+    });
+
+    it('is refused with a clear message when migration jobs use the provider', async () => {
+      jobCount = 3;
+      const result = service.delete(7);
+      await expect(result).rejects.toBeInstanceOf(BadRequestException);
+      await expect(result).rejects.toThrow(/used by 3 media migration job\(s\)/);
+      expect(repo.remove).not.toHaveBeenCalled();
+    });
+
+    it('is refused for a bulk delete too', async () => {
+      jobCount = 1;
+      await expect(service.deleteMany([7, 8])).rejects.toThrow(/media migration job/);
+      expect(repo.remove).not.toHaveBeenCalled();
+    });
+
+    it('works when no migration job uses the provider', async () => {
+      await service.delete(7);
+      expect(repo.remove).toHaveBeenCalled();
     });
   });
 

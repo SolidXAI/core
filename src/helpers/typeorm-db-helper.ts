@@ -48,6 +48,15 @@ const BOOLEAN_MAP: Record<DatasourceType, ColumnOptions> = {
     [DatasourceType.oracle]: { type: "number", precision: 1 },
 };
 
+// Oracle has no bigint type; number(19,0) holds the same range.
+const BIGINT_MAP: Record<DatasourceType, ColumnOptions> = {
+    [DatasourceType.postgres]: { type: "bigint" },
+    [DatasourceType.mssql]: { type: "bigint" },
+    [DatasourceType.mysql]: { type: "bigint" },
+    [DatasourceType.mariadb]: { type: "bigint" },
+    [DatasourceType.oracle]: { type: "number", precision: 19, scale: 0 },
+};
+
 const DATE_TIME_MAP: Record<DatasourceType, ColumnOptions> = {
     [DatasourceType.postgres]: { type: "timestamp" },
     [DatasourceType.mssql]: { type: "datetime2" },
@@ -98,6 +107,9 @@ export function getColumnType(solidType: string): ColumnOptions {
 
         case "boolean":
             return BOOLEAN_MAP[solidCoreDbType];
+
+        case "bigint":
+            return BIGINT_MAP[solidCoreDbType];
 
         case "datetime":
             return DATE_TIME_MAP[solidCoreDbType];

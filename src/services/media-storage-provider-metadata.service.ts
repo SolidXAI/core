@@ -2,8 +2,9 @@ import { BadRequestException, Injectable, Logger, NotFoundException } from "@nes
 import { InjectDataSource } from "@nestjs/typeorm";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
 import { Media } from "src/entities/media.entity";
+import { MediaMigrationJob } from "src/entities/media-migration-job.entity";
 import { MediaStorageProviderMetadataRepository } from "src/repository/media-storage-provider-metadata.repository";
-import { DataSource, SelectQueryBuilder } from "typeorm";
+import { DataSource, In, SelectQueryBuilder } from "typeorm";
 import { BasicFilterDto } from "../dtos/basic-filters.dto";
 import { UpdateMediaStorageProviderMetadataDto } from "../dtos/update-media-storage-provider.dto";
 import { MediaStorageProviderMetadata } from "../entities/media-storage-provider-metadata.entity";
@@ -176,10 +177,28 @@ export class MediaStorageProviderMetadataService {
         return this.mediaStorageProviderRepo.save(entity);
     }
 
+    // Migration history keeps a link to its providers. Refuse the delete with a clear message
+    // instead of letting the database reject it with a foreign key error.
+    private async assertNoMigrationHistory(providerIds: number[]): Promise<void> {
+        const jobCount = await this.dataSource.getRepository(MediaMigrationJob).count({
+            where: [
+                { sourceProvider: { id: In(providerIds) } },
+                { targetProvider: { id: In(providerIds) } },
+            ],
+        });
+        if (jobCount > 0) {
+            throw new BadRequestException(
+                `Cannot delete this media storage provider: it is used by ${jobCount} media migration job(s). ` +
+                `Delete those migration jobs first, then delete the provider.`
+            );
+        }
+    }
+
     async deleteMany(ids: number[]): Promise<any> {
         if (!ids || ids.length === 0) {
             throw new Error(ERROR_MESSAGES.DELETE_IDS_REQUIRED);
         }
+        await this.assertNoMigrationHistory(ids);
         const removedEntities = [];
         for (let i = 0; i < ids.length; i++) {
             const id = ids[i]
@@ -200,6 +219,7 @@ export class MediaStorageProviderMetadataService {
 
     async delete(id: number) {
         const lov = await this.findOne(id);
+        await this.assertNoMigrationHistory([id]);
         return this.mediaStorageProviderRepo.remove(lov);
     }
 }
