@@ -576,4 +576,106 @@ describeIfDb('media migration end to end', () => {
 
   const fieldOn2 = (name: string) =>
     ds.getRepository(FieldMetadata).save({ name, displayName: name, type: 'mediaSingle', model, mediaStorageProvider: publicProvider } as any) as unknown as Promise<FieldMetadata>;
+
+  // ---- error codes and run behaviour that had no test ----
+
+  it('skips a file whose rows are deleted during the copy, and removes the copy it made', async () => {
+    await clearActiveJobs();
+    writeSource('vanishing.txt', 'gone soon');
+    await addRow('vanishing.txt', 90);
+    const transfer = (runner as any).transfer as MediaTransferService;
+    const realCopy = transfer.copy.bind(transfer);
+    jest.spyOn(transfer, 'copy').mockImplementationOnce(async (source, target, options) => {
+      await realCopy(source, target, options);
+      await ds.getRepository(Media).delete({ relativeUri: 'vanishing.txt' });
+    });
+
+    const job = await createJob(await inField(90));
+    expect((await runner.run(job.id)).status).toBe('completed');
+
+    const [item] = await itemsOf(job.id);
+    expect([item.status, item.errorCode]).toEqual(['skipped', 'ROW_DELETED_DURING_MIGRATION']);
+    expect(fs.existsSync(path.join(privateDir, 'vanishing.txt'))).toBe(false);
+    jest.restoreAllMocks();
+  });
+
+  it('refuses an S3 provider that has no bucket, before any work starts', async () => {
+    const previous = { key: process.env.S3_AWS_ACCESS_KEY, secret: process.env.S3_AWS_SECRET_KEY };
+    process.env.S3_AWS_ACCESS_KEY = 'test';
+    process.env.S3_AWS_SECRET_KEY = 'test';
+    try {
+      const noBucket = await ds.getRepository(MediaStorageProviderMetadata).save({ name: 's3-no-bucket', type: 'aws-s3', region: 'ap-south-1' } as any) as any;
+      await expect(service.preview({ sourceProviderId: publicProvider.id, targetProviderId: noBucket.id })).rejects.toThrow(/has no bucketName set/);
+    } finally {
+      if (previous.key === undefined) delete process.env.S3_AWS_ACCESS_KEY; else process.env.S3_AWS_ACCESS_KEY = previous.key;
+      if (previous.secret === undefined) delete process.env.S3_AWS_SECRET_KEY; else process.env.S3_AWS_SECRET_KEY = previous.secret;
+    }
+  });
+
+  it('counts a file that spans several batches once, and moves all of its rows', async () => {
+    await clearActiveJobs();
+    writeSource('spanning.txt', 'span');
+    for (let i = 0; i < 12; i++) {
+      await addRow('spanning.txt', 91);
+    }
+    const job = await createJob({ ...(await inField(91)), batchSize: 10 });
+    expect((await runner.run(job.id)).status).toBe('completed');
+
+    const finished = await jobOf(job.id);
+    expect([finished.totalCount, finished.migratedCount]).toEqual([1, 1]);
+    const [item] = await itemsOf(job.id);
+    expect(item.mediaIds).toHaveLength(12);
+    const rows = await ds.getRepository(Media).find({ where: { relativeUri: 'spanning.txt' }, relations: ['mediaStorageProviderMetadata'] });
+    expect(rows.every(row => row.mediaStorageProviderMetadata.id === privateProvider.id)).toBe(true);
+  });
+
+  it('continues from the saved point after a stop, without redoing earlier files', async () => {
+    await clearActiveJobs();
+    writeSource('resume-1.txt', '1');
+    writeSource('resume-2.txt', '2');
+    writeSource('resume-3.txt', '3');
+    const first = await addRow('resume-1.txt', 92);
+    const second = await addRow('resume-2.txt', 92);
+    const third = await addRow('resume-3.txt', 92);
+    const job = await createJob({ ...(await inField(92)), batchSize: 10, status: 'pending', lastProcessedMediaId: first.id });
+
+    expect((await runner.run(job.id)).status).toBe('completed');
+
+    expect((await rowOn(first.id)).mediaStorageProviderMetadata.id).toBe(publicProvider.id);
+    expect((await rowOn(second.id)).mediaStorageProviderMetadata.id).toBe(privateProvider.id);
+    expect((await rowOn(third.id)).mediaStorageProviderMetadata.id).toBe(privateProvider.id);
+  });
+
+  it('finishes a job whose run failed part way, once it is resumed', async () => {
+    await clearActiveJobs();
+    writeSource('interrupted-1.txt', 'i1');
+    writeSource('interrupted-2.txt', 'i2');
+    const one = await addRow('interrupted-1.txt', 93);
+    const two = await addRow('interrupted-2.txt', 93);
+    const job = await createJob({ ...(await inField(93)), batchSize: 1 });
+
+    // The run stops with an error after the first batch, as if the process had failed.
+    const original = (runner as any).processBatches.bind(runner);
+    let calls = 0;
+    jest.spyOn(runner as any, 'processBatches').mockImplementation(async (...args: any[]) => {
+      calls += 1;
+      if (calls === 1) {
+        const context = args[0];
+        const rows = await ds.getRepository(Media).find({ where: { id: one.id }, relations: ['mediaStorageProviderMetadata'] });
+        await (runner as any).migrateFile(context, 'interrupted-1.txt', rows);
+        await ds.getRepository(MediaMigrationJob).update({ id: job.id }, { lastProcessedMediaId: one.id });
+        throw new Error('simulated failure');
+      }
+      return original(...args);
+    });
+
+    expect((await runner.run(job.id)).status).toBe('failed');
+    expect((await jobOf(job.id)).status).toBe('failed');
+
+    await service.resume(job.id);
+    expect((await runner.run(job.id)).status).toBe('completed');
+    expect((await rowOn(one.id)).mediaStorageProviderMetadata.id).toBe(privateProvider.id);
+    expect((await rowOn(two.id)).mediaStorageProviderMetadata.id).toBe(privateProvider.id);
+    jest.restoreAllMocks();
+  });
 });
