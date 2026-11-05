@@ -25,6 +25,10 @@ import { TestController } from "./controllers/test.controller";
 import { FieldMetadata } from "./entities/field-metadata.entity";
 import { ListOfValues } from "./entities/list-of-values.entity";
 import { MediaStorageProviderMetadata } from "./entities/media-storage-provider-metadata.entity";
+import { MediaMigrationJob } from "./entities/media-migration-job.entity";
+import { MediaMigrationItem } from "./entities/media-migration-item.entity";
+import { MediaMigrationJobRepository } from "./repository/media-migration-job.repository";
+import { MediaMigrationItemRepository } from "./repository/media-migration-item.repository";
 import { Media } from "./entities/media.entity";
 import { ModelMetadata } from "./entities/model-metadata.entity";
 import { ModuleMetadata } from "./entities/module-metadata.entity";
@@ -565,6 +569,8 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
       Locale,
       Media,
       MediaStorageProviderMetadata,
+      MediaMigrationJob,
+      MediaMigrationItem,
       MenuItemMetadata,
       ModelMetadata,
       ModuleMetadata,
@@ -1078,6 +1084,8 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     ModuleMetadataRepository,
     ActionMetadataRepository,
     MediaStorageProviderMetadataRepository,
+    MediaMigrationJobRepository,
+    MediaMigrationItemRepository,
     FixturesService,
     FixturesSetupCommand,
     FixturesTearDownCommand,
