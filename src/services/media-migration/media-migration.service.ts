@@ -14,6 +14,8 @@ import { findTargetKeyCollisions, normalizeTargetKey, resolveLocation, sameLocat
 import { MigrationError } from './migration-error';
 import { MediaTransferService } from './media-transfer.service';
 import { countSharedRowsOutsideScope, MigrationScope, rowsUsingLocation, scopedMediaQuery } from './media-migration-scope';
+import { MediaMigrationFieldsService } from './media-migration-fields.service';
+import { MediaMigrationRunnerService } from './media-migration-runner.service';
 
 export const CLEANUP_CONFIRMATION = 'DELETE_SOURCE_FILES';
 
@@ -52,6 +54,8 @@ export class MediaMigrationService {
     private readonly transfer: MediaTransferService,
     private readonly configService: ConfigService,
     private readonly publisherFactory: PublisherFactory<{ jobId: number }>,
+    private readonly fields: MediaMigrationFieldsService,
+    private readonly runner: MediaMigrationRunnerService,
   ) { }
 
   // ---- preview ----
@@ -262,6 +266,7 @@ export class MediaMigrationService {
     if (!['completed', 'completed_with_errors', 'cancelled'].includes(job.status)) {
       throw new BadRequestException(`Job #${jobId} is ${job.status}. Rollback needs a finished job.`);
     }
+    const repointedBack = await this.fields.moveFields(job.repointedFieldIds ?? [], job.targetProvider.id, job.sourceProvider);
     const removed = await this.dataSource.getRepository(MediaMigrationItem).count({ where: { job: { id: jobId }, status: 'source_deleted' } });
     if (removed > 0) {
       throw new BadRequestException(`Job #${jobId} already removed ${removed} source file(s), so it cannot be rolled back.`);
@@ -286,10 +291,24 @@ export class MediaMigrationService {
         await manager.getRepository(MediaMigrationItem).update({ id: item.id }, { status: 'rolled_back' });
       });
     }
-    await this.updateJob(jobId, { status: 'rolled_back', finishedAt: new Date() });
+    await this.updateJob(jobId, {
+      status: 'rolled_back',
+      finishedAt: new Date(),
+      repointedFieldIds: [],
+      warnings: [...(job.warnings ?? []).filter(w => !w.startsWith('Fields were')), ...repointedBack.warnings],
+    });
 
     const targetFilesLeft = await this.dataSource.getRepository(MediaMigrationItem).count({ where: { job: { id: jobId }, copied: true } });
     return { job: await this.loadJob(jobId), targetFilesLeft };
+  }
+
+  /**
+   * Switches the media fields of a completed job to the target provider, for a job that was created
+   * without repointing, or after a retry. New uploads then go to the target.
+   */
+  async repoint(jobId: number) {
+    await this.loadJob(jobId);
+    return this.runner.repoint(jobId);
   }
 
   /**

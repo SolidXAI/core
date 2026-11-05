@@ -14,12 +14,14 @@ import { Media } from 'src/entities/media.entity';
 import { MediaMigrationItem } from 'src/entities/media-migration-item.entity';
 import { MediaMigrationJob } from 'src/entities/media-migration-job.entity';
 import { MediaStorageProviderMetadata } from 'src/entities/media-storage-provider-metadata.entity';
+import { FieldMetadata as FieldEntity } from 'src/entities/field-metadata.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { FieldMetadata } from 'src/entities/field-metadata.entity';
 import { DiskFileService, S3FileService } from 'src/services/file';
 import { MediaMigrationRunnerService } from './media-migration-runner.service';
 import { MediaMigrationService } from './media-migration.service';
 import { MediaTransferService } from './media-transfer.service';
+import { MediaMigrationFieldsService } from './media-migration-fields.service';
 
 const port = process.env.MEDIA_MIGRATION_TEST_PG_PORT;
 const describeIfDb = port ? describe : describe.skip;
@@ -37,6 +39,9 @@ describeIfDb('media migration end to end', () => {
   let privateProvider: MediaStorageProviderMetadata;
   let model: ModelMetadata;
   let field: FieldMetadata;
+  let modelMetadata: { updateInFile: jest.Mock };
+  let moduleHelper: { getModuleMetadataFilePath: jest.Mock };
+  let fieldsService: MediaMigrationFieldsService;
 
   beforeAll(async () => {
     process.env.AB_MEDIA_FILE_STORAGE_ROOT = workRoot;
@@ -61,9 +66,13 @@ describeIfDb('media migration end to end', () => {
 
     const config = { get: () => undefined } as any;
     const transfer = new MediaTransferService(new DiskFileService(), new S3FileService());
-    runner = new MediaMigrationRunnerService(ds, transfer, config);
+    // Metadata JSON is not written by the tests: the real model metadata writer is replaced by a recorder.
+    modelMetadata = { updateInFile: jest.fn(async () => undefined) };
+    moduleHelper = { getModuleMetadataFilePath: jest.fn(async (name: string) => `/metadata/${name}-metadata.json`) };
+    fieldsService = new MediaMigrationFieldsService(ds, modelMetadata as any, moduleHelper as any);
+    runner = new MediaMigrationRunnerService(ds, transfer, config, fieldsService);
     publisher = { publish: jest.fn(async () => 'message-id') };
-    service = new MediaMigrationService(ds, transfer, config, publisher as any);
+    service = new MediaMigrationService(ds, transfer, config, publisher as any, fieldsService, runner);
 
     publicProvider = await ds.getRepository(MediaStorageProviderMetadata).save({ name: 'fs-public', type: 'filesystem', isPublic: true } as any) as any;
     privateProvider = await ds.getRepository(MediaStorageProviderMetadata).save({ name: 'fs-private', type: 'filesystem', isPublic: false } as any) as any;
@@ -467,4 +476,102 @@ describeIfDb('media migration end to end', () => {
     const scoped = await service.preview({ sourceProviderId: bulk.id, targetProviderId: privateProvider.id, fieldMetadataIds: [field.id] });
     expect(scoped.totalFiles).toBe(70000);
   }, 120_000);
+
+  // ---- phase 4: switching the fields ----
+
+  describe('switching media fields to the target provider', () => {
+    const newField = (name: string, provider = publicProvider) =>
+      ds.getRepository(FieldEntity).save({ name, displayName: name, type: 'mediaSingle', model, mediaStorageProvider: provider } as any) as unknown as Promise<FieldMetadata>;
+    const fieldOn = async (id: number) =>
+      ds.getRepository(FieldEntity).findOneOrFail({ where: { id }, relations: ['mediaStorageProvider'] });
+
+    beforeEach(() => {
+      modelMetadata.updateInFile.mockReset().mockResolvedValue(undefined);
+      moduleHelper.getModuleMetadataFilePath.mockClear();
+    });
+
+    it('moves the field when a whole job finishes cleanly, and rewrites the model metadata', async () => {
+      await clearActiveJobs();
+      writeSource('phase4-a.txt', 'a');
+      const photo = await newField('phase4Photo');
+      await ds.getRepository(Media).save({ entityId: 70, relativeUri: 'phase4-a.txt', fileSize: 1, mimeType: 'text/plain', originalFileName: 'a', modelMetadata: model, fieldMetadata: photo, mediaStorageProviderMetadata: publicProvider } as any);
+
+      const job = await createJob({ repointFields: true, fieldMetadataIds: [photo.id] });
+      expect((await runner.run(job.id)).status).toBe('completed');
+
+      expect((await fieldOn(photo.id)).mediaStorageProvider.id).toBe(privateProvider.id);
+      expect(modelMetadata.updateInFile).toHaveBeenCalledWith(model.id, expect.anything());
+      const finished = await jobOf(job.id);
+      expect(finished.repointedFieldIds).toEqual([photo.id]);
+      expect(finished.updatedMetadataFiles).toEqual([expect.stringContaining('metadata.json')]);
+      expect(finished.warnings?.join(' ') ?? '').not.toMatch(/were not switched/);
+    });
+
+    it('does not switch fields for a job limited to some records, and says so', async () => {
+      await clearActiveJobs();
+      writeSource('phase4-b.txt', 'b');
+      const photo = await newField('phase4Records');
+      await ds.getRepository(Media).save({ entityId: 71, relativeUri: 'phase4-b.txt', fileSize: 1, mimeType: 'text/plain', originalFileName: 'b', modelMetadata: model, fieldMetadata: photo, mediaStorageProviderMetadata: publicProvider } as any);
+
+      const job = await createJob({ repointFields: true, fieldMetadataIds: [photo.id], entityIds: [71] });
+      expect((await runner.run(job.id)).status).toBe('completed');
+
+      expect((await fieldOn(photo.id)).mediaStorageProvider.id).toBe(publicProvider.id);
+      expect(modelMetadata.updateInFile).not.toHaveBeenCalled();
+      expect((await jobOf(job.id)).warnings?.join(' ')).toMatch(/Fields were not switched: this job covered only some records/);
+    });
+
+    it('keeps the database change, and tells the admin what to fix, when the metadata file cannot be written', async () => {
+      await clearActiveJobs();
+      writeSource('phase4-c.txt', 'c');
+      const photo = await newField('phase4ReadOnly');
+      await ds.getRepository(Media).save({ entityId: 72, relativeUri: 'phase4-c.txt', fileSize: 1, mimeType: 'text/plain', originalFileName: 'c', modelMetadata: model, fieldMetadata: photo, mediaStorageProviderMetadata: publicProvider } as any);
+      modelMetadata.updateInFile.mockRejectedValueOnce(new Error('read-only file system'));
+
+      const job = await createJob({ repointFields: true, fieldMetadataIds: [photo.id] });
+      expect((await runner.run(job.id)).status).toBe('completed');
+
+      expect((await fieldOn(photo.id)).mediaStorageProvider.id).toBe(privateProvider.id);
+      const warnings = (await jobOf(job.id)).warnings?.join(' ') ?? '';
+      expect(warnings).toMatch(/read-only file system/);
+      expect(warnings).toMatch(/by hand/);
+    });
+
+    it('repoints a finished job on request, once, and only for a completed job', async () => {
+      await clearActiveJobs();
+      writeSource('phase4-d.txt', 'd');
+      const photo = await newField('phase4Later');
+      await ds.getRepository(Media).save({ entityId: 73, relativeUri: 'phase4-d.txt', fileSize: 1, mimeType: 'text/plain', originalFileName: 'd', modelMetadata: model, fieldMetadata: photo, mediaStorageProviderMetadata: publicProvider } as any);
+
+      const job = await createJob({ repointFields: false, fieldMetadataIds: [photo.id] });
+      expect((await runner.run(job.id)).status).toBe('completed');
+      expect((await fieldOn(photo.id)).mediaStorageProvider.id).toBe(publicProvider.id);
+
+      const first = await service.repoint(job.id);
+      expect(first.movedFieldIds).toEqual([photo.id]);
+      expect((await fieldOn(photo.id)).mediaStorageProvider.id).toBe(privateProvider.id);
+
+      const second = await service.repoint(job.id);
+      expect(second.movedFieldIds).toEqual([]);
+
+      const running = await createJob({ repointFields: false, fieldMetadataIds: [photo.id] });
+      await ds.getRepository(MediaMigrationJob).update({ id: running.id }, { status: 'running', leaseToken: 'busy', leaseExpiresAt: new Date(Date.now() + 60_000) });
+      await expect(service.repoint(running.id)).rejects.toThrow(/must be completed/);
+    });
+
+    it('rollback moves the fields back to the source provider', async () => {
+      await clearActiveJobs();
+      writeSource('phase4-e.txt', 'e');
+      const photo = await newField('phase4Rollback');
+      await ds.getRepository(Media).save({ entityId: 74, relativeUri: 'phase4-e.txt', fileSize: 1, mimeType: 'text/plain', originalFileName: 'e', modelMetadata: model, fieldMetadata: photo, mediaStorageProviderMetadata: publicProvider } as any);
+
+      const job = await createJob({ repointFields: true, fieldMetadataIds: [photo.id] });
+      expect((await runner.run(job.id)).status).toBe('completed');
+      expect((await fieldOn(photo.id)).mediaStorageProvider.id).toBe(privateProvider.id);
+
+      await service.rollback(job.id);
+      expect((await fieldOn(photo.id)).mediaStorageProvider.id).toBe(publicProvider.id);
+      expect((await jobOf(job.id)).repointedFieldIds).toEqual([]);
+    });
+  });
 });
