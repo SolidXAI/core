@@ -269,21 +269,15 @@ export class MediaService extends CRUDService<Media> {
       // relativeUri (see DraftPublishHelperService.cloneMediaForVersion) instead of
       // duplicating the underlying file. Skip the physical delete if another row
       // still references it.
-      const mediaStorageProvider = await this.resolveMediaStorageProvider(media);
-      if (!mediaStorageProvider) {
+      const stillReferenced = await this.repo.exists({
+        where: { relativeUri: media.relativeUri, id: Not(media.id) },
+      });
+      if (stillReferenced) {
         return;
       }
 
-      // Only rows on the same provider share the physical file; a same-named row on
-      // another provider is a different file and must not block this delete.
-      const stillReferenced = await this.repo.exists({
-        where: {
-          relativeUri: media.relativeUri,
-          mediaStorageProviderMetadata: { id: mediaStorageProvider.id },
-          id: Not(media.id),
-        },
-      });
-      if (stillReferenced) {
+      const mediaStorageProvider = await this.resolveMediaStorageProvider(media);
+      if (!mediaStorageProvider) {
         return;
       }
 
