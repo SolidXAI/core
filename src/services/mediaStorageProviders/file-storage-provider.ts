@@ -9,7 +9,7 @@ import { Readable } from "stream";
 import * as fs from "fs";
 import { SettingService } from "../setting.service";
 import { MediaDownloadUrlService } from "src/services/media-download-url.service";
-import {buildDiskMediaPath,buildMediaRecordCreateInput,buildStoredMediaFileName,resolveMediaIsPublic,} from "src/services/media-storage.utils";
+import {buildDiskMediaPath,buildMediaRecordCreateInput,buildStoredMediaFileName,} from "src/services/media-storage.utils";
 
 @Injectable()
 export class FileStorageProvider<T> implements MediaStorageProvider<T> {
@@ -33,11 +33,8 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         // media.forEach(m => {
         // });
         for (const m of media) {
-            const storageProvider = this.resolveMediaStorageProvider(m, mediaFieldMetadata);
-            const isPublic = resolveMediaIsPublic(storageProvider);
-            m['_full_url'] = isPublic === false
-                ? await this.mediaDownloadUrlService.getPrivateUrl(m.id, m.relativeUri, storageProvider)
-                : await this.fileService.getUrl(buildDiskMediaPath(m.relativeUri, this.settingService, storageProvider));
+            m.mediaStorageProviderMetadata = m.mediaStorageProviderMetadata || mediaFieldMetadata?.mediaStorageProvider;
+            m['_full_url'] = await this.mediaDownloadUrlService.buildFullUrl(m);
         }
 
 

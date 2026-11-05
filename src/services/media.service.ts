@@ -22,7 +22,7 @@ import { FieldMetadataRepository } from 'src/repository/field-metadata.repositor
 import { MediaStorageProviderMetadataRepository } from 'src/repository/media-storage-provider-metadata.repository';
 import { MediaRepository } from 'src/repository/media.repository';
 import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
-import { buildDiskMediaPath, getEffectiveS3Region, resolveMediaIsPublic, } from 'src/services/media-storage.utils';
+import { buildDiskMediaPath, getEffectiveS3Region, } from 'src/services/media-storage.utils';
 import { getMediaStorageProvider } from "./mediaStorageProviders";
 
 @Injectable()
@@ -253,24 +253,10 @@ export class MediaService extends CRUDService<Media> {
 
   private async resolveMediaUrl(media: Media, mediaStorageProvider?: MediaStorageProviderMetadata): Promise<string> {
     const resolvedMediaStorageProvider = mediaStorageProvider || await this.resolveMediaStorageProvider(media);
-    const isPublic = resolveMediaIsPublic(resolvedMediaStorageProvider);
-
-    if (isPublic === false) {
-      return this.mediaDownloadUrlService.getPrivateUrl(media.id, media.relativeUri, resolvedMediaStorageProvider);
-    }
-
-    if (resolvedMediaStorageProvider?.type === MediaStorageProviderType.Filesystem) {
-      return this.diskFileService.getUrl(buildDiskMediaPath(media.relativeUri, this.settingService, resolvedMediaStorageProvider));
-    }
-
-    if (resolvedMediaStorageProvider?.type === MediaStorageProviderType.AwsS3) {
-      return this.s3FileService.getUrl(
-        `${resolvedMediaStorageProvider.bucketName}:${media.relativeUri}`,
-        { region: getEffectiveS3Region(this.configService, resolvedMediaStorageProvider.region), expiresIn: 0 },
-      );
-    }
-
-    return media.relativeUri;
+    return this.mediaDownloadUrlService.buildFullUrl({
+      ...media,
+      mediaStorageProviderMetadata: resolvedMediaStorageProvider,
+    } as Media);
   }
 
   private async deletePhysicalFile(media: Media): Promise<void> {

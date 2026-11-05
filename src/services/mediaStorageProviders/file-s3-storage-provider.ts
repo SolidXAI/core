@@ -14,7 +14,6 @@ import {
 buildMediaRecordCreateInput,
 buildStoredMediaFileName,
 getEffectiveS3Region,
-resolveMediaIsPublic,
 } from "src/services/media-storage.utils";
 
 @Injectable()
@@ -71,14 +70,7 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         // If private bucket then we need to return a "signed-url", the timeout for the signed url can be configured in the media storage provider entity and modified using the CRUD interface.
         // Add the full URL to the media
         for (const m of media) {
-            const storageMeta = m.mediaStorageProviderMetadata;
-            const isPublic = resolveMediaIsPublic(storageMeta);
-            m['_full_url'] = isPublic === false
-                ? await this.mediaDownloadUrlService.getPrivateUrl(m.id, m.relativeUri, storageMeta)
-                : await this.s3FileService.getUrl(
-                    `${storageMeta.bucketName}:${m.relativeUri}`,
-                    { region: getEffectiveS3Region(this.configService, storageMeta.region), expiresIn: 0 },
-                );
+            m['_full_url'] = await this.mediaDownloadUrlService.buildFullUrl(m);
         }
 
         return media;
