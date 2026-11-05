@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.22-beta.2] - 2026-11-04
+
+### Added
+
+- enhance DTO validation and optional properties in CreateFieldMetadataDto and CreateModelMetadataDto
+
+### Maintenance
+
+- remove unused fields from solid-core-metadata.json
+- remove unused agenthubTags and agenthubAgents from solid-core-metadata.json
+
+### Other
+
+- Mobile testing agentic authoring (#204)
+- User action view fix
+
 ## [0.1.22-beta.1] - 2026-10-30
 
 ### Other

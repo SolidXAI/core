@@ -10,6 +10,7 @@ import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.serv
 import { PollerService } from 'src/services/poller.service';
 import { toMobileAdapterOptions } from '../../testing/adapters/mobile/run-options';
 import { runFromMetadata } from '../../testing/runner/run-from-metadata';
+import { registerRunCancellation, releaseRunCancellation } from '../../testing/runner/run-cancellation';
 import { readScenariosFile } from '../../testing/runner/read-scenarios-file';
 import {
   LifecycleWebhookReporter,
@@ -102,8 +103,12 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
         // scenario starts (a device that is not ready, a scenario that cannot run on it) has no scenario to carry the
         // reason, so it goes out on run.end.
         let failureReason: string | undefined;
+        // A caller that knows this run by its externalRunId can cancel it (POST /test-runs/cancel).
+        const cancelKey = p.externalRunId ? String(p.externalRunId) : undefined;
+        const signal = cancelKey ? registerRunCancellation(cancelKey) : undefined;
         try {
             await runFromMetadata({
+                signal,
                 scenarios,
                 data,
                 includeTags: p.includeTags,
@@ -125,6 +130,7 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
             failureReason = String(err?.message ?? err);
             this.testRunLogger.warn(`Test run ${p.runId} completed with failures: ${failureReason}`);
         } finally {
+            if (cancelKey) releaseRunCancellation(cancelKey);
             await reporter.flushPending(exitCode, failureReason);
         }
 

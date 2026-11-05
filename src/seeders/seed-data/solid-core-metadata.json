@@ -24687,18 +24687,6 @@
           {
             "type": "field",
             "attrs": {
-              "name": "systemPrompt"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "requiredInputs"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
               "name": "reasoningModelKey",
               "sortable": true,
               "isSearchable": true
@@ -24725,27 +24713,6 @@
                 "disabled": "#dc2626",
                 "default": "#e5e7eb"
               }
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "stepLimit",
-              "sortable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "turnStepLimit",
-              "sortable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "costLimit",
-              "sortable": true
             }
           },
           {
@@ -25132,12 +25099,6 @@
           {
             "type": "field",
             "attrs": {
-              "name": "checksum"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
               "name": "status",
               "isSearchable": true,
               "sortable": true,
@@ -25148,12 +25109,6 @@
                 "load_failed": "#dc2626",
                 "default": "#e5e7eb"
               }
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "lastLoadError"
             }
           },
           {
@@ -29683,7 +29638,5 @@
       }
     }
   ],
-  "agenthubTags": [],
-  "agenthubAgents": [],
   "secrets": []
 }
