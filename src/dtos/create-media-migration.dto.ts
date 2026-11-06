@@ -1,6 +1,17 @@
 import { Type } from 'class-transformer';
 import { Transform } from 'class-transformer';
-import { IsArray, IsBoolean, IsInt, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
+
+/** A field, named by its userKey (its name) and the userKey of the model it belongs to. */
+export class FieldUserKeyDto {
+  @IsString()
+  @IsNotEmpty()
+  modelUserKey: string;
+
+  @IsString()
+  @IsNotEmpty()
+  fieldUserKey: string;
+}
 
 /**
  * Starts a media migration from one storage provider to another. Providers can be given by id or by
@@ -36,6 +47,20 @@ export class CreateMediaMigrationDto {
   @Type(() => Number)
   @IsInt({ each: true })
   fieldMetadataIds?: number[];
+
+  // Same scope by user key. A model's userKey is its singularName, so "product".
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  modelUserKeys?: string[];
+
+  // A field's userKey is its name, which can repeat across models, so each field also names its model.
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => FieldUserKeyDto)
+  fieldUserKeys?: FieldUserKeyDto[];
 
   // Replace a same-named file at the target that has different content. Defaults to false.
   // Form posts send "false" as text, which implicit conversion would turn into true, so read the raw value.

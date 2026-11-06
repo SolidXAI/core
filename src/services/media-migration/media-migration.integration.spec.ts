@@ -678,4 +678,46 @@ describeIfDb('media migration end to end', () => {
     expect((await rowOn(two.id)).mediaStorageProviderMetadata.id).toBe(privateProvider.id);
     jest.restoreAllMocks();
   });
+
+  // ---- scoping by user key ----
+
+  describe('scoping by user key', () => {
+    it('a model userKey (its singularName) selects the same files as its id', async () => {
+      const byId = await service.preview({ sourceProviderId: publicProvider.id, targetProviderId: privateProvider.id, modelMetadataIds: [model.id] });
+      const byKey = await service.preview({ sourceProviderId: publicProvider.id, targetProviderId: privateProvider.id, modelUserKeys: ['product'] });
+      expect(byKey.totalFiles).toBe(byId.totalFiles);
+      expect(byKey.totalMediaRows).toBe(byId.totalMediaRows);
+    });
+
+    it('a field userKey is qualified by its model, so a field name that repeats picks the right field', async () => {
+      const warehouse = await ds.getRepository(ModelMetadata).save({ singularName: 'warehouse', pluralName: 'warehouses', displayName: 'Warehouses', dataSource: 'default', dataSourceType: 'postgres' } as any) as any;
+      await ds.getRepository(FieldMetadata).save([
+        { name: 'sharedName', displayName: 'Shared', type: 'mediaSingle', model, mediaStorageProvider: publicProvider },
+        { name: 'sharedName', displayName: 'Shared', type: 'mediaSingle', model: warehouse, mediaStorageProvider: publicProvider },
+      ] as any);
+
+      const preview = await service.preview({
+        sourceProviderId: publicProvider.id, targetProviderId: privateProvider.id,
+        fieldUserKeys: [{ modelUserKey: 'warehouse', fieldUserKey: 'sharedName' }],
+      });
+      expect(preview.fieldsOnSourceProvider).toHaveLength(1);
+      expect(preview.fieldsOnSourceProvider[0]).toMatchObject({ name: 'sharedName', modelName: 'warehouse' });
+    });
+
+    it('refuses an unknown model or field userKey by name, instead of migrating less', async () => {
+      await expect(service.preview({ sourceProviderId: publicProvider.id, targetProviderId: privateProvider.id, modelUserKeys: ['no-such-model'] }))
+        .rejects.toThrow(/Unknown model userKey: "no-such-model"/);
+      await expect(service.preview({ sourceProviderId: publicProvider.id, targetProviderId: privateProvider.id, fieldUserKeys: [{ modelUserKey: 'product', fieldUserKey: 'noSuchField' }] }))
+        .rejects.toThrow(/Unknown field userKey "noSuchField" on model "product"/);
+    });
+
+    it('combines ids and user keys into one scope', async () => {
+      const both = await service.preview({
+        sourceProviderId: publicProvider.id, targetProviderId: privateProvider.id,
+        modelMetadataIds: [model.id], modelUserKeys: ['product'],
+      });
+      const byId = await service.preview({ sourceProviderId: publicProvider.id, targetProviderId: privateProvider.id, modelMetadataIds: [model.id] });
+      expect(both.totalFiles).toBe(byId.totalFiles);
+    });
+  });
 });

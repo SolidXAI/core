@@ -28,6 +28,10 @@
     {
       "key": "jobId",
       "value": "0"
+    },
+    {
+      "key": "modelUserKey",
+      "value": "product"
     }
   ],
   "item": [
@@ -86,6 +90,58 @@
               "raw": "{\n  \"sourceProviderName\": \"{{sourceProviderName}}\",\n  \"targetProviderName\": \"{{targetProviderName}}\",\n  \"fieldMetadataIds\": [\n    \"{{fieldId}}\"\n  ]\n}"
             }
           }
+        },
+        {
+          "name": "1b. Preview by userKey",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/preview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "preview"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Same preview scoped by the model's userKey (its singularName) instead of an id.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceProviderName\": \"{{sourceProviderName}}\",\n  \"targetProviderName\": \"{{targetProviderName}}\",\n  \"modelUserKeys\": [\n    \"{{modelUserKey}}\"\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('preview by userKey returns 200', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('counts are numbers', () => { pm.expect(b.totalFiles).to.be.a('number'); pm.expect(b.totalMediaRows).to.be.a('number'); });",
+                  "pm.test('model userKey scope is accepted', () => pm.expect(b.fieldsOnSourceProvider).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "2. Create job",

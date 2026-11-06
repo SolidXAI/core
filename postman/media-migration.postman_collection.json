@@ -103,6 +103,80 @@
           }
         },
         {
+          "name": "Start: one model (by userKey)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Scope by the model's userKey, which is its singularName. Use this instead of modelMetadataIds.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceProviderName\": \"default-filesystem\",\n  \"targetProviderName\": \"default-aws-s3\",\n  \"modelUserKeys\": [\n    \"product\"\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Start: one field (by userKey)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Scope by field userKey. A field's name can repeat across models, so each field also names its model. Use this instead of fieldMetadataIds.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceProviderName\": \"default-filesystem\",\n  \"targetProviderName\": \"default-aws-s3\",\n  \"fieldUserKeys\": [\n    {\n      \"modelUserKey\": \"product\",\n      \"fieldUserKey\": \"photo\"\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
           "name": "Start: one field",
           "request": {
             "method": "POST",

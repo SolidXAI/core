@@ -21,6 +21,12 @@ const ACTIVE_STATUSES: MediaMigrationJobStatus[] = ['pending', 'running', 'cance
 const DEFAULT_BATCH_SIZE = 200;
 const DEFAULT_CONCURRENCY = 4;
 
+/** A field identified by its name and the model it belongs to, since field names repeat across models. */
+export interface FieldUserKeyRef {
+  modelUserKey: string;
+  fieldUserKey: string;
+}
+
 export interface MediaMigrationRequest {
   sourceProviderId?: number;
   sourceProviderName?: string;
@@ -28,6 +34,9 @@ export interface MediaMigrationRequest {
   targetProviderName?: string;
   modelMetadataIds?: number[];
   fieldMetadataIds?: number[];
+  // The same scope by user key: a model's userKey is its singularName; a field's is its name.
+  modelUserKeys?: string[];
+  fieldUserKeys?: FieldUserKeyRef[];
   overwriteExisting?: boolean;
   batchSize?: number;
   concurrency?: number;
@@ -38,6 +47,10 @@ interface ValidatedRequest {
   target: MediaStorageProviderMetadata;
   scope: MigrationScope;
   options: { overwriteExisting: boolean; batchSize: number; concurrency: number };
+}
+
+function unique<T>(values: T[]): T[] {
+  return [...new Set(values)];
 }
 
 @Injectable()
@@ -375,10 +388,14 @@ export class MediaMigrationService {
       }
     }
 
+    // Ids and user keys can be mixed; the scope is the union of both, resolved to ids once here.
+    const byKey = await this.resolveUserKeys(request);
+    const modelIds = unique([...(request.modelMetadataIds ?? []), ...byKey.modelIds]);
+    const fieldIds = unique([...(request.fieldMetadataIds ?? []), ...byKey.fieldIds]);
     const scope: MigrationScope = {
       sourceProviderId: source.id,
-      modelMetadataIds: request.modelMetadataIds?.length ? request.modelMetadataIds : null,
-      fieldMetadataIds: request.fieldMetadataIds?.length ? request.fieldMetadataIds : null,
+      modelMetadataIds: modelIds.length ? modelIds : null,
+      fieldMetadataIds: fieldIds.length ? fieldIds : null,
     };
     await this.assertScopeExists(scope);
 
@@ -416,6 +433,34 @@ export class MediaMigrationService {
       throw new BadRequestException(`Choose a ${role} provider by id or name. "${id ?? name ?? ''}" was not found.`);
     }
     return provider;
+  }
+
+  // Turns model and field user keys into ids. An unknown key is refused by name, so a typo cannot
+  // quietly migrate less than the admin meant.
+  private async resolveUserKeys(request: MediaMigrationRequest): Promise<{ modelIds: number[]; fieldIds: number[] }> {
+    const modelKeys = unique(request.modelUserKeys ?? []);
+    const modelIds: number[] = [];
+    if (modelKeys.length) {
+      const models = await this.dataSource.getRepository(ModelMetadata).find({ where: { singularName: In(modelKeys) } });
+      const found = new Set(models.map(model => model.singularName));
+      const missing = modelKeys.filter(key => !found.has(key));
+      if (missing.length) {
+        throw new BadRequestException(`Unknown model userKey: ${missing.map(key => `"${key}"`).join(', ')}. A model's userKey is its singularName.`);
+      }
+      modelIds.push(...models.map(model => model.id));
+    }
+
+    const fieldIds: number[] = [];
+    for (const ref of request.fieldUserKeys ?? []) {
+      const field = await this.dataSource.getRepository(FieldMetadata).findOne({
+        where: { name: ref.fieldUserKey, model: { singularName: ref.modelUserKey } },
+      });
+      if (!field) {
+        throw new BadRequestException(`Unknown field userKey "${ref.fieldUserKey}" on model "${ref.modelUserKey}".`);
+      }
+      fieldIds.push(field.id);
+    }
+    return { modelIds, fieldIds: unique(fieldIds) };
   }
 
   private async assertScopeExists(scope: MigrationScope): Promise<void> {

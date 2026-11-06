@@ -61,6 +61,19 @@ describe('request bodies', () => {
     expect(validateSync(dto)).toEqual([]);
   });
 
+  it('accepts model and field user keys', () => {
+    expect(create({ modelUserKeys: ['product'], fieldUserKeys: [{ modelUserKey: 'product', fieldUserKey: 'photo' }] })).toEqual([]);
+  });
+
+  it('requires a field user key to name its model, since field names repeat across models', () => {
+    const errors = create({ fieldUserKeys: [{ fieldUserKey: 'photo' }] });
+    expect(errors.length).toBeGreaterThan(0);
+  });
+
+  it('rejects a model user key that is not text', () => {
+    expect(create({ modelUserKeys: [42] }).map(error => error.property)).toContain('modelUserKeys');
+  });
+
   it('no longer accepts repointFields', () => {
     expect(Object.keys(new CreateMediaMigrationDto())).not.toContain('repointFields');
   });
