@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, NotFoundException, Param, ParseIntPipe
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { CleanupMediaMigrationSourceDto, CreateMediaMigrationDto } from '../dtos/create-media-migration.dto';
+import { CleanupMediaMigrationDto, CreateMediaMigrationDto } from '../dtos/create-media-migration.dto';
 import { MediaMigrationItem, MediaMigrationItemStatus } from '../entities/media-migration-item.entity';
 import { MediaMigrationJob } from '../entities/media-migration-job.entity';
 import { MediaMigrationService } from '../services/media-migration/media-migration.service';
@@ -116,8 +116,8 @@ export class MediaMigrationController {
   }
 
   @ApiBearerAuth('jwt')
-  @Post(':id/cleanup-source')
-  cleanupSource(@Param('id', ParseIntPipe) id: number, @Body() dto: CleanupMediaMigrationSourceDto) {
-    return this.service.cleanupSource(id, dto.confirm);
+  @Post(':id/cleanup')
+  cleanup(@Param('id', ParseIntPipe) id: number, @Body() dto: CleanupMediaMigrationDto) {
+    return this.service.cleanup(id, dto.confirm);
   }
 }

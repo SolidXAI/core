@@ -87,8 +87,9 @@ export class CreateMediaMigrationDto {
   concurrency?: number;
 }
 
-export class CleanupMediaMigrationSourceDto {
-  // Must be exactly DELETE_SOURCE_FILES. Deleting source files cannot be undone.
+export class CleanupMediaMigrationDto {
+  // DELETE_SOURCE_FILES for a finished migration, DELETE_TARGET_FILES for a rolled-back one.
+  // Deleting files cannot be undone.
   @IsString()
   confirm: string;
 }

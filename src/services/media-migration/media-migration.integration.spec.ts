@@ -140,10 +140,10 @@ describeIfDb('media migration end to end', () => {
 
   it('cleanup removes the source file only after the copy is checked, and refuses without confirmation', async () => {
     const job = await ds.getRepository(MediaMigrationJob).findOneOrFail({ where: { status: 'completed' }, order: { id: 'DESC' } });
-    await expect(service.cleanupSource(job.id, 'yes')).rejects.toThrow(/confirm/);
+    await expect(service.cleanup(job.id, 'yes')).rejects.toThrow(/confirm/);
 
-    const outcome = await service.cleanupSource(job.id, 'DELETE_SOURCE_FILES');
-    expect(outcome).toEqual({ deleted: 1, skipped: [] });
+    const outcome = await service.cleanup(job.id, 'DELETE_SOURCE_FILES');
+    expect(outcome).toEqual({ side: 'source', deleted: 1, skipped: [] });
     expect(fs.existsSync(path.join(publicDir, 'alpha.txt'))).toBe(false);
     expect(fs.readFileSync(path.join(privateDir, 'alpha.txt'), 'utf8')).toBe('alpha');
   });
@@ -298,7 +298,7 @@ describeIfDb('media migration end to end', () => {
       const job = await createJob(await inField(22));
       expect((await runner.run(job.id)).status).toBe('completed');
 
-      const outcome = await service.cleanupSource(job.id, 'DELETE_SOURCE_FILES');
+      const outcome = await service.cleanup(job.id, 'DELETE_SOURCE_FILES');
       expect(outcome.deleted).toBe(0);
       expect(outcome.skipped[0].reason).toMatch(/still use the source file/);
       expect(fs.existsSync(path.join(publicDir, 'shared-folder.txt'))).toBe(true);
@@ -312,9 +312,88 @@ describeIfDb('media migration end to end', () => {
       const job = await createJob(await inField(24));
       expect((await runner.run(job.id)).status).toBe('completed_with_errors');
 
-      const outcome = await service.cleanupSource(job.id, 'DELETE_SOURCE_FILES');
+      const outcome = await service.cleanup(job.id, 'DELETE_SOURCE_FILES');
       expect(outcome.deleted).toBe(0);
       expect(fs.existsSync(path.join(publicDir, 'alias.txt'))).toBe(true);
+    });
+
+    describe('after a rollback', () => {
+      const rolledBackJob = async (name: string, key: number, content = name) => {
+        writeSource(name, content);
+        const row = await addRow(name, key);
+        const job = await createJob(await inField(key));
+        expect((await runner.run(job.id)).status).toBe('completed');
+        await service.rollback(job.id);
+        return { row, job };
+      };
+      const itemOf = (sourceKey: string) => ds.getRepository(MediaMigrationItem).findOneOrFail({ where: { sourceKey } });
+
+      it('deletes the target copy the job made, and only after the matching confirmation', async () => {
+        const { job } = await rolledBackJob('tc-one.txt', 60);
+        await expect(service.cleanup(job.id, 'DELETE_SOURCE_FILES')).rejects.toThrow(/DELETE_TARGET_FILES/);
+        expect(fs.existsSync(path.join(privateDir, 'tc-one.txt'))).toBe(true);
+
+        const outcome = await service.cleanup(job.id, 'DELETE_TARGET_FILES');
+        expect(outcome).toEqual({ side: 'target', deleted: 1, skipped: [] });
+        expect(fs.existsSync(path.join(privateDir, 'tc-one.txt'))).toBe(false);
+        expect(fs.existsSync(path.join(publicDir, 'tc-one.txt'))).toBe(true);
+        expect((await itemOf('tc-one.txt')).status).toBe('target_deleted');
+
+        // Running it again finds nothing left to delete.
+        expect(await service.cleanup(job.id, 'DELETE_TARGET_FILES')).toEqual({ side: 'target', deleted: 0, skipped: [] });
+      });
+
+      it('refuses the source confirmation text on a finished migration the other way round', async () => {
+        writeSource('tc-two.txt', 'two');
+        await addRow('tc-two.txt', 61);
+        const job = await createJob(await inField(61));
+        expect((await runner.run(job.id)).status).toBe('completed');
+        await expect(service.cleanup(job.id, 'DELETE_TARGET_FILES')).rejects.toThrow(/DELETE_SOURCE_FILES/);
+        expect(fs.existsSync(path.join(publicDir, 'tc-two.txt'))).toBe(true);
+      });
+
+      it('keeps a target file that was already there before the job ran', async () => {
+        writeSource('tc-pre.txt', 'same');
+        fs.writeFileSync(path.join(privateDir, 'tc-pre.txt'), 'same');
+        await addRow('tc-pre.txt', 62);
+        const job = await createJob(await inField(62));
+        expect((await runner.run(job.id)).status).toBe('completed');
+        expect((await itemOf('tc-pre.txt')).copied).toBe(false);
+        await service.rollback(job.id);
+
+        const outcome = await service.cleanup(job.id, 'DELETE_TARGET_FILES');
+        expect(outcome.deleted).toBe(0);
+        expect(fs.existsSync(path.join(privateDir, 'tc-pre.txt'))).toBe(true);
+      });
+
+      it('keeps the target copy when the source file is gone', async () => {
+        const { job } = await rolledBackJob('tc-lost.txt', 63);
+        fs.rmSync(path.join(publicDir, 'tc-lost.txt'));
+
+        const outcome = await service.cleanup(job.id, 'DELETE_TARGET_FILES');
+        expect(outcome.deleted).toBe(0);
+        expect(outcome.skipped[0].reason).toMatch(/source file is missing/);
+        expect(fs.existsSync(path.join(privateDir, 'tc-lost.txt'))).toBe(true);
+      });
+
+      it('keeps the target copy while a media row still uses it', async () => {
+        const { job } = await rolledBackJob('tc-used.txt', 64);
+        await addRow('tc-used.txt', 64, privateProvider); // a row created on the target after the rollback
+
+        const outcome = await service.cleanup(job.id, 'DELETE_TARGET_FILES');
+        expect(outcome.deleted).toBe(0);
+        expect(outcome.skipped[0].reason).toMatch(/still use the target file/);
+        expect(fs.existsSync(path.join(privateDir, 'tc-used.txt'))).toBe(true);
+      });
+
+      it('tells the user to run a reverse migration when rollback is no longer possible', async () => {
+        writeSource('tc-late.txt', 'late');
+        await addRow('tc-late.txt', 65);
+        const job = await createJob(await inField(65));
+        expect((await runner.run(job.id)).status).toBe('completed');
+        await service.cleanup(job.id, 'DELETE_SOURCE_FILES');
+        await expect(service.rollback(job.id)).rejects.toThrow(/new migration from the target provider to the source provider/);
+      });
     });
   });
 

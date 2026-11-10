@@ -4,7 +4,7 @@ import { plainToInstance } from 'class-transformer';
 import { PATH_METADATA, METHOD_METADATA } from '@nestjs/common/constants';
 import { RequestMethod } from '@nestjs/common';
 import { MediaMigrationController } from './media-migration.controller';
-import { CleanupMediaMigrationSourceDto, CreateMediaMigrationDto } from '../dtos/create-media-migration.dto';
+import { CleanupMediaMigrationDto, CreateMediaMigrationDto } from '../dtos/create-media-migration.dto';
 
 const routes = (method: any) => Object.getOwnPropertyNames(method.prototype)
   .filter(name => name !== 'constructor')
@@ -24,7 +24,7 @@ describe('MediaMigrationController routes', () => {
     expect(has(RequestMethod.GET, '/')).toBe(true);
     expect(has(RequestMethod.GET, ':id')).toBe(true);
     expect(has(RequestMethod.GET, ':id/items')).toBe(true);
-    for (const action of ['cancel', 'resume', 'retry-failed', 'rollback', 'cleanup-source']) {
+    for (const action of ['cancel', 'resume', 'retry-failed', 'rollback', 'cleanup']) {
       expect(has(RequestMethod.POST, `:id/${action}`)).toBe(true);
     }
   });
@@ -79,7 +79,7 @@ describe('request bodies', () => {
   });
 
   it('requires the confirmation text to be given for cleanup', () => {
-    const cleanup = plainToInstance(CleanupMediaMigrationSourceDto, {});
+    const cleanup = plainToInstance(CleanupMediaMigrationDto, {});
     expect(validateSync(cleanup).map(error => error.property)).toContain('confirm');
   });
 });

@@ -1449,7 +1449,8 @@
               "skipped:Skipped",
               "failed:Failed",
               "rolled_back:Rolled Back",
-              "source_deleted:Source Deleted"
+              "source_deleted:Source Deleted",
+              "target_deleted:Target Deleted"
             ],
             "defaultValue": "pending",
             "isMultiSelect": false

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "SolidX - Media migration (tests)",
-    "description": "Test collection for the media migration API. Each request has assertions.\n\nSetup: set baseUrl, token, sourceProviderName, targetProviderName and fieldId in the collection variables. Use a small test field on a test provider, never production data.\n\nOrder: run 'Happy path' first, then wait for the job to finish (repeat '3. Get job'), then 'Negative checks'. 'Control' requests depend on the job's state and report 400 when the state does not allow them; that is expected.\n\nCleanup deletes source files and cannot be undone.",
+    "description": "Test collection for the media migration API. Each request has assertions.\n\nSetup: set baseUrl, token, sourceProviderName, targetProviderName and fieldId in the collection variables. Use a small test field on a test provider, never production data.\n\nOrder: run 'Happy path' first, then wait for the job to finish (repeat '3. Get job'), then 'Negative checks'. 'Control' requests depend on the job's state and report 400 when the state does not allow them; that is expected.\n\nCleanup deletes files and cannot be undone: the source files after a migration, the target copies after a rollback.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -545,7 +545,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/cleanup-source",
+              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/cleanup",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -553,7 +553,7 @@
                 "api",
                 "media-migration",
                 "{{jobId}}",
-                "cleanup-source"
+                "cleanup"
               ]
             },
             "auth": {
@@ -906,7 +906,7 @@
           }
         },
         {
-          "name": "Cleanup source files",
+          "name": "Cleanup (deletes the source files of a finished migration)",
           "event": [
             {
               "listen": "test",
@@ -914,7 +914,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('cleanup is accepted or refused by state', () => pm.expect([200, 400]).to.include(pm.response.code));",
-                  "if (pm.response.code === 200) { const b = pm.response.json(); pm.expect(b.deleted).to.be.a('number'); pm.expect(b.skipped).to.be.an('array'); }"
+                  "if (pm.response.code === 200) { const b = pm.response.json().data || pm.response.json(); pm.expect(b.side).to.eql('source'); pm.expect(b.deleted).to.be.a('number'); pm.expect(b.skipped).to.be.an('array'); }"
                 ]
               }
             }
@@ -928,7 +928,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/cleanup-source",
+              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/cleanup",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -936,7 +936,7 @@
                 "api",
                 "media-migration",
                 "{{jobId}}",
-                "cleanup-source"
+                "cleanup"
               ]
             },
             "auth": {
@@ -953,6 +953,57 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"confirm\": \"DELETE_SOURCE_FILES\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Cleanup target copies (only after a rollback)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('target cleanup is accepted or refused by state', () => pm.expect([200, 400]).to.include(pm.response.code));",
+                  "if (pm.response.code === 200) { const b = pm.response.json().data || pm.response.json(); pm.expect(b.side).to.eql('target'); pm.expect(b.deleted).to.be.a('number'); pm.expect(b.skipped).to.be.an('array'); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/cleanup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "{{jobId}}",
+                "cleanup"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "DELETES SOURCE FILES AND CANNOT BE UNDONE. Only after the job completed and the results were checked.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirm\": \"DELETE_TARGET_FILES\"\n}"
             }
           }
         }

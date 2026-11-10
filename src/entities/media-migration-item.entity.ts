@@ -11,6 +11,7 @@ export const MEDIA_MIGRATION_ITEM_STATUSES = [
   'failed',
   'rolled_back',
   'source_deleted',
+  'target_deleted',
 ] as const;
 export type MediaMigrationItemStatus = typeof MEDIA_MIGRATION_ITEM_STATUSES[number];
 

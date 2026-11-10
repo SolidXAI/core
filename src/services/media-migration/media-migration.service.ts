@@ -15,7 +15,10 @@ import { MigrationError } from './migration-error';
 import { MediaTransferService } from './media-transfer.service';
 import { countSharedRowsOutsideScope, findMediaFieldsOnProvider, MigrationScope, rowsUsingLocation, scopedMediaQuery } from './media-migration-scope';
 
-export const CLEANUP_CONFIRMATION = 'DELETE_SOURCE_FILES';
+// Cleanup deletes the files a finished job no longer needs: the source files after a migration, the
+// target copies after a rollback. The confirmation names the side so the wrong one cannot be deleted.
+export const CLEANUP_SOURCE_CONFIRMATION = 'DELETE_SOURCE_FILES';
+export const CLEANUP_TARGET_CONFIRMATION = 'DELETE_TARGET_FILES';
 
 const ACTIVE_STATUSES: MediaMigrationJobStatus[] = ['pending', 'running', 'cancelling'];
 const DEFAULT_BATCH_SIZE = 200;
@@ -275,7 +278,10 @@ export class MediaMigrationService {
     }
     const removed = await this.dataSource.getRepository(MediaMigrationItem).count({ where: { job: { id: jobId }, status: 'source_deleted' } });
     if (removed > 0) {
-      throw new BadRequestException(`Job #${jobId} already removed ${removed} source file(s), so it cannot be rolled back.`);
+      throw new BadRequestException(
+        `Job #${jobId} already removed ${removed} source file(s), so it cannot be rolled back. ` +
+        `To move the files back, run a new migration from the target provider to the source provider.`,
+      );
     }
 
     const completed = await this.dataSource.getRepository(MediaMigrationItem).find({ where: { job: { id: jobId }, status: 'completed' } });
@@ -307,18 +313,75 @@ export class MediaMigrationService {
   }
 
   /**
+   * Deletes the files a finished job no longer needs. After a migration (completed) that is the source
+   * files; after a rollback (rolled_back) it is the target copies the job made. Each side needs its own
+   * confirmation string. Items that fail a check are skipped and reported, never deleted.
+   */
+  async cleanup(jobId: number, confirm: string): Promise<{ side: 'source' | 'target'; deleted: number; skipped: { itemId: number; reason: string }[] }> {
+    const job = await this.loadJob(jobId);
+    if (['completed', 'completed_with_errors'].includes(job.status)) {
+      this.assertConfirmation(confirm, CLEANUP_SOURCE_CONFIRMATION, 'source');
+      return { side: 'source', ...await this.cleanupSourceFiles(job) };
+    }
+    if (job.status === 'rolled_back') {
+      this.assertConfirmation(confirm, CLEANUP_TARGET_CONFIRMATION, 'target');
+      return { side: 'target', ...await this.cleanupTargetFiles(job) };
+    }
+    throw new BadRequestException(`Job #${jobId} is ${job.status}. Files can only be removed after the job has finished or been rolled back.`);
+  }
+
+  private assertConfirmation(confirm: string, expected: string, side: 'source' | 'target') {
+    if (confirm !== expected) {
+      throw new BadRequestException(`Deleting ${side} files for this job needs confirm: "${expected}" in the request body.`);
+    }
+  }
+
+  /**
+   * Deletes the target copies a rolled-back job made. The rows point at the source again, so a target
+   * copy is only deleted if the source file is still there, no media row uses the copy, and the job
+   * wrote the copy itself (a file that was already on the target is never touched).
+   */
+  private async cleanupTargetFiles(job: MediaMigrationJob): Promise<{ deleted: number; skipped: { itemId: number; reason: string }[] }> {
+    const defaultRegion = this.defaultRegion();
+    const items = await this.dataSource.getRepository(MediaMigrationItem).find({ where: { job: { id: job.id }, status: 'rolled_back', copied: true } });
+    const skipped: { itemId: number; reason: string }[] = [];
+    let deleted = 0;
+
+    for (const item of items) {
+      try {
+        const source = resolveLocation(job.sourceProvider, item.sourceKey, defaultRegion);
+        const target = resolveLocation(job.targetProvider, item.targetKey ?? item.sourceKey, defaultRegion);
+        if (sameLocation(source, target)) {
+          skipped.push({ itemId: item.id, reason: 'Source and target are the same stored file.' });
+          continue;
+        }
+        // The rolled-back rows read from the source, so it has to be intact before the other copy goes.
+        const sourceStat = await this.transfer.stat(source, 'source');
+        if (!sourceStat || (item.sourceSize !== null && item.sourceSize !== undefined && sourceStat.size !== item.sourceSize)) {
+          skipped.push({ itemId: item.id, reason: 'The source file is missing or has a different size, so the target copy may be the only good one.' });
+          continue;
+        }
+        const stillUsed = await rowsUsingLocation(this.dataSource, target, defaultRegion);
+        if (stillUsed.length > 0) {
+          skipped.push({ itemId: item.id, reason: `${stillUsed.length} media row(s) still use the target file.` });
+          continue;
+        }
+        await this.transfer.delete(target, 'target');
+        await this.dataSource.getRepository(MediaMigrationItem).update({ id: item.id }, { status: 'target_deleted' });
+        deleted += 1;
+      } catch (error: any) {
+        skipped.push({ itemId: item.id, reason: error instanceof MigrationError ? error.message : (error?.message ?? String(error)) });
+      }
+    }
+    return { deleted, skipped };
+  }
+
+  /**
    * Deletes the source files of completed items, after checking that the target copy is complete and
    * that no media row still uses the source file. Items that fail a check are skipped and reported.
    */
-  async cleanupSource(jobId: number, confirm: string): Promise<{ deleted: number; skipped: { itemId: number; reason: string }[] }> {
-    if (confirm !== CLEANUP_CONFIRMATION) {
-      throw new BadRequestException(`Deleting source files needs confirm: "${CLEANUP_CONFIRMATION}" in the request body.`);
-    }
-    const job = await this.loadJob(jobId);
-    if (!['completed', 'completed_with_errors'].includes(job.status)) {
-      throw new BadRequestException(`Job #${jobId} is ${job.status}. Source files can only be removed after the job has finished.`);
-    }
-
+  private async cleanupSourceFiles(job: MediaMigrationJob): Promise<{ deleted: number; skipped: { itemId: number; reason: string }[] }> {
+    const jobId = job.id;
     const defaultRegion = this.defaultRegion();
     const items = await this.dataSource.getRepository(MediaMigrationItem).find({ where: { job: { id: jobId }, status: 'completed' } });
     const skipped: { itemId: number; reason: string }[] = [];

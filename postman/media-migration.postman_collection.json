@@ -436,7 +436,7 @@
           }
         },
         {
-          "name": "Cleanup: delete source files",
+          "name": "Cleanup: delete source files (after a migration)",
           "request": {
             "method": "POST",
             "header": [
@@ -446,7 +446,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/cleanup-source",
+              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/cleanup",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -454,7 +454,7 @@
                 "api",
                 "media-migration",
                 "{{jobId}}",
-                "cleanup-source"
+                "cleanup"
               ]
             },
             "auth": {
@@ -467,10 +467,49 @@
                 }
               ]
             },
-            "description": "Deletes source files only where the target copy is verified and no row still uses them. Cannot be undone.",
+            "description": "Deletes the source files of a finished migration, only where the target copy is verified and no row still uses them. Needs confirm DELETE_SOURCE_FILES. Cannot be undone.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"confirm\": \"DELETE_SOURCE_FILES\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Cleanup: delete target copies (after a rollback)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/media-migration/{{jobId}}/cleanup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media-migration",
+                "{{jobId}}",
+                "cleanup"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Deletes the target copies a rolled-back job made, only where the source file is still intact, no row uses the copy and the job wrote it itself. Needs confirm DELETE_TARGET_FILES. Cannot be undone.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirm\": \"DELETE_TARGET_FILES\"\n}"
             }
           }
         }
