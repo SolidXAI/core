@@ -1,7 +1,7 @@
 import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
-import { EntityManager, In, Not } from 'typeorm';
+import { EntityManager, In } from 'typeorm';
 import * as path from 'path';
 import { Readable } from 'stream';
 
@@ -10,6 +10,7 @@ import { CRUDService } from 'src/services/crud.service';
 import { DiskFileService, S3FileService } from 'src/services/file';
 import { classify } from 'src/helpers/string.helper';
 import { MediaDownloadUrlService } from 'src/services/media-download-url.service';
+import { MediaFileStorageService } from 'src/services/media-file-storage.service';
 
 
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
@@ -22,7 +23,7 @@ import { FieldMetadataRepository } from 'src/repository/field-metadata.repositor
 import { MediaStorageProviderMetadataRepository } from 'src/repository/media-storage-provider-metadata.repository';
 import { MediaRepository } from 'src/repository/media.repository';
 import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
-import { buildDiskMediaPath, getEffectiveS3Region, resolveMediaIsPublic, } from 'src/services/media-storage.utils';
+import { buildDiskMediaPath } from 'src/services/media-storage.utils';
 import { getMediaStorageProvider } from "./mediaStorageProviders";
 
 @Injectable()
@@ -34,6 +35,7 @@ export class MediaService extends CRUDService<Media> {
     readonly diskFileService: DiskFileService,
     readonly s3FileService: S3FileService,
     private readonly mediaDownloadUrlService: MediaDownloadUrlService,
+    private readonly mediaFileStorageService: MediaFileStorageService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     // @InjectRepository(Media, 'default')
@@ -253,24 +255,10 @@ export class MediaService extends CRUDService<Media> {
 
   private async resolveMediaUrl(media: Media, mediaStorageProvider?: MediaStorageProviderMetadata): Promise<string> {
     const resolvedMediaStorageProvider = mediaStorageProvider || await this.resolveMediaStorageProvider(media);
-    const isPublic = resolveMediaIsPublic(resolvedMediaStorageProvider);
-
-    if (isPublic === false) {
-      return this.mediaDownloadUrlService.getPrivateUrl(media.id, media.relativeUri, resolvedMediaStorageProvider);
-    }
-
-    if (resolvedMediaStorageProvider?.type === MediaStorageProviderType.Filesystem) {
-      return this.diskFileService.getUrl(buildDiskMediaPath(media.relativeUri, this.settingService, resolvedMediaStorageProvider));
-    }
-
-    if (resolvedMediaStorageProvider?.type === MediaStorageProviderType.AwsS3) {
-      return this.s3FileService.getUrl(
-        `${resolvedMediaStorageProvider.bucketName}:${media.relativeUri}`,
-        { region: getEffectiveS3Region(this.configService, resolvedMediaStorageProvider.region), expiresIn: 0 },
-      );
-    }
-
-    return media.relativeUri;
+    return this.mediaDownloadUrlService.buildFullUrl({
+      ...media,
+      mediaStorageProviderMetadata: resolvedMediaStorageProvider,
+    } as Media);
   }
 
   private async deletePhysicalFile(media: Media): Promise<void> {
@@ -279,38 +267,10 @@ export class MediaService extends CRUDService<Media> {
     }
 
     try {
-      // Draft/publish versioning may clone a Media row that reuses the same
-      // relativeUri (see DraftPublishHelperService.cloneMediaForVersion) instead of
-      // duplicating the underlying file. Skip the physical delete if another row
-      // still references it.
-      const stillReferenced = await this.repo.exists({
-        where: { relativeUri: media.relativeUri, id: Not(media.id) },
-      });
-      if (stillReferenced) {
-        return;
-      }
-
       const mediaStorageProvider = await this.resolveMediaStorageProvider(media);
-      if (!mediaStorageProvider) {
-        return;
-      }
-
-      switch (mediaStorageProvider.type as MediaStorageProviderType) {
-        case MediaStorageProviderType.Filesystem:
-          await this.diskFileService.delete(buildDiskMediaPath(media.relativeUri, this.settingService, mediaStorageProvider));
-          return;
-        case MediaStorageProviderType.AwsS3:
-          await this.s3FileService.delete(
-            `${mediaStorageProvider.bucketName}:${media.relativeUri}`,
-            { region: getEffectiveS3Region(this.configService, mediaStorageProvider.region) },
-          );
-          return;
-        default:
-          this.logger.warn(`Skipping physical delete for unsupported media storage provider type ${mediaStorageProvider.type}`);
-      }
+      await this.mediaFileStorageService.deleteFile(media, mediaStorageProvider);
     } catch (error: any) {
-      const message = error?.message ?? String(error);
-      this.logger.warn(`Failed to delete physical media file for media id ${media.id}: ${message}`);
+      this.logger.warn(`Failed to delete physical media file for media id ${media.id}: ${error?.message ?? String(error)}`);
     }
   }
 

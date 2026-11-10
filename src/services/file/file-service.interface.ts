@@ -2,6 +2,8 @@ import { Readable } from 'stream';
 
 export interface WriteOptions {
   contentType?: string;
+  /** Total size in bytes, if known. Lets S3 pick a part size that fits very large uploads. */
+  contentLength?: number;
   /** AWS region override (S3 only) - uses default region from env if not specified */
   region?: string;
 }
