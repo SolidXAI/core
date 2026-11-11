@@ -27,6 +27,88 @@ export function resolvePlaywrightCli(): string | null {
   }
 }
 
+/** Playwright writes this file into a browser's folder as the very last step of installing it. */
+const INSTALL_COMPLETE_MARKER = "INSTALLATION_COMPLETE";
+
+/** Playwright keeps each browser in its own folder, such as `chromium-1228` or `chromium_headless_shell-1228`. */
+const PLAYWRIGHT_BROWSER_DIRECTORY = /^chromium(_headless_shell)?-\d+$/;
+
+/**
+ * The browser folder that contains `executablePath`, or null when the executable does not sit
+ * in a Playwright-style folder (for example a Chrome the operator pointed to).
+ */
+export function playwrightBrowserDirectory(executablePath: string): string | null {
+  let dir = path.dirname(executablePath);
+  while (dir !== path.dirname(dir)) {
+    if (PLAYWRIGHT_BROWSER_DIRECTORY.test(path.basename(dir))) return dir;
+    dir = path.dirname(dir);
+  }
+  return null;
+}
+
+/**
+ * True when the browser at `executablePath` is fully installed.
+ *
+ * The executable alone is not proof: Playwright extracts the archive file by file and writes
+ * the completion marker last, so an interrupted install can leave the executable behind in a
+ * broken browser. When the executable is in a Playwright browser folder we also require the
+ * marker. Anywhere else there is no marker to expect, so the executable alone is enough.
+ */
+export function isBrowserInstallComplete(executablePath: string): boolean {
+  if (!fs.existsSync(executablePath)) return false;
+  const directory = playwrightBrowserDirectory(executablePath);
+  if (!directory) return true;
+  return hasInstallMarker(directory);
+}
+
+function hasInstallMarker(browserDirectory: string): boolean {
+  return fs.existsSync(path.join(browserDirectory, INSTALL_COMPLETE_MARKER));
+}
+
+/** The part of Playwright's browsers.json that this file reads. */
+export interface PlaywrightBrowsersJson {
+  browsers?: Array<{ name: string; revision: string }>;
+}
+
+/**
+ * Playwright's list of browser versions (`browsers.json`), read from the same install as the `playwright`
+ * package. It is not in the package's exports map, so it is read as a file next to `package.json`, the same
+ * way the CLI entry point is found. Null when it cannot be read.
+ */
+export function readPlaywrightBrowsersJson(): PlaywrightBrowsersJson | null {
+  try {
+    const playwrightPackage = require.resolve("playwright/package.json");
+    const corePackage = require.resolve("playwright-core/package.json", { paths: [path.dirname(playwrightPackage)] });
+    return JSON.parse(fs.readFileSync(path.join(path.dirname(corePackage), "browsers.json"), "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The headless shell folder that belongs with the Chromium at `chromiumExecutable`, or null when it cannot be
+ * worked out (a Chromium outside a Playwright folder, or a Playwright with no headless shell).
+ *
+ * UI runs launch Chromium headless by default, and Playwright serves a headless launch from this separate
+ * browser, which `playwright install chromium` installs alongside Chromium.
+ */
+export function headlessShellDirectory(chromiumExecutable: string, browsersJson: PlaywrightBrowsersJson | null): string | null {
+  const chromiumDirectory = playwrightBrowserDirectory(chromiumExecutable);
+  const shell = browsersJson?.browsers?.find((browser) => browser.name === "chromium-headless-shell");
+  if (!chromiumDirectory || !shell) return null;
+  return path.join(path.dirname(chromiumDirectory), `chromium_headless_shell-${shell.revision}`);
+}
+
+/**
+ * True when everything a UI run launches is fully installed: Chromium, and its headless shell when this
+ * Playwright has one. Each is checked for its completion marker (see `isBrowserInstallComplete`).
+ */
+export function isChromiumBundleComplete(chromiumExecutable: string, browsersJson: PlaywrightBrowsersJson | null): boolean {
+  if (!isBrowserInstallComplete(chromiumExecutable)) return false;
+  const shellDirectory = headlessShellDirectory(chromiumExecutable, browsersJson);
+  return shellDirectory === null || hasInstallMarker(shellDirectory);
+}
+
 /**
  * Asking Playwright for the executable path keeps us in step with PLAYWRIGHT_BROWSERS_PATH
  * and its per-version cache layout instead of second-guessing either.
@@ -34,7 +116,7 @@ export function resolvePlaywrightCli(): string | null {
 export async function isChromiumInstalled(): Promise<boolean> {
   try {
     const { chromium } = await import("playwright");
-    return fs.existsSync(chromium.executablePath());
+    return isChromiumBundleComplete(chromium.executablePath(), readPlaywrightBrowsersJson());
   } catch {
     return false;
   }
@@ -61,7 +143,8 @@ export function ensureChromiumInstalled(): Promise<void> {
 
 /**
  * Stops a download that is still running, so shutting down mid-install does not orphan the
- * child process against a half-written browser cache.
+ * child process against a half-written browser cache. A half-written browser has no completion
+ * marker, so `isChromiumInstalled` reports it as missing and the next call repairs it.
  */
 export function cancelChromiumInstall(): void {
   activeInstall?.kill("SIGTERM");
