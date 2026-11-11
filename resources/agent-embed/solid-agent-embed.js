@@ -311,7 +311,8 @@
         (bootstrapAuth ? Promise.resolve(bootstrapAuth) : fetchToken()).then(function (auth) {
           bootstrapAuth = null;
           debug(id, "sending token bootstrap to iframe", { requestId: data.requestId, inputsCount: Object.keys(inputs).length });
-          post("token", { requestId: data.requestId, auth: auth, inputs: inputs });
+          var agentName = hasAgentName ? options.agentName.trim() : (typeof auth.agentName === "string" ? auth.agentName.trim() : undefined);
+          post("token", { requestId: data.requestId, auth: auth, inputs: inputs, agentName: agentName });
         })
           .catch(function (error) { post("token_error", { requestId: data.requestId, error: error.message }); emitError(error); });
       } else if (data.type === "authenticated") { emitRecovered(); emit("onAuthenticationStateChanged", { state: "authenticated" }); }
