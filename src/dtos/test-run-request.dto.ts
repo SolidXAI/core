@@ -45,6 +45,12 @@ export class TestRunRequestDto {
   @IsString()
   scenariosPath?: string;
 
+  /** One file per scenario, in run order (each holds one scenario's JSON). Takes precedence over `scenariosPath`. */
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  scenarioPaths?: string[];
+
   @IsOptional()
   @IsArray()
   data?: TestingDataRecord[];
