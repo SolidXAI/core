@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { ModuleRef  } from "@nestjs/core";
 import { EntityManager, In } from 'typeorm';
@@ -21,7 +21,7 @@ function assertNotReservedName(name: any): void {
 }
 
 @Injectable()
-export class AgentRegistryService extends CRUDService<AgentRegistry>{
+export class AgentRegistryService extends CRUDService<AgentRegistry> implements OnModuleInit {
   private readonly logger = new Logger(AgentRegistryService.name);
   constructor(
     @InjectEntityManager("default")
@@ -32,6 +32,24 @@ export class AgentRegistryService extends CRUDService<AgentRegistry>{
  ) {
    super(entityManager, repo, 'agentRegistry', 'agent-hub', moduleRef);
  }
+
+  async onModuleInit(): Promise<void> {
+    if (typeof this.entityManager?.query !== 'function') return;
+    try {
+      const dbType = this.entityManager.connection?.options?.type;
+      if (dbType === 'postgres') {
+        await this.entityManager.query(
+          `DO $$ BEGIN IF to_regclass('ss_agent_registry') IS NOT NULL THEN ALTER TABLE "ss_agent_registry" ADD COLUMN IF NOT EXISTS "is_builtin" boolean NOT NULL DEFAULT false; END IF; END $$;`,
+        );
+      } else if (dbType === 'mssql') {
+        await this.entityManager.query(
+          `IF OBJECT_ID('ss_agent_registry', 'U') IS NOT NULL AND COL_LENGTH('ss_agent_registry', 'is_builtin') IS NULL BEGIN ALTER TABLE [ss_agent_registry] ADD [is_builtin] bit NOT NULL DEFAULT 0 END`,
+        );
+      }
+    } catch (err: any) {
+      this.logger.warn(`Could not ensure is_builtin column on ss_agent_registry: ${err?.message ?? err}`);
+    }
+  }
 
   override async create(createDto: any, files: Express.Multer.File[] = [], solidRequestContext: any = {}): Promise<AgentRegistry> {
     assertNotReservedName(createDto?.name);
