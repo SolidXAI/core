@@ -12,6 +12,14 @@ import { normalizeAgentRequiredInputs } from '../helpers/agent-required-inputs';
 import { ModuleMetadataHelperService } from '../helpers/module-metadata-helper.service';
 import { syncEntityTagsToModuleMetadataJson } from '../subscribers/agenthub-metadata-sync.util';
 
+const RESERVED_AGENT_NAMES = new Set(['solidx-native', 'testhub']);
+
+function assertNotReservedName(name: any): void {
+  if (typeof name === 'string' && RESERVED_AGENT_NAMES.has(name.trim().toLowerCase())) {
+    throw new BadRequestException(`"${name}" is a reserved built-in agent name.`);
+  }
+}
+
 @Injectable()
 export class AgentRegistryService extends CRUDService<AgentRegistry>{
   private readonly logger = new Logger(AgentRegistryService.name);
@@ -26,10 +34,12 @@ export class AgentRegistryService extends CRUDService<AgentRegistry>{
  }
 
   override async create(createDto: any, files: Express.Multer.File[] = [], solidRequestContext: any = {}): Promise<AgentRegistry> {
+    assertNotReservedName(createDto?.name);
     return super.create({ ...createDto, isBuiltin: false, requiredInputs: normalizeAgentRequiredInputs(createDto.requiredInputs), configVersion: 1 }, files, solidRequestContext);
   }
 
   override async createMany(createDtos: any[], solidRequestContext: any = {}): Promise<AgentRegistry[]> {
+    createDtos.forEach((dto) => assertNotReservedName(dto?.name));
     return super.createMany(createDtos.map((dto) => ({ ...dto, isBuiltin: false, requiredInputs: normalizeAgentRequiredInputs(dto.requiredInputs), configVersion: 1 })), solidRequestContext);
   }
 
@@ -58,6 +68,13 @@ export class AgentRegistryService extends CRUDService<AgentRegistry>{
       }
       if (changes.isBuiltin !== undefined && changes.isBuiltin !== true) {
         throw new BadRequestException(`Cannot unset built-in status of agent "${existing.name}".`);
+      }
+    } else {
+      if (changes.name !== undefined && changes.name !== existing.name) {
+        assertNotReservedName(changes.name);
+      }
+      if (changes.isBuiltin !== undefined && changes.isBuiltin === true) {
+        throw new BadRequestException(`Cannot mark an ordinary agent as built-in.`);
       }
     }
 
