@@ -11,7 +11,7 @@ import { PollerService } from 'src/services/poller.service';
 import { toMobileAdapterOptions } from '../../testing/adapters/mobile/run-options';
 import { runFromMetadata } from '../../testing/runner/run-from-metadata';
 import { registerRunCancellation, releaseRunCancellation } from '../../testing/runner/run-cancellation';
-import { readScenariosFile } from '../../testing/runner/read-scenarios-file';
+import { readScenarioFiles, readScenariosFile } from '../../testing/runner/read-scenarios-file';
 import {
   LifecycleWebhookReporter,
   WebhookPostFn,
@@ -24,7 +24,7 @@ import { SecretService } from '../../services/secret.service';
 
 /**
  * Executes a queued test run on the worker tier (QUEUES_SERVICE_ROLE=subscriber).
- * Resolves scenarios from `scenariosPath` (read from disk here, at execution time —
+ * Resolves scenarios from `scenarioPaths` (one file per scenario) or `scenariosPath` (read from disk here, at execution time —
  * the worker shares the filesystem with the caller) or from inline `scenarios`, then
  * runs them via {@link runFromMetadata} with a {@link LifecycleWebhookReporter} that
  * streams run.start → scenario.* → run.end to the caller's webhookUrl. A failing TEST
@@ -84,10 +84,14 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
 
         let scenarios = p.scenarios;
         let data = p.data;
-        if (p.scenariosPath) {
-            const read = readScenariosFile(p.scenariosPath);
+        const scenarioPaths = Array.isArray(p.scenarioPaths) && p.scenarioPaths.length ? p.scenarioPaths : null;
+        if (scenarioPaths || p.scenariosPath) {
+            const source = scenarioPaths ? `${scenarioPaths.length} scenario file(s)` : p.scenariosPath;
+            const read = scenarioPaths ? readScenarioFiles(scenarioPaths) : readScenariosFile(p.scenariosPath);
             if (!read.ok) {
-                const reason = `Scenario file unreadable: ${p.scenariosPath} (${read.error})`;
+                const reason = scenarioPaths
+                    ? `Scenario file unreadable (${read.error})`
+                    : `Scenario file unreadable: ${p.scenariosPath} (${read.error})`;
                 this.testRunLogger.warn(`Test run ${p.runId} — ${reason}`);
                 reporter.onRunStart({ total: 0, startedAt: new Date().toISOString(), scenarioIds: [] });
                 await reporter.flushPending(1, reason);
@@ -95,7 +99,7 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
             }
             scenarios = read.scenarios;
             data = read.data ?? data;
-            this.testRunLogger.debug(`Test run ${p.runId} loaded ${scenarios.length} scenario(s) from ${p.scenariosPath}`);
+            this.testRunLogger.debug(`Test run ${p.runId} loaded ${scenarios.length} scenario(s) from ${source}`);
         }
 
         let exitCode = 0;

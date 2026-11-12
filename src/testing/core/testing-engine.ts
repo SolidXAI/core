@@ -40,6 +40,19 @@ export interface ScenarioSetup {
   orElse?: ScenarioSetup[];
 }
 
+/**
+ * `step` with the scenario's step timeout, unless it sets its own. Browser and device steps take it as their wait
+ * (`with.timeoutMs`, which their Playwright and Appium calls use); any other step is cut off after it.
+ */
+function withStepTimeout(step: OpStep, stepTimeoutMs?: number): OpStep {
+  if (typeof stepTimeoutMs !== "number" || !Number.isFinite(stepTimeoutMs) || stepTimeoutMs <= 0) return step;
+  if (step.timeoutMs !== undefined || step.with?.timeoutMs !== undefined) return step;
+  if (step.op.startsWith("ui.") || step.op.startsWith("mobile.")) {
+    return { ...step, with: { ...(step.with ?? {}), timeoutMs: stepTimeoutMs } };
+  }
+  return { ...step, timeoutMs: stepTimeoutMs };
+}
+
 /** A device lookup slower than this is reported with its step. */
 const SLOW_CALL_REPORT_MS = 2000;
 
@@ -98,7 +111,7 @@ export class TestingEngine {
           for (const [blockIndex, block] of scenario.steps.entries()) {
             const normalized = normalizeBlock(block);
             for (const [stepIndex, step] of normalized.steps.entries()) {
-              await this.runStep(normalized.phase, step, ctx, stepPathFor(block, blockIndex, stepIndex));
+              await this.runStep(normalized.phase, step, ctx, stepPathFor(block, blockIndex, stepIndex), undefined, scenario.stepTimeoutMs);
             }
           }
         };
@@ -185,7 +198,7 @@ export class TestingEngine {
       for (const [stepIndex, step] of normalized.steps.entries()) {
         const stepPath = stepPathFor(block, blockIndex, stepIndex);
         try {
-          await this.runStep(normalized.phase, step, partCtx, stepPath, part.kind);
+          await this.runStep(normalized.phase, step, partCtx, stepPath, part.kind, part.scenario.stepTimeoutMs);
         } catch (err: any) {
           const failure = new Error(`Setup "${part.kind}" (scenario "${part.scenario.id}") failed at ${stepPath}: ${err?.message ?? err}`);
           (failure as Error & { cause?: unknown }).cause = err;
@@ -211,8 +224,9 @@ export class TestingEngine {
   }
 
   /**
-   * Run one step exactly as a scenario would: interpolate, dispatch, honor `timeoutMs`,
-   * store `saveAs`, and report start/end. Throws the step's error.
+   * Run one step exactly as a scenario would: interpolate, dispatch, honor `timeoutMs`
+   * (the step's own, else the scenario's `stepTimeoutMs`), store `saveAs`, and report
+   * start/end. Throws the step's error.
    */
   async runStep(
     phase: StepPhase,
@@ -220,6 +234,7 @@ export class TestingEngine {
     ctx: TestContext,
     stepPath?: string,
     setup?: string,
+    stepTimeoutMs?: number,
   ): Promise<unknown> {
     const reporter = ctx.reporter;
     const stepStart = Date.now();
@@ -231,7 +246,7 @@ export class TestingEngine {
     reporter.onStepStart({ scenarioId: ctx.scenarioId, phase, step, stepPath, ...(setup ? { setup } : {}) });
 
     try {
-      resolvedStep = this.resolveStep(step, ctx);
+      resolvedStep = withStepTimeout(this.resolveStep(step, ctx), stepTimeoutMs);
       const handler = this.registry.get(resolvedStep.op);
       const run = handler(ctx, resolvedStep);
       result =
