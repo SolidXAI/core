@@ -165,6 +165,14 @@ export class TestingEngine {
         }
 
         const durationMs = Date.now() - scenarioStart;
+        ctx.ui?.recordScenario({
+          scenarioId: scenario.id,
+          name: scenario.name,
+          attempt,
+          ok: !scenarioError,
+          startedAt: scenarioStart,
+          endedAt: scenarioStart + durationMs,
+        });
         const heals = [...(ctx.ui?.getHeals() ?? []), ...(ctx.mobile?.getHeals() ?? [])];
         reporter.onScenarioEnd(scenario, {
           ok: !scenarioError,
