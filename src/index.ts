@@ -404,6 +404,8 @@ export * from './services/selection-providers/list-of-values-selection-providers
 // seed-data
 export * from './seeders/permission-metadata-seeder.service'
 export * from './seeders/module-metadata-seeder.service'
+export * from './seeders/module-test-data.service'
+export * from './controllers/test-data.controller'
 
 export * from './services/access-token-denylist.service'
 export * from './services/action-metadata.service'

@@ -117,6 +117,7 @@ import { ServiceController } from "./controllers/service.controller";
 import { SmsTemplateController } from "./controllers/sms-template.controller";
 import { TestQueueController } from "./controllers/test-queue.controller";
 import { TestRunController } from "./controllers/test-run.controller";
+import { TestDataController } from "./controllers/test-data.controller";
 import { EmailAttachment } from "./entities/email-attachment.entity";
 import { EmailTemplate } from "./entities/email-template.entity";
 import { MenuItemMetadata } from "./entities/menu-item-metadata.entity";
@@ -756,6 +757,7 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     TestController,
     TestQueueController,
     TestRunController,
+    TestDataController,
     UserActivityHistoryController,
     UserController,
     UserViewMetadataController,
@@ -1213,6 +1215,7 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     ConfigModule,
     DraftPublishHelperService,
     InternationalisationHelperService,
+    ModuleTestDataService,
     CrudHelperService,
     CRUDService,
     CsvService,
