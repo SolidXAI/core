@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.22-beta.3] - 2026-11-12
+
+### Added
+
+- include agentName in token post data
+
+### Fixed
+
+- allow pdf attachments on chatter messages (#213)
+
+### Other
+
+- Media storage provider migration (#210)
+
 ## [0.1.22-beta.2] - 2026-11-04
 
 ### Added
