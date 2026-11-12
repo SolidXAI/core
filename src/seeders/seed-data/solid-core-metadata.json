@@ -4646,7 +4646,8 @@
             "isSystem": true,
             "mediaTypes": [
               "image",
-              "file"
+              "file",
+              "pdf"
             ],
             "mediaMaxSizeKb": 102400,
             "required": false,
