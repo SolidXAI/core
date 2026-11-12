@@ -1224,7 +1224,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
     {
       moduleName: "solid-core",
       key: "forceChangePasswordOnFirstLogin",
-      value: false,
+      value: true,
       level: SettingLevel.SystemAdminEditable,
       label: "Force Change Password On First Login",
       group: "authentication-settings",
