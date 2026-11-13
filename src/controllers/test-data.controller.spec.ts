@@ -1,22 +1,18 @@
 import { BadRequestException, ConflictException, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
-import { TEST_DATA_ENDPOINT_FLAG, TestDataController } from './test-data.controller';
+import { SolidCoreDefaultSettingsProvider } from 'src/services/settings/default-settings-provider.service';
+import { TestDataController } from './test-data.controller';
 
 describe('TestDataController', () => {
   const summary = { rolesProcessed: 0, usersProcessed: 0, data: { created: 1, updated: 0, skipped: 0 } };
   let loadTestData: jest.Mock;
+  let settings: Record<string, unknown>;
   let controller: TestDataController;
-  let originalFlag: string | undefined;
 
   beforeEach(() => {
-    originalFlag = process.env[TEST_DATA_ENDPOINT_FLAG];
-    process.env[TEST_DATA_ENDPOINT_FLAG] = 'true';
+    settings = { testDataEndpointEnabled: true };
     loadTestData = jest.fn(async () => summary);
-    controller = new TestDataController({ loadTestData } as any);
-  });
-
-  afterEach(() => {
-    if (originalFlag === undefined) delete process.env[TEST_DATA_ENDPOINT_FLAG];
-    else process.env[TEST_DATA_ENDPOINT_FLAG] = originalFlag;
+    const settingService = { getConfigValue: jest.fn((key: string) => settings[key] ?? null) };
+    controller = new TestDataController({ loadTestData } as any, settingService as any);
   });
 
   it('returns the load summary', async () => {
@@ -25,15 +21,15 @@ describe('TestDataController', () => {
     expect(loadTestData).toHaveBeenCalledWith(testing);
   });
 
-  it('responds 404 and loads nothing when the endpoint flag is off', async () => {
-    process.env[TEST_DATA_ENDPOINT_FLAG] = 'false';
+  it('responds 404 and loads nothing when the setting is off', async () => {
+    settings.testDataEndpointEnabled = false;
 
     await expect(controller.load({ testing: {} })).rejects.toBeInstanceOf(NotFoundException);
     expect(loadTestData).not.toHaveBeenCalled();
   });
 
-  it('responds 404 when the flag is not set', async () => {
-    delete process.env[TEST_DATA_ENDPOINT_FLAG];
+  it('responds 404 when the setting is not present', async () => {
+    delete settings.testDataEndpointEnabled;
 
     await expect(controller.load({ testing: {} })).rejects.toBeInstanceOf(NotFoundException);
   });
@@ -69,5 +65,30 @@ describe('TestDataController', () => {
     const failure = controller.load({ testing: { data: [] } });
     await expect(failure).rejects.toBeInstanceOf(UnprocessableEntityException);
     await expect(failure).rejects.toThrow('Test data relation not found: author.authorCode=A9');
+  });
+});
+
+describe('testDataEndpointEnabled setting', () => {
+  const find = () =>
+    new SolidCoreDefaultSettingsProvider().getSettings().find((s: any) => s.key === 'testDataEndpointEnabled') as any;
+  const original = process.env.SOLIDX_TEST_DATA_ENDPOINT_ENABLED;
+  afterEach(() => {
+    if (original === undefined) delete process.env.SOLIDX_TEST_DATA_ENDPOINT_ENABLED;
+    else process.env.SOLIDX_TEST_DATA_ENDPOINT_ENABLED = original;
+  });
+
+  it('is on only when SOLIDX_TEST_DATA_ENDPOINT_ENABLED is "true"', () => {
+    process.env.SOLIDX_TEST_DATA_ENDPOINT_ENABLED = 'true';
+    expect(find().value).toBe(true);
+
+    process.env.SOLIDX_TEST_DATA_ENDPOINT_ENABLED = 'yes';
+    expect(find().value).toBe(false);
+
+    delete process.env.SOLIDX_TEST_DATA_ENDPOINT_ENABLED;
+    expect(find().value).toBe(false);
+  });
+
+  it('is SystemEnv, so the settings screen and settings API never return it', () => {
+    expect(find().level).toBe('system-env');
   });
 });

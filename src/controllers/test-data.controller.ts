@@ -12,13 +12,13 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 
 import { ModuleTestDataService, TestDataSpec } from 'src/seeders/module-test-data.service';
-
-export const TEST_DATA_ENDPOINT_FLAG = 'SOLIDX_TEST_DATA_ENDPOINT_ENABLED';
+import { SettingService } from 'src/services/setting.service';
+import { SolidCoreSetting } from 'src/services/settings/default-settings-provider.service';
 
 /**
  * Loads `testing` roles, users and data into this application's database, idempotently.
- * Test Hub calls this before a run so seed data is present for the run. Disabled unless
- * SOLIDX_TEST_DATA_ENDPOINT_ENABLED=true. Uses the default auth guards, so the caller needs
+ * Test Hub calls this before a run so seed data is present for the run. Disabled unless the
+ * testDataEndpointEnabled setting is on, which comes from SOLIDX_TEST_DATA_ENDPOINT_ENABLED=true. Uses the default auth guards, so the caller needs
  * a Bearer token or API key whose role has TestDataController.load. One load runs at a time per process: a
  * second request while one is running gets 409, so two loads can never both create the same record.
  */
@@ -27,12 +27,15 @@ export const TEST_DATA_ENDPOINT_FLAG = 'SOLIDX_TEST_DATA_ENDPOINT_ENABLED';
 export class TestDataController {
   private static loadInProgress = false;
 
-  constructor(private readonly moduleTestDataService: ModuleTestDataService) {}
+  constructor(
+    private readonly moduleTestDataService: ModuleTestDataService,
+    private readonly settingService: SettingService,
+  ) {}
 
   @Post('load')
   @HttpCode(HttpStatus.OK)
   async load(@Body() body: { testing?: TestDataSpec }) {
-    if (process.env[TEST_DATA_ENDPOINT_FLAG] !== 'true') {
+    if (this.settingService.getConfigValue<SolidCoreSetting>('testDataEndpointEnabled') !== true) {
       throw new NotFoundException();
     }
     if (!body || typeof body.testing !== 'object' || body.testing === null) {
