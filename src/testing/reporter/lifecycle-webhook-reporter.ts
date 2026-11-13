@@ -61,6 +61,7 @@ const defaultPost: WebhookPostFn = async (url, body, opts) => {
 /** Map an `attach()` payload to an ArtifactRef. Covers API/console/network + video/screenshots. */
 function classifyAttachment(name: string, contentType: string): ArtifactRef["kind"] {
   const hint = `${name} ${contentType}`.toLowerCase();
+  if (name.toLowerCase().endsWith("timeline.json")) return "timeline";
   if (contentType.startsWith("video/") || hint.includes("video")) return "video";
   if (hint.includes("screenshot") || contentType.startsWith("image/")) return "screenshot";
   if (hint.includes("console")) return "console";

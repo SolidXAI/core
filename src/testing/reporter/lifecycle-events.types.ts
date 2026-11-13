@@ -18,7 +18,8 @@ export type LifecycleEventType =
  * referenced by `storageKey`/`url` to keep webhook payloads small.
  */
 export interface ArtifactRef {
-  kind: "console" | "network" | "screenshot" | "video" | "har" | "api-log";
+  /** `timeline`: where each scenario is in the run video (run-timeline.json). */
+  kind: "console" | "network" | "screenshot" | "video" | "har" | "api-log" | "timeline";
   name: string;
   contentType: string;
   transport: "inline" | "storage";
