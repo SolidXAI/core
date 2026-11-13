@@ -1,10 +1,11 @@
-/* SolidX AgentHub Embed SDK v5. No dependencies; credentials stay in memory.
+/* SolidX AgentHub Embed SDK v7. No dependencies; credentials stay in memory.
  * mode: "popup" (default) owns its launcher and floating window.
  * mode: "inline" fills the supplied container; the host owns its layout.
+ * mountWorkspace owns the host layout around an inline chat.
  */
 (function (global) {
   "use strict";
-  if (global.SolidAgentEmbed && global.SolidAgentEmbed.version >= 5) return;
+  if (global.SolidAgentEmbed && global.SolidAgentEmbed.version >= 7) return;
   var channel = "solidx-agent-embed";
   var publicProtocolVersion = 2;
   var maxContextBytes = 32 * 1024;
@@ -35,6 +36,7 @@
     embedUrl.searchParams.set("parentOrigin", location.origin);
     embedUrl.searchParams.set("instanceId", id);
     var inputs = JSON.parse(JSON.stringify(options.inputs || {}));
+    var workspaceState = options.workspace || null;
     var destroyed = false, initialized = false, locked = false, open = false, windowMode = "popup", ready = false, tokenFlight = null;
     var pending = new Map();
     var listeners = new Map(), beforeSendListeners = [], contextSnapshots = new Map(), listenerOrder = 0, eventSequence = 0;
@@ -292,11 +294,15 @@
         var missing = (options.requiredCapabilities || []).filter(function (name) { return !frameCapabilities.includes(name); });
         if (missing.length) { emitError(new Error("This hosted chat needs an upgrade. Missing capabilities: " + missing.join(", "))); return; }
         ready = true;
+        if (workspaceState) post("workspace_state", { workspace: workspaceState });
         clearTimeout(loadTimer);
         emit("onReady", { protocolVersion: publicProtocolVersion, instanceId: id, agentId: resolvedAgentId, capabilities: frameCapabilities });
         debug(id, "iframe ready", { protocolVersion: publicProtocolVersion, capabilities: frameCapabilities });
       }
       else if (data.type === "close") hide();
+      else if (data.type === "workspace_request" && inline && typeof data.action === "string") {
+        emit("onWorkspaceActionRequested", { action: data.action, agentName: data.agentName });
+      }
       else if (data.type === "before_send_request") runBeforeSend(data);
       else if (data.type === "public_event" && data.protocolVersion === publicProtocolVersion
           && typeof data.event === "string" && isPlainObject(data.payload) && payloadSize(data.payload) <= 64 * 1024) {
@@ -312,7 +318,7 @@
           bootstrapAuth = null;
           debug(id, "sending token bootstrap to iframe", { requestId: data.requestId, inputsCount: Object.keys(inputs).length });
           var agentName = hasAgentName ? options.agentName.trim() : (typeof auth.agentName === "string" ? auth.agentName.trim() : undefined);
-          post("token", { requestId: data.requestId, auth: auth, inputs: inputs, agentName: agentName });
+          post("token", { requestId: data.requestId, auth: auth, inputs: inputs, agentName: agentName, workspace: workspaceState });
         })
           .catch(function (error) { post("token_error", { requestId: data.requestId, error: error.message }); emitError(error); });
       } else if (data.type === "authenticated") { emitRecovered(); emit("onAuthenticationStateChanged", { state: "authenticated" }); }
@@ -431,6 +437,10 @@
         emit("onContextChanged", { protocolVersion: publicProtocolVersion, instanceId: id, agentId: resolvedAgentId, namespace: namespace, revision: revision, displaySummary: displaySummary });
         return sendCommand("setContext", { namespace: namespace, contribution: contribution });
       },
+      setWorkspaceState: function (next) {
+        workspaceState = next;
+        if (ready) post("workspace_state", { workspace: next });
+      },
       sendMessage: function (message) {
         if (!isPlainObject(message) || typeof message.text !== "string") return Promise.reject(new Error("sendMessage requires text."));
         return sendCommand("sendMessage", { text: message.text, source: message.source || "sdk" });
@@ -476,5 +486,234 @@
       }
     };
   }
-  global.SolidAgentEmbed = { version: 5, mount: mount };
+  function mountWorkspace(options) {
+    var container = typeof options.container === "string" ? document.querySelector(options.container) : options.container;
+    var content = typeof options.content === "string" ? document.querySelector(options.content) : options.content;
+    if (!container || !content || content.parentElement !== container) throw new Error("Provide a workspace container and its content element.");
+    var agents = options.agents;
+    if (!Array.isArray(agents) || !agents.length || !agents.every(function (agent) {
+      return agent && typeof agent.name === "string" && agent.name.trim() && typeof agent.title === "string";
+    })) throw new Error("Provide at least one named agent.");
+    if (typeof options.tokenEndpoint !== "string" || !options.tokenEndpoint) throw new Error("Provide a token endpoint.");
+    var agentNames = agents.map(function (agent) { return agent.name; });
+    if (new Set(agentNames).size !== agentNames.length) throw new Error("Agent names must be unique.");
+    var defaultAgent = agentNames.includes(options.defaultAgentName) ? options.defaultAgentName : agents[0].name;
+    var key = typeof options.persistenceKey === "string" ? options.persistenceKey : "";
+    var state = { version: 1, open: false, mode: "docked", agentName: defaultAgent,
+      width: 420, floatingWidth: 440, floatingHeight: 720, x: 24, y: 80 };
+    try {
+      var stored = key && JSON.parse(localStorage.getItem(key) || "null");
+      if (stored && stored.version === 1) {
+        state.open = stored.open === true;
+        state.mode = ["docked", "floating", "fullscreen"].includes(stored.mode) ? stored.mode : "docked";
+        state.agentName = agentNames.includes(stored.agentName) ? stored.agentName : defaultAgent;
+        ["width", "floatingWidth", "floatingHeight", "x", "y"].forEach(function (field) {
+          if (Number.isFinite(stored[field])) state[field] = stored[field];
+        });
+      }
+    } catch (_) { /* Storage is optional. */ }
+
+    var previousContainerStyle = container.style.cssText;
+    var previousContentStyle = content.style.cssText;
+    var previousChatSpace = document.documentElement.style.getPropertyValue("--agent-chat-space");
+    var host = document.createElement("div");
+    var launcherHost = document.createElement("div");
+    container.appendChild(host);
+    document.body.appendChild(launcherHost);
+    var root = host.attachShadow({ mode: "open" });
+    var launcherRoot = launcherHost.attachShadow({ mode: "open" });
+    var css = document.createElement("style");
+    css.textContent = ":host{font:13px system-ui;color:#1e293b}*{box-sizing:border-box}button{font:inherit;cursor:pointer}button:focus-visible{outline:2px solid #3b82f6;outline-offset:2px}.panel{position:relative;display:flex;flex-direction:column;width:100%;height:100%;overflow:hidden;background:#fff;border-left:1px solid #d8dee8}.floating{border:1px solid #d8dee8;border-radius:12px;box-shadow:0 20px 60px #0004}.chat{flex:1;min-height:0}.drag{display:none;flex:0 0 22px;width:100%;border:0;border-bottom:1px solid #e2e8f0;background:#f8fafc;cursor:grab;touch-action:none}.floating .drag{display:block}.drag:active{cursor:grabbing}.drag:after{display:block;width:36px;height:4px;margin:auto;border-radius:3px;background:#94a3b8;content:''}.dock-resize{position:absolute;z-index:5;top:0;bottom:0;left:0;width:8px;cursor:col-resize;touch-action:none}.float-resize{position:absolute;z-index:5;right:0;bottom:0;width:28px;height:28px;border:0;background:transparent;cursor:nwse-resize;touch-action:none}.float-resize:after{position:absolute;right:6px;bottom:6px;width:10px;height:10px;border-right:2px solid #64748b;border-bottom:2px solid #64748b;content:''}.error{position:absolute;z-index:4;inset:0;overflow:auto;padding:44px 24px 24px;background:#fff}.floating .error{top:22px}.error-inner{max-width:420px;margin:auto}.error-icon{display:grid;width:36px;height:36px;place-items:center;border-radius:11px;background:#fff1ed;color:#c2412f;font-size:21px;font-weight:700}.eyebrow{margin-top:18px;color:#bd4c3d;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}.error h2{margin:5px 0 8px;font-size:18px;line-height:1.3}.error p{margin:0;color:#64748b;overflow-wrap:anywhere}.recovery{margin-top:30px}.recovery-label{margin-bottom:8px;color:#475569;font-weight:700}.switch{display:flex;align-items:center;gap:10px;width:100%;min-height:40px;padding:0 12px;border:1px solid #d7e1ef;border-radius:10px;background:#fff;color:#23324b;text-align:left;font-weight:600}.switch:hover{background:#f4f7fc}.menu{margin-top:6px;padding:6px;border:1px solid #dce4ef;border-radius:12px;background:#fff;box-shadow:0 14px 40px #0f172a24}.menu-title{padding:7px 9px 9px;color:#64748b;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}.option{display:flex;align-items:center;gap:10px;width:100%;min-height:42px;padding:6px 9px;border:0;border-radius:8px;background:transparent;color:#25344d;text-align:left;font-weight:600}.option:hover,.option.selected{background:#eff5ff}.avatar{display:grid;flex:0 0 26px;width:26px;height:26px;place-items:center;border-radius:8px;background:#e8f0ff;color:#2864c6}.option-title{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.close{margin-top:20px;padding:0;border:0;background:none;color:#5277b1;font-weight:600}.close:hover{text-decoration:underline}";
+    var panel = document.createElement("div");
+    panel.className = "panel";
+    panel.setAttribute("role", "region");
+    panel.setAttribute("aria-label", "Agent chat");
+    var drag = document.createElement("button");
+    drag.type = "button"; drag.className = "drag"; drag.setAttribute("aria-label", "Move agent chat");
+    drag.title = "Drag or use arrow keys to move chat";
+    var chat = document.createElement("div"); chat.className = "chat";
+    var dockResize = document.createElement("div"); dockResize.className = "dock-resize";
+    dockResize.setAttribute("role", "separator"); dockResize.setAttribute("aria-label", "Resize agent chat");
+    var floatResize = document.createElement("button"); floatResize.type = "button";
+    floatResize.className = "float-resize"; floatResize.setAttribute("aria-label", "Resize floating agent chat");
+    panel.append(drag, chat, dockResize, floatResize); root.append(css, panel);
+    var launcherStyle = document.createElement("style");
+    launcherStyle.textContent = "button{position:fixed;z-index:2147483000;right:24px;bottom:72px;display:grid;width:56px;height:56px;place-items:center;border:0;border-radius:50%;background:#2563eb;color:#fff;box-shadow:0 10px 30px #2563eb6b;cursor:pointer;font-size:26px}button:focus-visible{outline:2px solid #2563eb;outline-offset:3px}";
+    var launcher = document.createElement("button"); launcher.type = "button";
+    launcher.setAttribute("aria-label", "Open agent chat"); launcher.textContent = "✧";
+    launcherRoot.append(launcherStyle, launcher);
+
+    var instance = null, disposed = false, error = "", restoreMode = "docked", context = null;
+    function clamp(value, min, max) { return Math.min(Math.max(value, min), Math.max(min, max)); }
+    function save() { if (key) try { localStorage.setItem(key, JSON.stringify(state)); } catch (_) { /* Storage is optional. */ } }
+    function workspaceState() { return { mode: state.mode, agents: agents, selectedAgentName: state.agentName }; }
+    function selectedAgent() { return agents.find(function (agent) { return agent.name === state.agentName; }); }
+    function showError(message) { error = message; render(); }
+    function clearError() { if (error) { error = ""; render(); } }
+    function setContext(namespace, snapshot, revision, displaySummary) {
+      context = { namespace: namespace, snapshot: snapshot, revision: revision, displaySummary: displaySummary };
+      return instance ? instance.setContext(namespace, snapshot, revision, displaySummary) : Promise.resolve();
+    }
+    function connect() {
+      if (disposed || instance) return;
+      var agent = selectedAgent();
+      instance = mount({ mode: "inline", container: chat, agentName: agent.name, title: agent.title,
+        tokenEndpoint: options.tokenEndpoint, getTokenHeaders: options.getTokenHeaders,
+        requiredCapabilities: ["inlinePanel", "asyncBeforeSend", "messageContextV1", "publicCommands", "workspaceControlsV1"],
+        requiredNamespaces: options.namespace ? [options.namespace] : undefined,
+        beforeSendTimeoutMs: 3000, workspace: workspaceState(),
+        onClose: function () { if (state.open) close(); },
+        onError: function (failure) { showError(failure.message || String(failure)); },
+        onRecovered: clearError });
+      if (options.namespace && typeof options.beforeSend === "function") instance.on("onBeforeUserMessageSend", options.beforeSend,
+        { namespace: options.namespace, priority: 0, timeoutMs: 3000 });
+      instance.on("onAgentNavigationRequested", function (event) { if (typeof options.onNavigationRequested === "function") options.onNavigationRequested(event); });
+      instance.on("onWorkspaceActionRequested", function (event) {
+        if (event.action === "close") close();
+        else if (event.action === "selectAgent") selectAgent(event.agentName);
+        else if (["dock", "float", "fullscreen", "restore"].includes(event.action)) changeMode(event.action);
+      });
+      if (context) instance.setContext(context.namespace, context.snapshot, context.revision, context.displaySummary).catch(function () {});
+      if (state.open) instance.open();
+    }
+    function selectAgent(name) {
+      if (!agentNames.includes(name) || name === state.agentName) return;
+      if (instance) { instance.destroy(); instance = null; }
+      chat.textContent = "";
+      state.agentName = name; error = ""; save(); render();
+      if (state.open) connect();
+    }
+    function changeMode(action) {
+      if (action === "fullscreen" && state.mode !== "fullscreen") restoreMode = state.mode;
+      state.mode = action === "float" ? "floating" : action === "fullscreen" ? "fullscreen"
+        : action === "restore" ? restoreMode : "docked";
+      save(); render();
+      if (instance) instance.setWorkspaceState(workspaceState());
+    }
+    function open() { state.open = true; save(); render(); connect(); if (instance) instance.open(); }
+    function close() { state.open = false; save(); if (instance) instance.close(); render(); }
+    function renderError() {
+      var previous = panel.querySelector(".error"); if (previous) previous.remove();
+      chat.style.visibility = error ? "hidden" : "visible";
+      if (!error) return;
+      var view = document.createElement("div"); view.className = "error";
+      var inner = document.createElement("div"); inner.className = "error-inner";
+      var icon = document.createElement("span"); icon.className = "error-icon"; icon.textContent = "!";
+      var eyebrow = document.createElement("div"); eyebrow.className = "eyebrow"; eyebrow.textContent = "Agent unavailable";
+      var title = document.createElement("h2"); title.textContent = "Couldn’t start " + selectedAgent().title;
+      var message = document.createElement("p"); message.setAttribute("role", "alert"); message.textContent = error;
+      inner.append(icon, eyebrow, title, message);
+      if (agents.length > 1) {
+        var recovery = document.createElement("div"); recovery.className = "recovery";
+        var label = document.createElement("div"); label.className = "recovery-label"; label.textContent = "Choose another agent";
+        var switcher = document.createElement("button"); switcher.type = "button"; switcher.className = "switch";
+        switcher.textContent = selectedAgent().title + "  ⌄"; switcher.setAttribute("aria-label", "Switch agent");
+        switcher.setAttribute("aria-expanded", "false");
+        var menu = document.createElement("div"); menu.className = "menu"; menu.style.display = "none";
+        menu.setAttribute("role", "menu"); menu.setAttribute("aria-label", "Choose agent");
+        var menuTitle = document.createElement("div"); menuTitle.className = "menu-title"; menuTitle.textContent = "Choose an agent";
+        menu.appendChild(menuTitle);
+        agents.forEach(function (agent) {
+          var item = document.createElement("button"); item.type = "button"; item.className = "option";
+          if (agent.name === state.agentName) item.classList.add("selected");
+          item.setAttribute("role", "menuitemradio"); item.setAttribute("aria-checked", String(agent.name === state.agentName));
+          var avatar = document.createElement("span"); avatar.className = "avatar"; avatar.textContent = agent.title.trim().charAt(0).toUpperCase();
+          var itemTitle = document.createElement("span"); itemTitle.className = "option-title"; itemTitle.textContent = agent.title;
+          item.append(avatar, itemTitle); menu.appendChild(item);
+          item.addEventListener("click", function () { selectAgent(agent.name); });
+        });
+        switcher.addEventListener("click", function () {
+          var expanded = menu.style.display === "none";
+          menu.style.display = expanded ? "block" : "none"; switcher.setAttribute("aria-expanded", String(expanded));
+        });
+        recovery.append(label, switcher, menu); inner.appendChild(recovery);
+      }
+      var closeButton = document.createElement("button"); closeButton.type = "button"; closeButton.className = "close";
+      closeButton.textContent = "Close chat"; closeButton.addEventListener("click", close);
+      inner.appendChild(closeButton); view.appendChild(inner); panel.appendChild(view);
+    }
+    function render() {
+      if (disposed) return;
+      var floating = state.open && state.mode === "floating";
+      var fullscreen = state.open && state.mode === "fullscreen";
+      var width = clamp(state.width, 280, innerWidth - 320);
+      var floatWidth = clamp(state.floatingWidth, 280, innerWidth - 32);
+      var floatHeight = clamp(state.floatingHeight, 360, innerHeight - 32);
+      var dockWidth = state.open && !floating ? fullscreen ? "100%" : width + "px" : "0px";
+      container.style.display = "grid"; container.style.gridTemplateColumns = "minmax(0,1fr) " + dockWidth;
+      container.style.width = "100%"; container.style.height = "100dvh"; container.style.overflow = "hidden";
+      content.style.minWidth = "0"; content.style.height = "100%"; content.style.overflow = "auto";
+      content.style.visibility = fullscreen ? "hidden" : ""; content.style.pointerEvents = fullscreen ? "none" : "";
+      document.documentElement.style.setProperty("--agent-chat-space", dockWidth);
+      launcher.style.display = state.open ? "none" : "grid";
+      host.style.display = state.open ? "block" : "none";
+      host.style.width = floating ? floatWidth + "px" : "100%";
+      host.style.height = floating ? floatHeight + "px" : "100%";
+      host.style.position = floating ? "fixed" : "relative";
+      host.style.zIndex = floating ? "2147483000" : "300";
+      host.style.left = floating ? clamp(state.x, 0, innerWidth - floatWidth) + "px" : "";
+      host.style.top = floating ? clamp(state.y, 0, innerHeight - floatHeight) + "px" : "";
+      panel.classList.toggle("floating", floating);
+      drag.style.display = floating ? "block" : "none";
+      dockResize.style.display = state.open && !floating && !fullscreen ? "block" : "none";
+      floatResize.style.display = floating ? "block" : "none";
+      renderError();
+    }
+    function onDrag(event) {
+      if (!dragStart) return;
+      state.x = clamp(dragStart.x + event.clientX - dragStart.clientX, 0, innerWidth - host.offsetWidth);
+      state.y = clamp(dragStart.y + event.clientY - dragStart.clientY, 0, innerHeight - host.offsetHeight);
+      render();
+    }
+    function onResize(event) {
+      if (!resizeStart) return;
+      if (resizeStart.floating) {
+        state.floatingWidth = clamp(resizeStart.width + event.clientX - resizeStart.clientX, 280, innerWidth - state.x - 16);
+        state.floatingHeight = clamp(resizeStart.height + event.clientY - resizeStart.clientY, 360, innerHeight - state.y - 16);
+      } else state.width = clamp(resizeStart.width + resizeStart.clientX - event.clientX, 280, innerWidth - 320);
+      render();
+    }
+    var dragStart = null, resizeStart = null;
+    drag.addEventListener("pointerdown", function (event) {
+      dragStart = { clientX: event.clientX, clientY: event.clientY, x: state.x, y: state.y };
+      drag.setPointerCapture(event.pointerId);
+    });
+    drag.addEventListener("pointermove", onDrag);
+    drag.addEventListener("pointerup", function () { if (dragStart) save(); dragStart = null; });
+    drag.addEventListener("pointercancel", function () { dragStart = null; });
+    dockResize.addEventListener("pointerdown", function (event) {
+      resizeStart = { clientX: event.clientX, width: state.width, floating: false };
+      dockResize.setPointerCapture(event.pointerId);
+    });
+    floatResize.addEventListener("pointerdown", function (event) {
+      resizeStart = { clientX: event.clientX, clientY: event.clientY, width: state.floatingWidth,
+        height: state.floatingHeight, floating: true };
+      floatResize.setPointerCapture(event.pointerId);
+    });
+    dockResize.addEventListener("pointermove", onResize); floatResize.addEventListener("pointermove", onResize);
+    dockResize.addEventListener("pointerup", function () { if (resizeStart) save(); resizeStart = null; });
+    floatResize.addEventListener("pointerup", function () { if (resizeStart) save(); resizeStart = null; });
+    dockResize.addEventListener("pointercancel", function () { resizeStart = null; });
+    floatResize.addEventListener("pointercancel", function () { resizeStart = null; });
+    drag.addEventListener("keydown", function (event) {
+      var delta = { ArrowLeft: [-20, 0], ArrowRight: [20, 0], ArrowUp: [0, -20], ArrowDown: [0, 20] }[event.key];
+      if (!delta) return; event.preventDefault();
+      state.x = clamp(state.x + delta[0], 0, innerWidth - host.offsetWidth);
+      state.y = clamp(state.y + delta[1], 0, innerHeight - host.offsetHeight); save(); render();
+    });
+    launcher.addEventListener("click", open);
+    global.addEventListener("resize", render);
+    render(); if (state.open) connect();
+    return { open: open, close: close, setContext: setContext, destroy: function () {
+      if (disposed) return; disposed = true;
+      if (instance) instance.destroy();
+      global.removeEventListener("resize", render);
+      host.remove(); launcherHost.remove();
+      container.style.cssText = previousContainerStyle;
+      content.style.cssText = previousContentStyle;
+      if (previousChatSpace) document.documentElement.style.setProperty("--agent-chat-space", previousChatSpace);
+      else document.documentElement.style.removeProperty("--agent-chat-space");
+    } };
+  }
+  global.SolidAgentEmbed = { version: 7, mount: mount, mountWorkspace: mountWorkspace };
 })(window);

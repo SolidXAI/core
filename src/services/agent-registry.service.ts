@@ -8,6 +8,7 @@ import { AgentRegistryRepository } from '../repository/agent-registry.repository
 import { AgentConfigVersion } from '../entities/agent-config-version.entity';
 import { ActivateAgentRegistryDto } from '../dtos/activate-agent-registry.dto';
 import { markActiveAgentsDraft } from './agent-config-version.service';
+import { buildAgentConfigVersionName } from '../helpers/agent-config-version-name';
 import { normalizeAgentRequiredInputs } from '../helpers/agent-required-inputs';
 import { ModuleMetadataHelperService } from '../helpers/module-metadata-helper.service';
 import { syncEntityTagsToModuleMetadataJson } from '../subscribers/agenthub-metadata-sync.util';
@@ -150,7 +151,7 @@ export class AgentRegistryService extends CRUDService<AgentRegistry> implements 
       await versionRepository.save(versionRepository.create({
         agentRegistry: agent,
         versionNumber,
-        name: dto.name?.trim() || null,
+        name: buildAgentConfigVersionName(dto.name, versionNumber),
         description: dto.description?.trim() || null,
       }));
 
