@@ -979,13 +979,41 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
             return { message: SUCCESS_MESSAGES.RECORD_RECOVERED, data: softDeletedRows };
         } catch (error: any) {
             if (error instanceof QueryFailedError && (error as any).code === '23505') {
-                throw new ConflictException(ERROR_MESSAGES.CONFLICTING_RECORD_ON_UNARCHIVE);
+                throw new ConflictException(this.getRecoveryConflictMessage(error));
             }
             if (error instanceof HttpException) {
                 throw error;
             }
             throw new InternalServerErrorException(error?.message ?? String(error));
         }
+    }
+
+    private getRecoveryConflictMessage(error: any): string {
+        const defaultMessage = ERROR_MESSAGES.CONFLICTING_RECORD_ON_UNARCHIVE();
+        const databaseDetail = error?.driverError?.detail ?? error?.detail;
+        if (typeof databaseDetail !== 'string') return defaultMessage;
+
+        // PostgreSQL detail example: Key (unique_field, deleted_tracker)=(value, not-deleted) already exists.
+        const match = databaseDetail.match(/^Key \((.+)\)=\((.+)\) already exists\.$/);
+        if (!match) return defaultMessage;
+
+        const fields = match[1].split(/,\s*/);
+        const values = match[2].split(/,\s*/);
+        if (fields.length !== values.length) return defaultMessage;
+
+        const conflictDetails: string[] = [];
+        fields.forEach((field: string, index: number) => {
+            // deletedTracker is an internal soft-delete field and is not useful to the user.
+            const fieldName = field.replace(/^"|"$/g, '');
+            const isInternalField = fieldName === 'deleted_tracker' || fieldName === 'deletedTracker';
+            if (!isInternalField) {
+                conflictDetails.push(`${fieldName.replace(/_/g, ' ')} "${values[index]}"`);
+            }
+        });
+
+        if (conflictDetails.length === 0) return defaultMessage;
+
+        return ERROR_MESSAGES.CONFLICTING_RECORD_ON_UNARCHIVE(conflictDetails.join(' and '));
     }
 
     async recoverMany(ids: number[], solidRequestContext: any = {}) {
@@ -1033,7 +1061,7 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
             return { message: SUCCESS_MESSAGES.SELECTED_RECORDS_RECOVERED, recoveredIds: ids };
         } catch (error: any) {
             if (error instanceof QueryFailedError && (error as any).code === "23505") {
-                throw new ConflictException(ERROR_MESSAGES.CONFLICTING_RECORD_ON_UNARCHIVE);
+                throw new ConflictException(this.getRecoveryConflictMessage(error));
             }
             if (error instanceof HttpException) {
                 throw error;
