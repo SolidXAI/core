@@ -9,6 +9,20 @@
 
 ### Other
 
+- changes to support force change password on first login using env
+- Lm migration (#215)
+- recover conflict record unique key added in error msg (#214)
+- set forceChangePasswordOnFirstLogin to true as per the requirement. (#211)
+
+## [0.1.22-beta.4] - 2026-11-16
+
+### Added
+
+- enhance agent management with deployment updates and new properties
+- implement buildAgentConfigVersionName function and integrate it into AgentRegistryService
+
+### Other
+
 - Lm migration (#215)
 - recover conflict record unique key added in error msg (#214)
 - set forceChangePasswordOnFirstLogin to true as per the requirement. (#211)
