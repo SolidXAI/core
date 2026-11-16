@@ -404,6 +404,8 @@ export * from './services/selection-providers/list-of-values-selection-providers
 // seed-data
 export * from './seeders/permission-metadata-seeder.service'
 export * from './seeders/module-metadata-seeder.service'
+export * from './seeders/module-test-data.service'
+export * from './controllers/test-data.controller'
 
 export * from './services/access-token-denylist.service'
 export * from './services/action-metadata.service'
@@ -600,3 +602,6 @@ export {
 
 // The mobile block of a run request. The adapter and steps stay private, like the UI ones.
 export type { MobileRunOptionsInput } from './testing/adapters/mobile/mobile.types'
+
+// The shape of run-timeline.json, the run.end artifact saying where each scenario is in the run video.
+export type { RunVideoTimeline } from './testing/adapters/ui/run-video'

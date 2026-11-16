@@ -50,6 +50,11 @@ export interface ScenarioSpec {
   params?: Record<string, any>;
   tags?: string[];
   timeoutMs?: number;
+  /**
+   * How long each step may take, for every step that sets no timeout of its own: the wait for browser and device
+   * steps (`with.timeoutMs`), the step-level `timeoutMs` for the rest. `timeoutMs` above bounds the whole scenario.
+   */
+  stepTimeoutMs?: number;
   retries?: number;
   /**
    * Scenarios that must pass before this one runs. Selecting this scenario pulls its

@@ -439,6 +439,14 @@ const getSolidCoreSettings = (isProd: boolean) =>
       level: SettingLevel.SystemEnv,
     },
     {
+      // Lets POST /api/test-data/load write seed data into this app. Off unless the env var is "true". SystemEnv keeps it
+      // out of the settings screen and out of reach of the settings API.
+      moduleName: "solid-core",
+      key: "testDataEndpointEnabled",
+      value: process.env.SOLIDX_TEST_DATA_ENDPOINT_ENABLED === "true",
+      level: SettingLevel.SystemEnv,
+    },
+    {
       moduleName: "solid-core",
       key: "solidAgentEnabled",
       value: process.env.SOLIDX_AGENT_ENABLED === "true",
