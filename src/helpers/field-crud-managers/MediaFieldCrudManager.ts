@@ -1,5 +1,5 @@
 import { FieldCrudManager, ValidationError } from "src/interfaces";
-import { EXT_TO_MEDIA_TYPES, getLowercaseFileExtension, getUploadedFileName, isDangerousMediaFile, MediaCategory, MIME_TO_MEDIA_TYPE } from "src/constants/media-file-types";
+import { EXT_TO_MEDIA_TYPES, getLowercaseFileExtension, getUploadedFileName, isDangerousMediaFile, MEDIA_FILE_TYPES, MediaCategory, MIME_TO_MEDIA_TYPE } from "src/constants/media-file-types";
 
 export enum SolidMediaType {
     mediaSingle = 'mediaSingle',
@@ -50,6 +50,28 @@ export class MediaFieldCrudManager implements FieldCrudManager {
         // Reject files whose extension is not part of the supported media definitions.
         if (!extToMediaTypes || extToMediaTypes.length === 0) {
             return null;
+        }
+
+        // Some containers, notably .webm and .ogg, are valid for both audio and video. Browsers
+        // commonly report those files using the video MIME type even when the container only has
+        // audio. When the destination field allows exactly one of the extension's categories, the
+        // field provides the missing context. Normalize the MIME type as well so the stored media
+        // record and subsequent previews use the same category that validation selected.
+        if (extToMediaTypes.length > 1) {
+            const fieldCompatibleTypes = extToMediaTypes.filter(mediaType =>
+                (this.options.mediaTypes || []).includes(mediaType)
+            );
+
+            if (fieldCompatibleTypes.length === 1) {
+                const resolvedType = fieldCompatibleTypes[0];
+                const normalizedDefinition = MEDIA_FILE_TYPES.find(fileType =>
+                    fileType.extension === ext && fileType.mediaType === resolvedType
+                );
+                if (normalizedDefinition) {
+                    file.mimetype = normalizedDefinition.mimeType;
+                }
+                return resolvedType;
+            }
         }
 
         // The mimetype may only confirm or veto what the extension already established, never
