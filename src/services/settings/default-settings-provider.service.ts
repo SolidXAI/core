@@ -1232,7 +1232,9 @@ const getSolidCoreSettings = (isProd: boolean) =>
     {
       moduleName: "solid-core",
       key: "forceChangePasswordOnFirstLogin",
-      value: true,
+      // Defaults to true. Set FORCE_CHANGE_PASSWORD_ON_FIRST_LOGIN=false before the first
+      // start on a fresh database to create users without the flag (used by test apps).
+      value: process.env.FORCE_CHANGE_PASSWORD_ON_FIRST_LOGIN !== "false",
       level: SettingLevel.SystemAdminEditable,
       label: "Force Change Password On First Login",
       group: "authentication-settings",
