@@ -1,10 +1,11 @@
-import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch } from '@nestjs/common';
+import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch, ParseIntPipe } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { AgentRegistryService } from '../services/agent-registry.service';
 import { CreateAgentRegistryDto } from '../dtos/create-agent-registry.dto';
 import { UpdateAgentRegistryDto } from '../dtos/update-agent-registry.dto';
 import { ActivateAgentRegistryDto } from '../dtos/activate-agent-registry.dto';
+import { UpdateAgentDeploymentDto } from '../dtos/update-agent-deployment.dto';
 import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Agent Hub')
@@ -39,6 +40,12 @@ export class AgentRegistryController {
   @UseInterceptors(AnyFilesInterceptor())
   partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateAgentRegistryDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.update(id, updateDto, files, true);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Patch(':id/deployment')
+  updateDeployment(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateAgentDeploymentDto) {
+    return this.service.updateDeployment(id, dto);
   }
 
   @ApiBearerAuth("jwt")

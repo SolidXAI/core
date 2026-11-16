@@ -56,6 +56,12 @@ export class CreateAgentJobDto {
     @ApiProperty()
     leaseExpiresAt: Date;
 
+    @IsOptional()
+    @Type(() => Date)
+    @IsDate()
+    @ApiProperty({ required: false, nullable: true, type: Date })
+    dispatchedAt?: Date | null;
+
     @IsNotEmpty()
     @IsInt()
     @ApiProperty()

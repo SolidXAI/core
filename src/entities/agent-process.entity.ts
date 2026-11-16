@@ -1,4 +1,5 @@
 import { CommonEntity } from 'src/entities/common.entity';
+import { Exclude } from 'class-transformer';
 import { Entity, JoinColumn, ManyToOne, Column, Index, OneToMany } from 'typeorm';
 import { AgentRegistry } from './agent-registry.entity';
 import { AgentSession } from './agent-session.entity'
@@ -18,6 +19,33 @@ export class AgentProcess extends CommonEntity {
 
     @Column({ type: "integer", nullable: true })
     pid: number;
+
+    @Column({ type: "varchar", nullable: true })
+    runner: string | null;
+
+    @Column({ type: "varchar", length: 512, nullable: true })
+    runnerRef: string | null;
+
+    @Exclude({ toPlainOnly: true })
+    @Column({ type: "varchar", default: "", select: false, insert: false, update: false })
+    internalUrl: string = "";
+
+    @Exclude({ toPlainOnly: true })
+    @Column({ type: "varchar", length: 64, nullable: true, select: false, insert: false, update: false })
+    bootstrapTokenHash: string | null;
+
+    @Exclude({ toPlainOnly: true })
+    @Column({ ...getColumnType('datetimeWithTimezone'), nullable: true, select: false, insert: false, update: false })
+    bootstrapExpiresAt: Date | null;
+
+    @Column({ type: "varchar", nullable: true })
+    runtimeVersion: string | null;
+
+    @Column({ type: "integer", nullable: true })
+    cpu: number | null;
+
+    @Column({ type: "integer", nullable: true })
+    memory: number | null;
 
     @Column({ type: "varchar" })
     wsUrl: string = "";
