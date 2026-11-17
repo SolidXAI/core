@@ -34,7 +34,7 @@ export class UpdateAgentSessionDto {
     @IsNotEmpty()
     @IsOptional()
     @IsString()
-    @ApiProperty()
+    @ApiProperty({ description: "Original session entry point. Use api or webhook for the background jobs inbox." })
     trigger: string;
 
     @IsOptional()

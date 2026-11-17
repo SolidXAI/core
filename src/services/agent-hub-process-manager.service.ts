@@ -1,4 +1,4 @@
-import { BadGatewayException, ConflictException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { BadGatewayException, ConflictException, HttpException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { SettingService } from './setting.service';
 
@@ -22,25 +22,46 @@ export class AgentHubProcessManagerService {
     return base;
   }
 
-  private async request<T>(method: 'GET' | 'POST', path: string, authorization: string): Promise<T> {
+  private async request<T>(method: 'GET' | 'POST', path: string, authorization: string, data?: unknown): Promise<T> {
     try {
       const response = await this.httpService.axiosRef.request<T>({
         url: `${this.getBaseUrl()}${path}`,
         method,
         headers: { Authorization: authorization },
+        data,
         timeout: 15000,
       });
       return response.data;
     } catch (error: any) {
-      if (error?.status) throw error;
+      if (error instanceof HttpException) throw error;
       const status = error?.response?.status;
       const detail = error?.response?.data?.detail ?? error?.response?.data?.message;
+      if ([400, 401, 403, 404, 409, 422, 429, 503].includes(status)) {
+        throw new HttpException(typeof detail === 'string' ? detail : 'AgentHub request failed.', status);
+      }
       throw new BadGatewayException(detail || `AgentHub manager request failed${status ? ` (${status})` : ''}.`);
     }
   }
 
   listProcesses(authorization: string): Promise<any[]> {
     return this.request('GET', '/api/processes', authorization);
+  }
+
+  listJobSessions(authorization: string, review: boolean, offset: number) {
+    return this.request('GET', `/api/job-sessions?review=${review}&offset=${offset}`, authorization);
+  }
+
+  getJobSession(authorization: string, sessionId: string) {
+    return this.request('GET', `/api/job-sessions/${encodeURIComponent(sessionId)}`, authorization);
+  }
+
+  connectJobSession(authorization: string, sessionId: string) {
+    return this.request('POST', `/api/job-sessions/${encodeURIComponent(sessionId)}/connect`, authorization);
+  }
+
+  answerJobSession(authorization: string, sessionId: string, requestId: number, answer: unknown) {
+    return this.request('POST', `/api/job-sessions/${encodeURIComponent(sessionId)}/requests/${requestId}/answer`,
+      authorization, answer);
   }
 
   async stopProcess(processId: string, authorization: string): Promise<{ status: string }> {
@@ -67,6 +88,6 @@ export class AgentHubProcessManagerService {
     if (Number(process.agentId) !== agentId) {
       throw new ConflictException('The process is no longer linked to this agent.');
     }
-    return this.restartAgent(agentId, authorization);
+    return this.request('POST', `/api/processes/${encodeURIComponent(processId)}/restart`, authorization);
   }
 }

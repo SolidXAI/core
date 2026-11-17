@@ -1,11 +1,12 @@
 import { CommonEntity } from 'src/entities/common.entity';
-import { Entity, JoinColumn, ManyToOne, Column, OneToMany } from 'typeorm';
+import { Entity, Index, JoinColumn, ManyToOne, Column, OneToMany } from 'typeorm';
 import { AgentSession } from './agent-session.entity';
 import { AgentRegistry } from './agent-registry.entity';
 import { AgentHumanRequest } from './agent-human-request.entity';
 import { getColumnType, getCurrentTimestampDefault } from 'src/helpers/typeorm-db-helper';
 
 @Entity('ss_agent_job')
+@Index(['agent', 'status', 'queuedAt'])
 export class AgentJob extends CommonEntity {
     @ManyToOne(() => AgentSession, { onDelete: "SET NULL", nullable: true })
     @JoinColumn()
@@ -59,6 +60,9 @@ export class AgentJob extends CommonEntity {
 
     @Column({ ...getColumnType('datetimeWithTimezone'), default: () => getCurrentTimestampDefault() })
     queuedAt: Date = new Date();
+
+    @Column({ ...getColumnType('datetimeWithTimezone'), nullable: true })
+    dispatchedAt: Date | null;
 
     @Column({ ...getColumnType('datetimeWithTimezone'), nullable: true })
     startedAt: Date;

@@ -134,7 +134,20 @@ describe("runFromMetadata without dependencies", () => {
 });
 
 describe("runFromMetadata with dependsOn", () => {
-  it("skips dependents of a failure and keeps running independent scenarios", async () => {
+  it("stops at the first failure by default, like a run without dependencies", async () => {
+    const events: Event[] = [];
+    await expect(
+      runFromMetadata({
+        scenarios: [pass("login"), pass("a", { dependsOn: ["login"] }), fail("b", { dependsOn: ["login"] }), pass("c", { dependsOn: ["login"] })],
+        reporter: recordingReporter(events),
+      }),
+    ).rejects.toThrow(/Expected values to be equal/);
+    expect(events.filter((e) => e.type !== "run").map((e) => `${e.type}:${(e as any).id}`)).toEqual(["end:login", "end:a", "end:b"]);
+    const run = events.find((e) => e.type === "run") as { args: RunEndArgs };
+    expect(run.args).toMatchObject({ ok: false, total: 4, passed: 2, failed: 1, skipped: 0 });
+  });
+
+  it("with failFast off, skips dependents of a failure and keeps running independent scenarios", async () => {
     const events: Event[] = [];
     await expect(
       runFromMetadata({
@@ -145,6 +158,7 @@ describe("runFromMetadata with dependsOn", () => {
           pass("independent"),
         ],
         reporter: recordingReporter(events),
+        failFast: false,
       }),
     ).rejects.toThrow();
     expect(events.filter((e) => e.type !== "run")).toEqual([

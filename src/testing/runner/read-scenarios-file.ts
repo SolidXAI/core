@@ -42,3 +42,27 @@ export function readScenariosFile(absPath: string): ReadScenariosResult {
     return { scenarios: [], ok: false, error: (err as Error)?.message || "read_error" };
   }
 }
+
+/**
+ * Read one scenario per file, in the order given: Testing Hub keeps each scenario in its own JSON file
+ * (`<app>/<scenario key>.json`) and sends their paths. Every file must hold one scenario object; the first missing,
+ * unreadable or invalid file fails the whole read (naming the file), so a run never silently drops a scenario.
+ */
+export function readScenarioFiles(absPaths: string[]): ReadScenariosResult {
+  const scenarios: ScenarioSpec[] = [];
+  for (const absPath of absPaths) {
+    if (!absPath || !fs.existsSync(absPath)) {
+      return { scenarios: [], ok: false, error: `file_not_found: ${absPath}` };
+    }
+    try {
+      const parsed = JSON.parse(fs.readFileSync(absPath, "utf-8"));
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return { scenarios: [], ok: false, error: `not_a_scenario: ${absPath}` };
+      }
+      scenarios.push(parsed as ScenarioSpec);
+    } catch (err) {
+      return { scenarios: [], ok: false, error: `${(err as Error)?.message || "read_error"}: ${absPath}` };
+    }
+  }
+  return { scenarios, ok: true };
+}

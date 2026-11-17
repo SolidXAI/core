@@ -58,6 +58,21 @@ export class AgentRegistry extends CommonEntity {
     @Column({ ...getColumnType('boolean'), name: "is_builtin", default: false })
     isBuiltin: boolean = false;
 
+    @Column({ type: "varchar", nullable: true })
+    runner: string | null;
+
+    @Column({ type: "integer", default: 0 })
+    minProcesses: number = 0;
+
+    @Column({ type: "integer", nullable: true })
+    maxProcesses: number | null;
+
+    @Column({ type: "integer", nullable: true })
+    processCpu: number | null;
+
+    @Column({ type: "integer", nullable: true })
+    processMemory: number | null;
+
     @Index()
     @ManyToOne(() => ModuleMetadata, { onDelete: "RESTRICT", nullable: false })
     @JoinColumn({ name: 'module_id', referencedColumnName: 'id' })

@@ -3,6 +3,7 @@ import type { Browser, BrowserContext, Page, ConsoleMessage, Response, Request, 
 import type { HealEvent } from "../../contracts/runtime-context.types";
 import type { HealingPolicy } from "../../contracts/testing-metadata.types";
 import type { AttachOptions, CaptureOptions, PlaywrightAdapterOptions, ViewportOptions } from "./ui.types";
+import { buildTimeline, clipDurationMs, findFfmpeg, joinClips, type ClipTiming, type RunVideoTimeline, type ScenarioMark } from "./run-video";
 
 /** Storage state as returned by `BrowserContext.storageState()`. */
 export type StorageState = Awaited<ReturnType<BrowserContext["storageState"]>>;
@@ -71,8 +72,11 @@ export class PlaywrightAdapter {
    * finalized bytes.
    */
   private videoDir?: string;
-  private videoSegments: Video[] = [];
+  private videoSegments: Array<{ video: Video; startedAt: number; endedAt: number }> = [];
+  private segmentStartedAt = 0;
+  private scenarioMarks: ScenarioMark[] = [];
   private runVideos: FailureArtifact[] = [];
+  private runVideoTimeline?: RunVideoTimeline;
   private readonly requestStartedAt = new Map<Request, number>();
 
   constructor(opts?: PlaywrightAdapterOptions) {
@@ -162,12 +166,13 @@ export class PlaywrightAdapter {
     this.context.setDefaultTimeout(this.defaultTimeoutMs);
     this.context.setDefaultNavigationTimeout(this.navigationTimeoutMs);
     this.page = await this.context.newPage();
+    this.segmentStartedAt = Date.now();
     this.attachCaptureListeners(this.page);
   }
 
   private async closeContext(): Promise<void> {
     const video = this.videoDir ? this.page?.video() : undefined;
-    if (video) this.videoSegments.push(video);
+    if (video) this.videoSegments.push({ video, startedAt: this.segmentStartedAt, endedAt: Date.now() });
     try {
       if (this.context) {
         await this.context.close();
@@ -203,9 +208,19 @@ export class PlaywrightAdapter {
     return this.runVideos[0];
   }
 
-  /** Every whole-run video segment (one per browser context), after {@link stop}. */
+  /** Every whole-run video file, after {@link stop}: one, unless clips could not be joined (no ffmpeg). */
   getRunVideos(): FailureArtifact[] {
     return [...this.runVideos];
+  }
+
+  /** Where each scenario is in the run video, after {@link stop} kept it. */
+  getRunVideoTimeline(): RunVideoTimeline | undefined {
+    return this.runVideoTimeline;
+  }
+
+  /** Note when a scenario attempt ran, so the run video can show where it is. Only while recording. */
+  recordScenario(mark: ScenarioMark): void {
+    if (this.videoDir) this.scenarioMarks.push(mark);
   }
 
   /**
@@ -349,13 +364,8 @@ export class PlaywrightAdapter {
         const fs = await import('fs');
         // Only read the recording into memory when the caller wants to keep it (i.e. the
         // run FAILED). Passing runs discard the webm unread — no wasted IO/memory.
-        if (keepVideo) {
-          const single = this.videoSegments.length === 1;
-          for (const [i, video] of this.videoSegments.entries()) {
-            const data = await fs.promises.readFile(await video.path());
-            const name = single ? 'run.webm' : `run-${i + 1}.webm`;
-            this.runVideos.push({ name, contentType: 'video/webm', data });
-          }
+        if (keepVideo && this.videoSegments.length) {
+          await this.keepRunVideo(this.videoDir);
         }
         // Clean up the temp recording directory either way.
         await fs.promises.rm(this.videoDir, { recursive: true, force: true }).catch(() => {});
@@ -364,6 +374,7 @@ export class PlaywrightAdapter {
       } finally {
         this.videoDir = undefined;
         this.videoSegments = [];
+        this.scenarioMarks = [];
       }
     }
 
@@ -374,6 +385,33 @@ export class PlaywrightAdapter {
     } finally {
       this.browser = undefined;
     }
+  }
+
+  /**
+   * Read the run's recording into {@link runVideos} as one `run.webm` (clips joined with ffmpeg when the run opened
+   * several contexts) and work out where each scenario is in it. Without ffmpeg several clips stay `run-<n>.webm`.
+   */
+  private async keepRunVideo(dir: string): Promise<void> {
+    const fs = await import('fs');
+    const path = await import('path');
+    const files = await Promise.all(this.videoSegments.map((s) => s.video.path()));
+    const ffmpeg = await findFfmpeg();
+    const clips: ClipTiming[] = [];
+    for (const [i, s] of this.videoSegments.entries()) {
+      const measured = ffmpeg ? await clipDurationMs(ffmpeg, files[i]) : undefined;
+      clips.push({ startedAt: s.startedAt, endedAt: s.endedAt, durationMs: measured ?? s.endedAt - s.startedAt });
+    }
+
+    let joined: string | undefined = files.length === 1 ? files[0] : undefined;
+    if (!joined && ffmpeg) {
+      const out = path.join(dir, 'run-joined.webm');
+      if (await joinClips(ffmpeg, files, path.join(dir, 'clips.txt'), out)) joined = out;
+    }
+    const names = joined ? ['run.webm'] : files.map((_, i) => `run-${i + 1}.webm`);
+    for (const [i, file] of (joined ? [joined] : files).entries()) {
+      this.runVideos.push({ name: names[i], contentType: 'video/webm', data: await fs.promises.readFile(file) });
+    }
+    this.runVideoTimeline = buildTimeline(clips, names, this.scenarioMarks, !!joined);
   }
 
   /**

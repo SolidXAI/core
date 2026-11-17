@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch, ParseIntPipe } from '@nestjs/common';
+import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch, ParseIntPipe, Headers, UnauthorizedException, Header } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { AgentSessionService } from '../services/agent-session.service';
@@ -7,11 +7,46 @@ import { UpdateAgentSessionDto } from '../dtos/update-agent-session.dto';
 import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 import { ActiveUser } from '../decorators/active-user.decorator';
 import { ActiveUserData } from '../interfaces/active-user-data.interface';
+import { AgentHubProcessManagerService } from '../services/agent-hub-process-manager.service';
 
 @ApiTags('Agent Hub')
 @Controller('agent-session')
 export class AgentSessionController {
-  constructor(private readonly service: AgentSessionService) {}
+  constructor(private readonly service: AgentSessionService, private readonly manager: AgentHubProcessManagerService) {}
+
+  private bearer(authorization?: string) {
+    if (!authorization?.startsWith('Bearer ')) throw new UnauthorizedException();
+    return authorization;
+  }
+
+  @ApiBearerAuth('jwt')
+  @Get('inbox')
+  listInbox(@Headers('authorization') authorization: string, @Query('review') review: string,
+            @Query('offset') offset: string) {
+    const start = Number(offset);
+    return this.manager.listJobSessions(this.bearer(authorization), review === 'true',
+      Number.isSafeInteger(start) && start > 0 ? start : 0);
+  }
+
+  @ApiBearerAuth('jwt')
+  @Get('inbox/:sessionId')
+  getInboxRun(@Headers('authorization') authorization: string, @Param('sessionId') sessionId: string) {
+    return this.manager.getJobSession(this.bearer(authorization), sessionId);
+  }
+
+  @ApiBearerAuth('jwt')
+  @Header('Cache-Control', 'no-store')
+  @Post('inbox/:sessionId/connect')
+  connectInboxRun(@Headers('authorization') authorization: string, @Param('sessionId') sessionId: string) {
+    return this.manager.connectJobSession(this.bearer(authorization), sessionId);
+  }
+
+  @ApiBearerAuth('jwt')
+  @Post('inbox/:sessionId/requests/:requestId/answer')
+  answerInboxRun(@Headers('authorization') authorization: string, @Param('sessionId') sessionId: string,
+                 @Param('requestId', ParseIntPipe) requestId: number, @Body() answer: unknown) {
+    return this.manager.answerJobSession(this.bearer(authorization), sessionId, requestId, answer);
+  }
 
   @ApiBearerAuth("jwt")
   @Post()

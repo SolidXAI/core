@@ -93,8 +93,9 @@ export type RunnerOptions = {
   defaults?: { timeoutMs?: number; retries?: number };
   options?: { printApiLogs?: boolean };
   /**
-   * Stop the run at the first failed scenario (default `true`). When `false`, every
-   * scenario runs; the run still throws after the last one if any failed.
+   * Stop the run at the first failed scenario (default `true`), also in a run with dependencies
+   * (dependsOn / restoreFrom / session). When `false`, every scenario runs — a failed one's dependents
+   * are skipped — and the run still throws after the last one if any failed.
    */
   failFast?: boolean;
   specs?: (registry: SpecRegistry) => void;
@@ -284,6 +285,7 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
             failed += 1;
             runError = error;
             outcomes.set(scenario.id, "failed");
+            if (opts.failFast !== false) throw error;
             continue;
           }
         }
@@ -310,6 +312,7 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
             failed += 1;
             runError = error;
             outcomes.set(scenario.id, "failed");
+            if (opts.failFast !== false) throw error;
             continue;
           }
         }
@@ -343,11 +346,11 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
       } catch (error) {
         failed += 1;
         outcomes.set(scenario.id, "failed");
-        // Keep going; the first failure is rethrown once every scenario has run.
-        // A dependsOn run always keeps going and skips the failed scenario's dependents.
+        // failFast (the default) stops the run here, with or without dependencies. Otherwise keep going: the
+        // first failure is rethrown once every scenario has run, and a dependsOn run skips the failed one's dependents.
         runError ??= error;
         throwIfCanceled();
-        if (!dependencyMode && opts.failFast !== false) throw error;
+        if (opts.failFast !== false) throw error;
       }
     }
     if (runError) throw runError;
@@ -375,6 +378,11 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
       if (keepVideo && reporter.attachRunArtifact) {
         for (const video of ui.getRunVideos()) {
           reporter.attachRunArtifact({ name: video.name, contentType: video.contentType, data: video.data });
+        }
+        // Where each scenario is in the video, for the run page to jump to.
+        const timeline = ui.getRunVideoTimeline();
+        if (timeline) {
+          reporter.attachRunArtifact({ name: "run-timeline.json", contentType: "application/json", data: JSON.stringify(timeline) });
         }
       }
     }
