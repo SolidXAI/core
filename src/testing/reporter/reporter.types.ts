@@ -1,4 +1,4 @@
-import type { HealEvent, StepPhase } from "../contracts/runtime-context.types";
+import type { HealEvent, StepDataUsed, StepPhase } from "../contracts/runtime-context.types";
 import type { OpStep, ScenarioSpec, ScenarioType } from "../contracts/testing-metadata.types";
 import type { SolidTestSpecResult } from "../contracts/test-spec.types";
 
@@ -49,6 +49,8 @@ export interface Reporter {
     stepPath?: string;
     /** Mobile only: the longest single device lookup in the step, when it was slow enough to matter (a stalled device). */
     slowestCallMs?: number;
+    /** Random values the step generated and text its `match` regexes extracted. */
+    data?: StepDataUsed[];
     setup?: string;
   }): void;
   onSpecResult?(args: {

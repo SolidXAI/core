@@ -1,6 +1,7 @@
 import type { TestContext } from "../../contracts/runtime-context.types";
 import type { OpStep } from "../../contracts/testing-metadata.types";
 import { StepRegistry } from "../../core/step-registry";
+import { recordStepData } from "../../core/step-data";
 
 type GotoInput = { url: string; timeoutMs?: number };
 type ExpectUrlInput = { equals?: string; contains?: string; timeoutMs?: number };
@@ -108,7 +109,9 @@ export function registerNavigationSteps(registry: StepRegistry): void {
           `ui.storeText: regex "${input.match}" found no match in text "${text.slice(0, 120)}"`,
         );
       }
-      return m[1] !== undefined ? m[1] : m[0];
+      const value = m[1] !== undefined ? m[1] : m[0];
+      recordStepData(ctx, { kind: "match", source: `match:${input.match}`, value, ...(step.saveAs ? { saveAs: step.saveAs } : {}) });
+      return value;
     }
     return text;
   });

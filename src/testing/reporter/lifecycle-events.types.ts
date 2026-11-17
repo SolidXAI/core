@@ -1,4 +1,4 @@
-import type { HealEvent } from "../contracts/runtime-context.types";
+import type { HealEvent, StepDataUsed } from "../contracts/runtime-context.types";
 import type { ScenarioType } from "../contracts/testing-metadata.types";
 
 /**
@@ -40,6 +40,8 @@ export interface StepResultData {
   stepPath?: string;
   /** Mobile only: the longest single device lookup in the step, reported when it was slow (a stalled device). */
   slowestCallMs?: number;
+  /** Random values the step generated and text its `match` regexes extracted, so the results show the data used. */
+  data?: StepDataUsed[];
   /** Set for a step that ran as setup for the scenario ("reset", "login"), not as one of its own. */
   setup?: string;
   ok: boolean;
