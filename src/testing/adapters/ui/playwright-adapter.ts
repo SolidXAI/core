@@ -160,7 +160,11 @@ export class PlaywrightAdapter {
     }
     this.context = await this.browser.newContext({
       ...contextViewportOptions(this.viewport),
-      ...(this.videoDir ? { recordVideo: { dir: this.videoDir } } : {}),
+      // At the viewport's own size: without `size` Playwright scales the recording down to fit 800x800, so a 1920x1080
+      // run was recorded at about 800x450 and its text was unreadable.
+      ...(this.videoDir
+        ? { recordVideo: { dir: this.videoDir, size: this.viewport ? { width: this.viewport.width, height: this.viewport.height } : { width: 1280, height: 720 } } }
+        : {}),
       ...(storageState ? { storageState } : {}),
     });
     this.context.setDefaultTimeout(this.defaultTimeoutMs);
