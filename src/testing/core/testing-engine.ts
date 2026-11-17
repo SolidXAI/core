@@ -165,7 +165,8 @@ export class TestingEngine {
         }
 
         const durationMs = Date.now() - scenarioStart;
-        ctx.ui?.recordScenario({
+        // Only browser scenarios are in the run video: an API scenario shows nothing in it, so it gets no place there.
+        if (scenario.type === "ui") ctx.ui?.recordScenario({
           scenarioId: scenario.id,
           name: scenario.name,
           attempt,
