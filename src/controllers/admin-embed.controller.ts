@@ -11,7 +11,8 @@ export class AdminEmbedController {
     sdk(@Res() response: Response): void {
         let embedUrl: URL;
         try {
-            const ui = new URL(process.env.ADMIN_EMBED_UI_URL ?? '');
+            // Falls back to the agent embed's UI URL: both point at the same hosted SolidX UI.
+            const ui = new URL(process.env.ADMIN_EMBED_UI_URL || process.env.AGENT_EMBED_UI_URL || '');
             if (!['http:', 'https:'].includes(ui.protocol) || ui.username || ui.password || ui.search || ui.hash) {
                 throw new Error('Invalid admin embed UI URL');
             }
