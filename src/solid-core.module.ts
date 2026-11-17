@@ -520,6 +520,7 @@ import { AgentHumanRequest } from "./entities/agent-human-request.entity";
 import { AgentConfigVersion } from "./entities/agent-config-version.entity";
 import { AgentRegistryController } from "./controllers/agent-registry.controller";
 import { AgentEmbedController } from './controllers/agent-embed.controller';
+import { AdminEmbedController } from './controllers/admin-embed.controller';
 import { AgentToolRegistryController } from "./controllers/agent-tool-registry.controller";
 import { AgentSkillRegistryController } from "./controllers/agent-skill-registry.controller";
 import { AgentHubTagController } from "./controllers/agent-hub-tag.controller";
@@ -773,6 +774,7 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     SecretController,
     AgentRegistryController,
     AgentEmbedController,
+    AdminEmbedController,
     AgentToolRegistryController,
     AgentSkillRegistryController,
     AgentHubTagController,

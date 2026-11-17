@@ -14325,7 +14325,9 @@
       "displayName": "Agent",
       "name": "agent-menu-item",
       "sequenceNumber": 8,
-      "roles": ["Internal User"],
+      "roles": [
+        "Internal User"
+      ],
       "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
@@ -14442,7 +14444,9 @@
       "displayName": "Jobs inbox",
       "name": "agentSession-inbox-menu-item",
       "sequenceNumber": 7,
-      "roles": ["Internal User"],
+      "roles": [
+        "Internal User"
+      ],
       "actionUserKey": "agentSession-inbox-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "agent-menu-item",
@@ -28284,6 +28288,69 @@
               "name": "heartbeatAt",
               "sortable": true
             }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "runner",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "runtimeVersion",
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "host"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "port",
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "cpu",
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "memory",
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "maxSessions",
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "maxRunningTurns",
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "stoppedAt",
+              "sortable": true
+            }
           }
         ]
       }
@@ -28425,6 +28492,36 @@
                         "type": "field",
                         "attrs": {
                           "name": "heartbeatAt"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "runner"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "runnerRef"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "runtimeVersion"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "cpu"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "memory"
                         }
                       }
                     ]

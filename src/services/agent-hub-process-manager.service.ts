@@ -47,8 +47,18 @@ export class AgentHubProcessManagerService {
     return this.request('GET', '/api/processes', authorization);
   }
 
-  listJobSessions(authorization: string, review: boolean, offset: number) {
-    return this.request('GET', `/api/job-sessions?review=${review}&offset=${offset}`, authorization);
+  listJobSessions(authorization: string, filters: {
+    review: boolean; offset: number; limit: number; agent?: string; status?: string;
+    trigger?: string; runtime?: string; startedFrom?: string; startedTo?: string; search?: string; sort?: string;
+  }) {
+    const query = new URLSearchParams({
+      review: String(filters.review), offset: String(filters.offset), limit: String(filters.limit),
+    });
+    for (const key of ['agent', 'status', 'trigger', 'runtime', 'startedFrom', 'startedTo', 'search', 'sort'] as const) {
+      const value = filters[key];
+      if (value) query.set(key, value);
+    }
+    return this.request('GET', `/api/job-sessions?${query.toString()}`, authorization);
   }
 
   getJobSession(authorization: string, sessionId: string) {
