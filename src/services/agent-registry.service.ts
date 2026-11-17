@@ -82,8 +82,11 @@ export class AgentRegistryService extends CRUDService<AgentRegistry>{
         }
       }
       const deployment = { runner, minProcesses, maxProcesses, processCpu, processMemory };
+      const changed = agent.runner !== runner || agent.minProcesses !== minProcesses || agent.maxProcesses !== maxProcesses ||
+        agent.processCpu !== processCpu || agent.processMemory !== processMemory;
       await repository.update(id, deployment);
-      return deployment;
+      if (changed) await markActiveAgentsDraft(manager, [id]);
+      return repository.findOne({ where: { id } });
     });
   }
 
