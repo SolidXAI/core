@@ -3,7 +3,6 @@ import { ViewMetadata } from "src/entities/view-metadata.entity";
 import { ModuleMetadataHelperService } from "src/helpers/module-metadata-helper.service";
 import { DataSource, EntitySubscriberInterface, UpdateEvent } from "typeorm";
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { getCoreRepoRoot } from '../helpers/solid-core-dev-paths';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
 
 
@@ -40,7 +39,7 @@ export class ViewMetadataSubsciber implements EntitySubscriberInterface<ViewMeta
         }
 
         // solid-core module metadata file is stored in the npm package when installed, so we do not propogate those changes to the solid-core-metadata.json file
-        if (viewMetadata.model.module.name != "solid-core" || getCoreRepoRoot()) {
+        if (viewMetadata.model.module.name != "solid-core") {
             const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(viewMetadata.model.module.name);
             try {
                 await fs.access(filePath);
