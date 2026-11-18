@@ -1304,11 +1304,21 @@ export class ModelMetadataService {
       const listViewLayoutFields = [{ type: "field", attrs: { name: `id` } }];
       const treeViewLayoutFields = [{ type: "field", attrs: { name: `id` } }];
       const formViewLayoutFields = [];
+      const isDatabaseGeneratedLegacyField = (field: FieldMetadata) =>
+        (model.legacyTableType === "existing_id" && field.name === "id" ||
+          model.legacyTableType === "generated_id" && field.name === "legacyId") &&
+        Boolean(field.defaultValue);
 
       for (let i = 0; i < model.fields.length; i++) {
         const field = model.fields[i];
         if (field.isSystem) continue;
-        formViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}` } })
+        // Database-generated IDs are not rendered as form inputs.
+        if (!isDatabaseGeneratedLegacyField(field)) {
+          formViewLayoutFields.push({
+            type: "field",
+            attrs: { name: `${field.name}` },
+          });
+        }
         // List and tree layouts already include id as their first column.
         if (field.name !== "id") {
           listViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}` } })
@@ -1525,7 +1535,15 @@ export class ModelMetadataService {
       }
     }));
 
-    const formViewLayout = jsonFieldsList.map(field => ({
+    const formFieldsList = jsonFieldsList.filter((field) => {
+      const isDatabaseGeneratedLegacyField =
+        (model.legacyTableType === "existing_id" && field.name === "id" ||
+          model.legacyTableType === "generated_id" && field.name === "legacyId") &&
+        Boolean(field.defaultValue);
+      return !isDatabaseGeneratedLegacyField;
+    });
+
+    const formViewLayout = formFieldsList.map(field => ({
       type: "field",
       attrs: {
         name: `${field.name}`
