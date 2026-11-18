@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { CommandService, CommandWithArgs } from './command.service';
 import { SolidRegistry } from './solid-registry';
+import { SOLID_CORE_MODULE_NAME } from '../constants';
+import { getCoreRepoRoot, getLocalCodeBuilderCollection } from './solid-core-dev-paths';
 
 export const ADD_MODULE_COMMAND = 'add-module';
 export type GenerateModuleOptions = {
@@ -39,7 +41,13 @@ export class SchematicService {
     options: GenerateModuleOptions | ModelAndFieldGenerationOptions,
     debug: boolean,
   ): CommandWithArgs {
-    const schematicName = `${this.SCHEMATIC_PROJECT}:${command}`;
+    // Core mode (solidctl --core): solid-core models generate into the core repo, using the local code-builder build.
+    const coreRoot = options.module === SOLID_CORE_MODULE_NAME ? getCoreRepoRoot() : undefined;
+    const collection = coreRoot ? (getLocalCodeBuilderCollection() ?? this.SCHEMATIC_PROJECT) : this.SCHEMATIC_PROJECT;
+    if (coreRoot) {
+      this.logger.log(`Core mode: generating solid-core code into ${coreRoot} using ${collection}`);
+    }
+    const schematicName = `${collection}:${command}`;
     // Only forward --debug when explicitly enabled. The Angular schematics
     // CLI treats the *presence* of --debug as truthy (regardless of the
     // assigned value), and once debug is on it forces dry-run mode — so
@@ -61,12 +69,12 @@ export class SchematicService {
       }
       const args = [...baseArgs, ...modelArgs, ...fieldArgs];
       this.logger.debug('schematicCommand args', args);
-      return { command: this.SCHEMATICS_COMMAND, args };
+      return { command: this.SCHEMATICS_COMMAND, args, cwd: coreRoot };
     } else if (command === ADD_MODULE_COMMAND) {
       const moduleOptions = options as GenerateModuleOptions;
       const args = [...baseArgs, `--module=${moduleOptions.module}`];
       this.logger.debug('schematicCommand args', args);
-      return { command: this.SCHEMATICS_COMMAND, args };
+      return { command: this.SCHEMATICS_COMMAND, args, cwd: coreRoot };
     } else {
       throw new Error('Schematic command not supported.');
     }
