@@ -54,7 +54,9 @@ export class SchematicService {
     // passing `--debug=false` previously made every schematic invocation
     // silently dry-run, leaving "CREATE …" lines in the log but writing
     // nothing to disk.
-    const baseArgs = [schematicName, ...(debug ? ['--debug=true'] : [])];
+    // A local collection path (core mode) makes the schematics CLI default to debug, which implies dry run.
+    // Pass --dry-run=false explicitly so core-mode runs actually write files.
+    const baseArgs = [schematicName, ...(debug ? ['--debug=true'] : coreRoot ? ['--dry-run=false'] : [])];
 
     if (
       command === REMOVE_FIELDS_COMMAND ||

@@ -36,6 +36,7 @@ describe('SchematicService core mode', () => {
     await run('solid-core');
     const sent = commandService.executeCommandWithArgs.mock.calls[0][0];
     expect(sent.args[0]).toBe('@solidxai/code-builder:refresh-model');
+    expect(sent.args).not.toContain('--dry-run=false');
     expect(sent.cwd).toBeUndefined();
   });
 
@@ -45,6 +46,7 @@ describe('SchematicService core mode', () => {
     await run('solid-core');
     const sent = commandService.executeCommandWithArgs.mock.calls[0][0];
     expect(sent.args[0]).toBe(`${path.join(builderDir, 'dist', 'collection.json')}:refresh-model`);
+    expect(sent.args).toContain('--dry-run=false');
     expect(sent.cwd).toBe(path.resolve(coreDir));
   });
 
