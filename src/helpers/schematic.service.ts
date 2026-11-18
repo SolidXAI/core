@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { CommandService, CommandWithArgs } from './command.service';
 import { SolidRegistry } from './solid-registry';
 import { SOLID_CORE_MODULE_NAME } from '../constants';
-import { getCoreRepoRoot, getLocalCodeBuilderCollection } from './solid-core-dev-paths';
+import { getCoreRepoRoot, getInstalledCodeBuilderCollection } from './solid-core-dev-paths';
 
 export const ADD_MODULE_COMMAND = 'add-module';
 export type GenerateModuleOptions = {
@@ -43,7 +43,8 @@ export class SchematicService {
   ): CommandWithArgs {
     // Core mode (solidctl --core): solid-core models generate into the core repo, using the local code-builder build.
     const coreRoot = options.module === SOLID_CORE_MODULE_NAME ? getCoreRepoRoot() : undefined;
-    const collection = coreRoot ? (getLocalCodeBuilderCollection() ?? this.SCHEMATIC_PROJECT) : this.SCHEMATIC_PROJECT;
+    // Core mode runs the installed code-builder by file path, so the generator runs from the core repo directory.
+    const collection = coreRoot ? getInstalledCodeBuilderCollection() : this.SCHEMATIC_PROJECT;
     if (coreRoot) {
       this.logger.log(`Core mode: generating solid-core code into ${coreRoot} using ${collection}`);
     }

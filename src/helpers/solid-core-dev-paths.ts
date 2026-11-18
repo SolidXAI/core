@@ -9,26 +9,23 @@ import * as path from 'path';
  * to know the installed core supports --core. Do not rename or move it.
  */
 export const SOLIDX_CORE_REPO_ROOT_ENV = 'SOLIDX_CORE_REPO_ROOT';
-export const SOLIDX_CODE_BUILDER_ROOT_ENV = 'SOLIDX_CODE_BUILDER_ROOT';
 
 export function getCoreRepoRoot(): string | undefined {
   const root = process.env[SOLIDX_CORE_REPO_ROOT_ENV]?.trim();
   return root ? path.resolve(root) : undefined;
 }
 
-export function getCodeBuilderRoot(): string | undefined {
-  const root = process.env[SOLIDX_CODE_BUILDER_ROOT_ENV]?.trim();
-  return root ? path.resolve(root) : undefined;
-}
-
-/** <code-builder>/dist/collection.json in core mode. Throws if core mode is on but it has not been built. */
-export function getLocalCodeBuilderCollection(): string | undefined {
-  const root = getCodeBuilderRoot();
-  if (!root) return undefined;
-  const collection = path.join(root, 'dist', 'collection.json');
+/**
+ * The code-builder collection installed for this project (solid-api/node_modules/@solidxai/code-builder).
+ * This is the same copy `solidctl local-upgrade --code-builder` keeps up to date, so it is the single
+ * source of truth for generation in both normal and core mode.
+ */
+export function getInstalledCodeBuilderCollection(): string {
+  const packageJson = require.resolve('@solidxai/code-builder/package.json');
+  const collection = path.join(path.dirname(packageJson), 'dist', 'collection.json');
   if (!fs.existsSync(collection)) {
     throw new Error(
-      `Local code-builder is not built: ${collection} is missing. Run \`npm run build\` in ${root} first.`,
+      `The installed @solidxai/code-builder has no ${collection}. Run \`solidctl local-upgrade --code-builder\` first.`,
     );
   }
   return collection;

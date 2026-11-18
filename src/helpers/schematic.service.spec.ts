@@ -1,38 +1,34 @@
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
 import { SchematicService } from './schematic.service';
+import { getInstalledCodeBuilderCollection } from './solid-core-dev-paths';
+
+jest.mock('./solid-core-dev-paths', () => ({
+  ...jest.requireActual('./solid-core-dev-paths'),
+  getInstalledCodeBuilderCollection: jest.fn(() => '/consumer/solid-api/node_modules/@solidxai/code-builder/dist/collection.json'),
+}));
 
 describe('SchematicService core mode', () => {
   let commandService: { executeCommandWithArgs: jest.Mock };
   let service: SchematicService;
-  const saved = { core: process.env.SOLIDX_CORE_REPO_ROOT, builder: process.env.SOLIDX_CODE_BUILDER_ROOT };
-  let coreDir: string;
-  let builderDir: string;
+  const saved = process.env.SOLIDX_CORE_REPO_ROOT;
+  const installedCollection = '/consumer/solid-api/node_modules/@solidxai/code-builder/dist/collection.json';
 
   beforeEach(() => {
-    coreDir = fs.mkdtempSync(path.join(os.tmpdir(), 'core-'));
-    builderDir = fs.mkdtempSync(path.join(os.tmpdir(), 'builder-'));
-    fs.mkdirSync(path.join(builderDir, 'dist'));
-    fs.writeFileSync(path.join(builderDir, 'dist', 'collection.json'), '{}');
     commandService = { executeCommandWithArgs: jest.fn().mockResolvedValue('') };
     const solidRegistry = { getCommonEntityKeys: () => [] } as any;
     service = new SchematicService(commandService as any, solidRegistry);
     delete process.env.SOLIDX_CORE_REPO_ROOT;
-    delete process.env.SOLIDX_CODE_BUILDER_ROOT;
+    (getInstalledCodeBuilderCollection as jest.Mock).mockClear();
   });
 
   afterEach(() => {
-    process.env.SOLIDX_CORE_REPO_ROOT = saved.core;
-    process.env.SOLIDX_CODE_BUILDER_ROOT = saved.builder;
-    if (saved.core === undefined) delete process.env.SOLIDX_CORE_REPO_ROOT;
-    if (saved.builder === undefined) delete process.env.SOLIDX_CODE_BUILDER_ROOT;
+    if (saved === undefined) delete process.env.SOLIDX_CORE_REPO_ROOT;
+    else process.env.SOLIDX_CORE_REPO_ROOT = saved;
   });
 
   const run = (module: string) =>
     service.executeSchematicCommand('refresh-model', { module, model: 'user', fieldNamesForRemoval: [] } as any);
 
-  it('uses the installed code-builder and inherits cwd when core mode is off', async () => {
+  it('uses the package name and inherits cwd when core mode is off', async () => {
     await run('solid-core');
     const sent = commandService.executeCommandWithArgs.mock.calls[0][0];
     expect(sent.args[0]).toBe('@solidxai/code-builder:refresh-model');
@@ -40,30 +36,29 @@ describe('SchematicService core mode', () => {
     expect(sent.cwd).toBeUndefined();
   });
 
-  it('runs solid-core from the core repo with the local code-builder', async () => {
-    process.env.SOLIDX_CORE_REPO_ROOT = coreDir;
-    process.env.SOLIDX_CODE_BUILDER_ROOT = builderDir;
+  it('runs solid-core from the core repo with the installed code-builder', async () => {
+    process.env.SOLIDX_CORE_REPO_ROOT = '/Users/ll/projects/core';
     await run('solid-core');
     const sent = commandService.executeCommandWithArgs.mock.calls[0][0];
-    expect(sent.args[0]).toBe(`${path.join(builderDir, 'dist', 'collection.json')}:refresh-model`);
+    expect(sent.args[0]).toBe(`${installedCollection}:refresh-model`);
     expect(sent.args).toContain('--no-dry-run');
-    expect(sent.cwd).toBe(path.resolve(coreDir));
+    expect(sent.cwd).toBe('/Users/ll/projects/core');
   });
 
   it('leaves non-core modules alone in core mode', async () => {
-    process.env.SOLIDX_CORE_REPO_ROOT = coreDir;
-    process.env.SOLIDX_CODE_BUILDER_ROOT = builderDir;
+    process.env.SOLIDX_CORE_REPO_ROOT = '/Users/ll/projects/core';
     await run('library');
     const sent = commandService.executeCommandWithArgs.mock.calls[0][0];
     expect(sent.args[0]).toBe('@solidxai/code-builder:refresh-model');
     expect(sent.cwd).toBeUndefined();
   });
 
-  it('refuses when the local code-builder is not built', async () => {
-    fs.unlinkSync(path.join(builderDir, 'dist', 'collection.json'));
-    process.env.SOLIDX_CORE_REPO_ROOT = coreDir;
-    process.env.SOLIDX_CODE_BUILDER_ROOT = builderDir;
-    await expect(run('solid-core')).rejects.toThrow('is not built');
+  it('refuses when the installed code-builder cannot be found', async () => {
+    process.env.SOLIDX_CORE_REPO_ROOT = '/Users/ll/projects/core';
+    (getInstalledCodeBuilderCollection as jest.Mock).mockImplementationOnce(() => {
+      throw new Error('The installed @solidxai/code-builder has no collection.');
+    });
+    await expect(run('solid-core')).rejects.toThrow('has no collection');
     expect(commandService.executeCommandWithArgs).not.toHaveBeenCalled();
   });
 });
