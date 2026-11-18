@@ -11166,6 +11166,30 @@
             "isPrimaryKey": false
           },
           {
+            "name": "hostRefId",
+            "displayName": "Host Reference ID",
+            "description": "Optional reference ID supplied by the host application to tag this session.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
             "name": "agentJobs",
             "displayName": "Agent Jobs",
             "description": null,
@@ -11530,6 +11554,30 @@
             "decryptWhen": null,
             "columnName": null,
             "enableAuditTracking": true
+          },
+          {
+            "name": "hostRefId",
+            "displayName": "Host Reference ID",
+            "description": "Optional reference ID supplied by the host application to tag this job.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
           },
           {
             "name": "webhookUrl",
@@ -28708,6 +28756,14 @@
           {
             "type": "field",
             "attrs": {
+              "name": "hostRefId",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "configVersion",
               "sortable": true,
               "viewWidget": "AgentSessionConfigVersionListWidget"
@@ -28959,6 +29015,12 @@
                               {
                                 "type": "field",
                                 "attrs": {
+                                  "name": "hostRefId"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
                                   "name": "status"
                                 }
                               },
@@ -29105,6 +29167,14 @@
             "type": "field",
             "attrs": {
               "name": "sessionId"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "hostRefId",
+              "isSearchable": true,
+              "sortable": true
             }
           },
           {
@@ -29262,6 +29332,14 @@
           {
             "type": "field",
             "attrs": {
+              "name": "hostRefId",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "agent"
             }
           },
@@ -29409,6 +29487,12 @@
                         "type": "field",
                         "attrs": {
                           "name": "session"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "hostRefId"
                         }
                       },
                       {
@@ -29570,6 +29654,14 @@
             "type": "field",
             "attrs": {
               "name": "session"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "hostRefId",
+              "isSearchable": true,
+              "sortable": true
             }
           },
           {

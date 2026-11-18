@@ -122,6 +122,11 @@ export class UpdateAgentSessionDto {
     fastModelKey: string;
 
     @IsOptional()
+    @IsString()
+    @ApiProperty({ required: false, nullable: true, description: "Optional reference ID supplied by the host application." })
+    hostRefId?: string | null;
+
+    @IsOptional()
     @ApiProperty()
     @IsArray()
     @ValidateNested({ each: true })

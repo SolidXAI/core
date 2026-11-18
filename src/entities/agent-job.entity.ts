@@ -40,6 +40,10 @@ export class AgentJob extends CommonEntity {
     @Column({ type: "text", nullable: true })
     idempotencyKey: string;
 
+    // Optional reference supplied by the host application to tag this record.
+    @Column({ type: "varchar", nullable: true })
+    hostRefId: string | null;
+
     @Column({ type: "text", nullable: true })
     webhookUrl: string;
 

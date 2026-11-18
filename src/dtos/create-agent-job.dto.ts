@@ -74,6 +74,11 @@ export class CreateAgentJobDto {
 
     @IsOptional()
     @IsString()
+    @ApiProperty({ required: false, nullable: true, description: "Optional reference ID supplied by the host application." })
+    hostRefId?: string | null;
+
+    @IsOptional()
+    @IsString()
     @ApiProperty()
     webhookUrl: string;
 
