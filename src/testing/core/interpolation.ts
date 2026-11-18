@@ -1,3 +1,5 @@
+import * as fs from "fs";
+import * as path from "path";
 import type { TestContext } from "../contracts/runtime-context.types";
 import { parsePathSegments } from "./path-segments";
 import { resolveNow } from "./dates";
@@ -84,6 +86,27 @@ function resolveToken(token: string, ctx: TestContext): TokenResolution {
     // Secrets carry a declared valueType, so a json/number/boolean secret used as an
     // exact token returns typed rather than stringified. Strings behave like env:.
     return { value, raw: typeof value !== "string" };
+  }
+
+  // ${media:name} is a file in the run's media folder, named relative to it: `photo.jpg` or `sub/photo.jpg`.
+  // The folder is TEST_UPLOADS_MEDIA_FILE_PATH, as set by the runner for this run.
+  if (token.startsWith("media:")) {
+    const name = token.slice("media:".length).trim();
+    if (!name) {
+      throw new Error('Invalid interpolation token: "media:"');
+    }
+    if (name.startsWith("/") || name.includes("\\") || name.split("/").some((part) => part === "" || part === "." || part === "..")) {
+      throw new Error(`Invalid media name in "\${${token}}": use a relative name such as photo.jpg`);
+    }
+    const folder = ctx.env?.TEST_UPLOADS_MEDIA_FILE_PATH ?? process.env.TEST_UPLOADS_MEDIA_FILE_PATH;
+    if (!folder) {
+      throw new Error(`No media folder for "\${${token}}": TEST_UPLOADS_MEDIA_FILE_PATH is not set`);
+    }
+    const filePath = path.join(folder, name);
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`Media file "${name}" was not found. Upload it to the application's test media.`);
+    }
+    return { value: filePath, raw: false };
   }
 
   if (token.startsWith("env:")) {
