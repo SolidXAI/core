@@ -116,6 +116,11 @@ export type RunnerOptions = {
    * are skipped — and the run still throws after the last one if any failed.
    */
   failFast?: boolean;
+  /**
+   * Which runs keep their whole-run video. `"failed"` (default) keeps it only for a failed run; `"always"` keeps it
+   * for every run that used the browser or a device. A canceled run never keeps it.
+   */
+  keepVideo?: "failed" | "always";
   specs?: (registry: SpecRegistry) => void;
   /**
    * Resolves `${secret:...}` references against the secret store. Injected by the
@@ -406,9 +411,13 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
     });
     opts.signal?.removeEventListener("abort", closeOnCancel);
     if (uiStarted.value && !uiClosedOnCancel) {
-      // Only KEEP the whole-run video when the run FAILED in the browser — passing runs, and runs where only API
-      // scenarios failed (nothing of theirs is on screen), discard it unread.
-      const keepVideo = !!runError && scenarios.some((s) => scenarioNeedsUi(s) && outcomes.get(s.id) === "failed");
+      // By default only KEEP the whole-run video when the run FAILED in the browser — passing runs, and runs where
+      // only API scenarios failed (nothing of theirs is on screen), discard it unread. With keepVideo "always" every
+      // run that has a browser scenario keeps it.
+      const keepVideo =
+        opts.keepVideo === "always"
+          ? scenarios.some((s) => scenarioNeedsUi(s))
+          : !!runError && scenarios.some((s) => scenarioNeedsUi(s) && outcomes.get(s.id) === "failed");
       await ui.stop({ keepVideo });
       // Video bytes are only finalized after ui.stop(); attach it as a run-level artifact so
       // the reporter uploads it and references it on run.end (queued before flushPending runs).
@@ -424,8 +433,8 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
       }
     }
     if (mobile && mobileStarted.value && !mobileClosedOnCancel) {
-      // Same policy as the browser video: only keep the recording when the run failed.
-      const keepVideo = !!runError;
+      // Same policy as the browser video: keep the recording when the run failed, or for every run with "always".
+      const keepVideo = opts.keepVideo === "always" || !!runError;
       await mobile.stop({ keepVideo });
       if (keepVideo) {
         const video = mobile.getRunVideo();

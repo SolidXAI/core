@@ -67,6 +67,29 @@ describe("runFromMetadata with mobile scenarios", () => {
     expect(reporter.runEnd).toMatchObject({ ok: true, passed: 1, failed: 0 });
   });
 
+  it("keeps the recording of a passing run when the run asks to keep every video", async () => {
+    const driver = new FakeDriver();
+    driver.add("~Save", new FakeElement());
+    const { options } = mobileOptions(driver);
+    const reporter = new RecordingReporter();
+
+    await runFromMetadata({ scenarios: [passing], mobile: options, reporter, keepVideo: "always" });
+
+    expect(reporter.runEnd).toMatchObject({ ok: true, passed: 1, failed: 0 });
+    expect(reporter.runArtifacts.map((a) => a.name)).toEqual(["run.mp4"]);
+  });
+
+  it("still discards the recording of a passing run when keepVideo is failed", async () => {
+    const driver = new FakeDriver();
+    driver.add("~Save", new FakeElement());
+    const { options } = mobileOptions(driver);
+    const reporter = new RecordingReporter();
+
+    await runFromMetadata({ scenarios: [passing], mobile: options, reporter, keepVideo: "failed" });
+
+    expect(reporter.runArtifacts).toEqual([]);
+  });
+
   it("passes a step that needed its fallback, and reports the heal on scenario.end", async () => {
     const driver = new FakeDriver();
     const [renamed] = driver.add("~Save order", new FakeElement());
