@@ -63,7 +63,7 @@ export class AgentSession extends CommonEntity {
     totalCost: number = 0;
 
     @Column({ type: "text", nullable: true })
-    error: string;
+    error: string | null;
 
     @Column({ ...getColumnType('datetimeWithTimezone'), default: () => getCurrentTimestampDefault() })
     startedAt: Date = new Date();
