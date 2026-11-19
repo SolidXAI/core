@@ -23,7 +23,8 @@ export class AgentSessionController {
   @Get('inbox')
   listInbox(@Headers('authorization') authorization: string, @Query('review') review: string,
             @Query('offset') offset: string, @Query('limit') limit: string,
-            @Query('agent') agent: string, @Query('status') status: string,
+            @Query('agent') agent: string, @Query('hostRefId') hostRefId: string,
+            @Query('sessionId') sessionId: string, @Query('status') status: string,
             @Query('trigger') trigger: string, @Query('runtime') runtime: string,
             @Query('startedFrom') startedFrom: string, @Query('startedTo') startedTo: string,
             @Query('q') search: string, @Query('sort') sort: string) {
@@ -34,6 +35,8 @@ export class AgentSessionController {
       offset: Number.isSafeInteger(start) && start > 0 ? start : 0,
       limit: Number.isSafeInteger(pageSize) && pageSize > 0 ? Math.min(pageSize, 100) : 25,
       agent: agent?.trim() || undefined,
+      hostRefId: hostRefId?.trim() || undefined,
+      sessionId: sessionId?.trim() || undefined,
       status: status?.trim() || undefined,
       trigger: trigger?.trim() || undefined,
       runtime: runtime?.trim() || undefined,

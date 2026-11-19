@@ -80,6 +80,10 @@ export class AgentSession extends CommonEntity {
     @Column({ type: "varchar", nullable: true })
     fastModelKey: string;
 
+    // Optional reference supplied by the host application to tag this record.
+    @Column({ type: "varchar", nullable: true })
+    hostRefId: string | null;
+
     @OneToMany(() => AgentJob, agentJob => agentJob.session, { cascade: true })
     agentJobs: AgentJob[];
 
