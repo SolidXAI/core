@@ -7,6 +7,7 @@ import { AgentJob } from './agent-job.entity';
 import { AgentEvent } from './agent-event.entity';
 import { AgentSessionCheckpoint } from './agent-session-checkpoint.entity';
 import { AgentHumanRequest } from './agent-human-request.entity';
+import { AgentBrowserSession } from './agent-browser-session.entity';
 import { getColumnType, getCurrentTimestampDefault } from 'src/helpers/typeorm-db-helper';
 
 @Entity('ss_agent_session')
@@ -95,5 +96,8 @@ export class AgentSession extends CommonEntity {
 
     @OneToMany(() => AgentHumanRequest, agentHumanRequest => agentHumanRequest.session, { cascade: true })
     agentHumanRequests: AgentHumanRequest[];
+
+    @OneToMany(() => AgentBrowserSession, agentBrowserSession => agentBrowserSession.session, { cascade: true })
+    agentBrowserSessions: AgentBrowserSession[];
 
 }
