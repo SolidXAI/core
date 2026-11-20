@@ -110,10 +110,10 @@ describe('ModulePackageService', () => {
 
         commands = [];
         failInstall = false;
-        // unzip is real; package-manager commands are recorded instead of run.
+        // unzip/tar is real; package-manager commands are recorded instead of run.
         const commandService = {
             executeCommandWithArgs: async (input: { command: string; args: string[]; cwd?: string }) => {
-                if (input.command === 'unzip') {
+                if (input.command === 'unzip' || input.command === 'tar') {
                     return realCommands.executeCommandWithArgs(input);
                 }
                 commands.push({ ...input, moduleFileAtCall: (await exists(modulePath(`${MODULE}.module.ts`))) ? await read(modulePath(`${MODULE}.module.ts`)) : null });
@@ -371,16 +371,17 @@ describe('ModulePackageService', () => {
         it('leaves user data and the install record out of the package', async () => {
             const result = await service.exportModulePackage(MODULE, {});
 
-            const entries = execFileSync('unzip', ['-Z1', result.filePath], { encoding: 'utf-8' });
+            const isWindows = process.platform === 'win32';
+            const entries = execFileSync(isWindows ? 'tar' : 'unzip', isWindows ? ['-tf', result.filePath] : ['-Z1', result.filePath], { encoding: 'utf-8' });
             expect(entries).not.toContain('test-scenarios');
             expect(entries).not.toContain('.sldx-installed.json');
             expect(entries).toContain(`${API}/a.ts`);
 
-            const manifest = JSON.parse(execFileSync('unzip', ['-p', result.filePath, 'manifest.json'], { encoding: 'utf-8' }));
+            const manifest = JSON.parse(execFileSync(isWindows ? 'tar' : 'unzip', isWindows ? ['-xf', result.filePath, '-O', 'manifest.json'] : ['-p', result.filePath, 'manifest.json'], { encoding: 'utf-8' }));
             expect(manifest.schemaVersion).toBe('1.1');
             expect(manifest.userData.metadataKeys).toEqual(['testHubApplications']);
 
-            const packaged = JSON.parse(execFileSync('unzip', ['-p', result.filePath, METADATA], { encoding: 'utf-8' }));
+            const packaged = JSON.parse(execFileSync(isWindows ? 'tar' : 'unzip', isWindows ? ['-xf', result.filePath, '-O', METADATA] : ['-p', result.filePath, METADATA], { encoding: 'utf-8' }));
             expect(packaged.testHubApplications).toEqual([]);
             // The project's own file is untouched.
             expect((await metadata()).testHubApplications).toEqual([{ name: 'developers app' }]);
