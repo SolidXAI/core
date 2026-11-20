@@ -17,6 +17,8 @@ import { PermissionMetadataService } from 'src/services/permission-metadata.serv
 import { AuthenticationService } from './authentication.service';
 import { UserRepository } from 'src/repository/user.repository';
 
+const portalAccessTokenTtl = 300;
+
 @Injectable()
 export class ApiKeyService {
     private readonly logger = new Logger(ApiKeyService.name);
@@ -110,6 +112,65 @@ export class ApiKeyService {
             .execute();
     }
 
+    async createPortalSession(rawKey: string) {
+        if (typeof rawKey !== 'string' || !rawKey) {
+            throw new UnauthorizedException();
+        }
+        const key = this.requirePortalKey(await this.apiKeyRepository.findOne({
+            where: { hashedKey: this.hash(rawKey), isActive: true },
+            relations: ['user', 'user.roles'],
+        }));
+        const user = key.user;
+        const remainingSeconds = key.expiresAt
+            ? Math.floor((key.expiresAt.getTime() - Date.now()) / 1000)
+            : portalAccessTokenTtl;
+        const expiresIn = Math.min(remainingSeconds, portalAccessTokenTtl);
+        if (expiresIn <= 0) {
+            throw new UnauthorizedException();
+        }
+        const accessToken = await this.authenticationService.generatePortalAccessToken(user, key.id, expiresIn);
+        this.apiKeyRepository.update(key.id, { lastUsedAt: new Date() }).catch((err) => {
+            this.logger.warn(`Failed to update lastUsedAt for key ${key.id}: ${err.message}`);
+        });
+        return {
+            accessToken,
+            user: {
+                id: user.id,
+                email: user.email,
+                mobile: user.mobile,
+                username: user.username,
+                roles: user.roles.map((role) => role.name),
+            },
+        };
+    }
+
+    async validatePortalSession(keyId: number, userId: number): Promise<ActiveUserData> {
+        if (!Number.isSafeInteger(keyId) || keyId <= 0 || !Number.isSafeInteger(userId) || userId <= 0) {
+            throw new UnauthorizedException();
+        }
+        const key = this.requirePortalKey(await this.apiKeyRepository.findOne({
+            where: { id: keyId, isActive: true, user: { id: userId } },
+            relations: ['user', 'user.roles'],
+        }));
+        const roles = key.user.roles.map((role) => role.name);
+        const permissions = await this.permissionMetadataService.findAllUsingRoles(roles);
+        return {
+            sub: key.user.id,
+            username: key.user.username,
+            email: key.user.email,
+            roles,
+            permissions: permissions.map((permission) => permission.name),
+            portalApiKeyId: keyId,
+        };
+    }
+
+    private requirePortalKey(key: UserApiKey | null): UserApiKey {
+        if (!key?.isActive || !key.user?.active || key.user.forcePasswordChange
+            || (key.expiresAt && key.expiresAt.getTime() <= Date.now())) {
+            throw new UnauthorizedException();
+        }
+        return key;
+    }
 
     async apiKeyMe(apiKey: string) {
 

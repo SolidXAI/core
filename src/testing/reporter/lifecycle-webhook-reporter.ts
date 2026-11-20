@@ -11,7 +11,7 @@ import type {
   StepResultData,
 } from "./lifecycle-events.types";
 import type { OpStep, ScenarioSpec, ScenarioType } from "../contracts/testing-metadata.types";
-import type { StepPhase } from "../contracts/runtime-context.types";
+import type { StepDataUsed, StepPhase } from "../contracts/runtime-context.types";
 import type { ScenarioResult, ScenarioSkipInfo } from "./reporter.types";
 
 /**
@@ -160,6 +160,7 @@ export class LifecycleWebhookReporter extends ConsoleReporter {
     durationMs: number;
     stepPath?: string;
     slowestCallMs?: number;
+    data?: StepDataUsed[];
     setup?: string;
   }): void {
     super.onStepEnd(args);
@@ -169,6 +170,7 @@ export class LifecycleWebhookReporter extends ConsoleReporter {
       name: args.step.name,
       ...(args.stepPath ? { stepPath: args.stepPath } : {}),
       ...(args.slowestCallMs ? { slowestCallMs: args.slowestCallMs } : {}),
+      ...(args.data?.length ? { data: args.data } : {}),
       ...(args.setup ? { setup: args.setup } : {}),
       ok: args.ok,
       durationMs: args.durationMs,

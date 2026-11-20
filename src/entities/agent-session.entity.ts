@@ -7,6 +7,7 @@ import { AgentJob } from './agent-job.entity';
 import { AgentEvent } from './agent-event.entity';
 import { AgentSessionCheckpoint } from './agent-session-checkpoint.entity';
 import { AgentHumanRequest } from './agent-human-request.entity';
+import { AgentBrowserSession } from './agent-browser-session.entity';
 import { getColumnType, getCurrentTimestampDefault } from 'src/helpers/typeorm-db-helper';
 
 @Entity('ss_agent_session')
@@ -63,7 +64,7 @@ export class AgentSession extends CommonEntity {
     totalCost: number = 0;
 
     @Column({ type: "text", nullable: true })
-    error: string;
+    error: string | null;
 
     @Column({ ...getColumnType('datetimeWithTimezone'), default: () => getCurrentTimestampDefault() })
     startedAt: Date = new Date();
@@ -80,6 +81,10 @@ export class AgentSession extends CommonEntity {
     @Column({ type: "varchar", nullable: true })
     fastModelKey: string;
 
+    // Optional reference supplied by the host application to tag this record.
+    @Column({ type: "varchar", nullable: true })
+    hostRefId: string | null;
+
     @OneToMany(() => AgentJob, agentJob => agentJob.session, { cascade: true })
     agentJobs: AgentJob[];
 
@@ -91,5 +96,8 @@ export class AgentSession extends CommonEntity {
 
     @OneToMany(() => AgentHumanRequest, agentHumanRequest => agentHumanRequest.session, { cascade: true })
     agentHumanRequests: AgentHumanRequest[];
+
+    @OneToMany(() => AgentBrowserSession, agentBrowserSession => agentBrowserSession.session, { cascade: true })
+    agentBrowserSessions: AgentBrowserSession[];
 
 }

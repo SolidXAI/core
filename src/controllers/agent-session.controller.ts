@@ -22,10 +22,29 @@ export class AgentSessionController {
   @ApiBearerAuth('jwt')
   @Get('inbox')
   listInbox(@Headers('authorization') authorization: string, @Query('review') review: string,
-            @Query('offset') offset: string) {
+            @Query('offset') offset: string, @Query('limit') limit: string,
+            @Query('agent') agent: string, @Query('hostRefId') hostRefId: string,
+            @Query('sessionId') sessionId: string, @Query('status') status: string,
+            @Query('trigger') trigger: string, @Query('runtime') runtime: string,
+            @Query('startedFrom') startedFrom: string, @Query('startedTo') startedTo: string,
+            @Query('q') search: string, @Query('sort') sort: string) {
     const start = Number(offset);
-    return this.manager.listJobSessions(this.bearer(authorization), review === 'true',
-      Number.isSafeInteger(start) && start > 0 ? start : 0);
+    const pageSize = Number(limit);
+    return this.manager.listJobSessions(this.bearer(authorization), {
+      review: review === 'true',
+      offset: Number.isSafeInteger(start) && start > 0 ? start : 0,
+      limit: Number.isSafeInteger(pageSize) && pageSize > 0 ? Math.min(pageSize, 100) : 25,
+      agent: agent?.trim() || undefined,
+      hostRefId: hostRefId?.trim() || undefined,
+      sessionId: sessionId?.trim() || undefined,
+      status: status?.trim() || undefined,
+      trigger: trigger?.trim() || undefined,
+      runtime: runtime?.trim() || undefined,
+      startedFrom: startedFrom?.trim() || undefined,
+      startedTo: startedTo?.trim() || undefined,
+      search: search?.trim() || undefined,
+      sort: sort?.trim() || undefined,
+    });
   }
 
   @ApiBearerAuth('jwt')

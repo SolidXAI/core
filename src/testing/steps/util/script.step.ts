@@ -29,7 +29,7 @@ const MAX_TIMEOUT_MS = 30_000;
 const WRAP_START = "(function () {\n";
 const WRAP_END = "\n})()";
 // Vocabulary tokens are refused inside a script: there `${...}` is a JavaScript template literal.
-const TOKEN_PREFIXES = ["res:", "env:", "params.", "data:", "data.", "secret:", "random:", "now:"];
+const TOKEN_PREFIXES = ["res:", "env:", "media:", "params.", "data:", "data.", "secret:", "random:", "now:"];
 const OUT_OF_SCOPE = /^(res|params|data|env|secrets?|lastResponse) is not defined$/;
 
 // The sandbox is given only text. An object made outside it would carry the runner's own Function

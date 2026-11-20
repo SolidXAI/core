@@ -1,9 +1,12 @@
+import * as fs from "fs";
+import * as path from "path";
 import type { TestContext } from "../contracts/runtime-context.types";
 import { parsePathSegments } from "./path-segments";
 import { resolveNow } from "./dates";
 import { parseCallToken } from "./call-args";
 import { parseRandomToken, randomDataFor } from "./random-data";
 import { findTokens, splitOutsideQuotes } from "./token-scan";
+import { recordStepData } from "./step-data";
 
 function getByPath(obj: Record<string, any>, path: string): unknown {
   if (!path) return undefined;
@@ -83,6 +86,27 @@ function resolveToken(token: string, ctx: TestContext): TokenResolution {
     // Secrets carry a declared valueType, so a json/number/boolean secret used as an
     // exact token returns typed rather than stringified. Strings behave like env:.
     return { value, raw: typeof value !== "string" };
+  }
+
+  // ${media:name} is a file in the run's media folder, named relative to it: `photo.jpg` or `sub/photo.jpg`.
+  // The folder is TEST_UPLOADS_MEDIA_FILE_PATH, as set by the runner for this run.
+  if (token.startsWith("media:")) {
+    const name = token.slice("media:".length).trim();
+    if (!name) {
+      throw new Error('Invalid interpolation token: "media:"');
+    }
+    if (name.startsWith("/") || name.includes("\\") || name.split("/").some((part) => part === "" || part === "." || part === "..")) {
+      throw new Error(`Invalid media name in "\${${token}}": use a relative name such as photo.jpg`);
+    }
+    const folder = ctx.env?.TEST_UPLOADS_MEDIA_FILE_PATH ?? process.env.TEST_UPLOADS_MEDIA_FILE_PATH;
+    if (!folder) {
+      throw new Error(`No media folder for "\${${token}}": TEST_UPLOADS_MEDIA_FILE_PATH is not set`);
+    }
+    const filePath = path.join(folder, name);
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`Media file "${name}" was not found. Upload it to the application's test media.`);
+    }
+    return { value: filePath, raw: false };
   }
 
   if (token.startsWith("env:")) {
@@ -175,11 +199,15 @@ function applyTransform(value: unknown, name: string, arg: string | undefined): 
 function resolveTokenWithTransforms(token: string, ctx: TestContext): TokenResolution {
   // Split outside quotes, so a quoted `|` in an argument is not a transform.
   const [first, ...transforms] = splitOutsideQuotes(token, "|");
+  const base = first.trim();
   if (!transforms.length) {
-    return resolveToken(token, ctx);
+    const resolved = resolveToken(token, ctx);
+    if (base.startsWith(RANDOM_PREFIX)) recordStepData(ctx, { kind: "random", source: `\${${token}}`, value: resolved.value });
+    return resolved;
   }
-  const resolved = resolveToken(first.trim(), ctx);
+  const resolved = resolveToken(base, ctx);
   let value = resolved.value;
+  let matched = false;
   for (const rawTransform of transforms) {
     const t = rawTransform.trim();
     if (!t) continue;
@@ -187,7 +215,11 @@ function resolveTokenWithTransforms(token: string, ctx: TestContext): TokenResol
     const name = (colon === -1 ? t : t.slice(0, colon)).trim();
     const arg = colon === -1 ? undefined : t.slice(colon + 1).trim();
     value = applyTransform(value, name, arg);
+    if (name === "match") matched = true;
   }
+  // A value taken from a secret stays out of the report, even after a transform.
+  if (base.startsWith(RANDOM_PREFIX)) recordStepData(ctx, { kind: "random", source: `\${${token.trim()}}`, value });
+  else if (matched && !base.startsWith(SECRET_PREFIX)) recordStepData(ctx, { kind: "match", source: `\${${token.trim()}}`, value });
   return { value, raw: false };
 }
 

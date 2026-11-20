@@ -16,6 +16,7 @@ import { ActiveSessionStorageService } from "../services/active-session-storage.
 import { AccessTokenDenylistService } from "../services/access-token-denylist.service";
 import { SettingService } from '../services/setting.service';
 import { createHash } from "crypto";
+import { ApiKeyService } from '../services/api-key.service';
 
 @Injectable()
 export class AccessTokenGuard implements CanActivate {
@@ -25,7 +26,8 @@ export class AccessTokenGuard implements CanActivate {
     private readonly activeSessionStorage: ActiveSessionStorageService,
     private readonly accessTokenDenylist: AccessTokenDenylistService,
     private readonly settingService: SettingService,
-    private readonly cls: ClsService
+    private readonly cls: ClsService,
+    private readonly apiKeyService: ApiKeyService,
   ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -48,6 +50,14 @@ export class AccessTokenGuard implements CanActivate {
         token,
         jwtConfiguration
       );
+
+      // Portal tokens follow the key lifecycle and never occupy a browser login slot.
+      if (payload.portalApiKeyId !== undefined) {
+        const user = await this.apiKeyService.validatePortalSession(payload.portalApiKeyId, payload.sub);
+        request[REQUEST_USER_KEY] = user;
+        this.cls.set(REQUEST_USER_KEY, user);
+        return true;
+      }
 
       // Immediate access-token revocation. Runs BEFORE the concurrent-login
       // check on purpose: rejecting a revoked token first stops it reaching the

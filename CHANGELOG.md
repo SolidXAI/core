@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.1.22-beta.5] - 2026-11-17
+
+### Added
+
+- implement admin embed functionality with SDK and session management
+
+### Fixed
+
+- update admin embed controller to fallback to agent embed UI URL
+- update deployment logic to mark active agents as draft when changes occur
+
+### Other
+
+- a broken restoreFrom fails only its scenario, run video at viewport size, no video or timeline for API scenarios
+- report the random values and match extractions each step used
+- make SolidX Agent Enabled an admin-editable setting
+
 ## [0.1.22-beta.4] - 2026-11-16
 
 ### Added

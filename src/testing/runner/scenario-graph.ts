@@ -19,18 +19,9 @@ export function expandRestoreFrom(scenarios: ScenarioSpec[], resetId?: string): 
   const sources = new Set<string>();
   const expanded = scenarios.map((scenario) => {
     if (scenario.restoreFrom === undefined) return scenario;
-    const source = scenario.restoreFrom;
-    if (typeof source !== "string" || !source.trim()) {
-      throw new Error(`Scenario "${scenario.id}" has an invalid restoreFrom (expected one scenario id)`);
-    }
-    if (source === scenario.id) throw new Error(`Scenario "${scenario.id}" cannot restoreFrom itself`);
-    if (resetId !== undefined && source === resetId) {
-      throw new Error(`Scenario "${scenario.id}" restores from the reset scenario "${source}", which only runs as setup`);
-    }
-    if (!byId.has(source)) throw new Error(`Scenario "${scenario.id}" restores from unknown scenario "${source}"`);
-    if (scenario.session !== undefined && scenario.session !== "restore") {
-      throw new Error(`Scenario "${scenario.id}" has restoreFrom, which means session "restore", but its session is "${String(scenario.session)}"`);
-    }
+    const problem = restoreFromProblem(scenario, byId, resetId);
+    if (problem) throw new Error(problem);
+    const source = scenario.restoreFrom as string;
     sources.add(source);
     const others = dependenciesOf(scenario).filter((id) => id !== source);
     const before = dependenciesOf(scenario);
@@ -38,6 +29,58 @@ export function expandRestoreFrom(scenarios: ScenarioSpec[], resetId?: string): 
     return { ...scenario, dependsOn, session: "restore" as const };
   });
   return expanded.map((scenario) => (sources.has(scenario.id) && !scenario.saveSession ? { ...scenario, saveSession: true } : scenario));
+}
+
+/** What is wrong with a scenario's `restoreFrom`, or undefined when it names another scenario it can restore from. */
+function restoreFromProblem(scenario: ScenarioSpec, byId: Map<string, ScenarioSpec>, resetId?: string): string | undefined {
+  const source = scenario.restoreFrom;
+  if (source === undefined) return undefined;
+  if (typeof source !== "string" || !source.trim()) return `Scenario "${scenario.id}" has an invalid restoreFrom (expected one scenario id)`;
+  if (source === scenario.id) return `Scenario "${scenario.id}" cannot restoreFrom itself`;
+  if (resetId !== undefined && source === resetId) {
+    return `Scenario "${scenario.id}" restores from the reset scenario "${source}", which only runs as setup`;
+  }
+  if (!byId.has(source)) return `Scenario "${scenario.id}" restores from unknown scenario "${source}"`;
+  if (scenario.session !== undefined && scenario.session !== "restore") {
+    return `Scenario "${scenario.id}" has restoreFrom, which means session "restore", but its session is "${String(scenario.session)}"`;
+  }
+  return undefined;
+}
+
+/** A scenario that cannot run in this run: its own reference is broken (`error`), or one it needs cannot run (`blockedBy`). */
+export interface UnrunnableScenario {
+  scenario: ScenarioSpec;
+  error?: string;
+  blockedBy?: string;
+}
+
+/**
+ * Sets aside the scenarios whose `restoreFrom` or `dependsOn` cannot be met — one naming a scenario that does not exist,
+ * itself, or the reset scenario — and, transitively, the scenarios that need them. A mistake in one scenario then fails
+ * that scenario instead of stopping the whole run before anything starts; the rest run as usual.
+ */
+export function splitUnrunnable(scenarios: ScenarioSpec[], resetId?: string): { runnable: ScenarioSpec[]; unrunnable: UnrunnableScenario[] } {
+  const byId = new Map(scenarios.map((s) => [s.id, s]));
+  const unrunnable = new Map<string, UnrunnableScenario>();
+  for (const scenario of scenarios) {
+    const unknownDep = dependenciesOf(scenario).find((id) => !byId.has(id));
+    const error = restoreFromProblem(scenario, byId, resetId)
+      ?? (unknownDep !== undefined ? `Scenario "${scenario.id}" depends on unknown scenario "${unknownDep}"` : undefined);
+    if (error) unrunnable.set(scenario.id, { scenario, error });
+  }
+  for (let grew = unrunnable.size > 0; grew; ) {
+    grew = false;
+    for (const scenario of scenarios) {
+      if (unrunnable.has(scenario.id)) continue;
+      const needs = [...dependenciesOf(scenario), ...(typeof scenario.restoreFrom === "string" ? [scenario.restoreFrom] : [])];
+      const blockedBy = needs.find((id) => unrunnable.has(id));
+      if (blockedBy !== undefined) {
+        unrunnable.set(scenario.id, { scenario, blockedBy });
+        grew = true;
+      }
+    }
+  }
+  return { runnable: scenarios.filter((s) => !unrunnable.has(s.id)), unrunnable: [...unrunnable.values()] };
 }
 
 function dependenciesOf(scenario: ScenarioSpec): string[] {

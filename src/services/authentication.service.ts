@@ -2109,6 +2109,15 @@ export class AuthenticationService {
     };
   }
 
+  async generatePortalAccessToken(user: User, apiKeyId: number, expiresIn: number) {
+    return this.signToken<Partial<ActiveUserData>>(user.id, expiresIn, {
+      username: user.username,
+      email: user.email,
+      roles: user.roles.map((role) => role.name),
+      portalApiKeyId: apiKeyId,
+    });
+  }
+
   async generateAccessToken(user: User, sessionId?: string, deviceKey?: string) {
     // const userRoleNames = user.roles.map((role) => role.name).join(';')
     const userRoleNames = user.roles.map((role) => role.name);
@@ -2832,8 +2841,9 @@ export class AuthenticationService {
     // Get the refresh token for a user from refresh token storage. The bucket
     // is named by the access token's own deviceKey claim; absent for
     // single-slot sessions, which resolves to the same key as before.
-    const refreshTokenState =
-      await this.refreshTokenIdsStorage.getCurrentRefreshTokenState(
+    const refreshTokenState = activeUser.portalApiKeyId
+      ? null
+      : await this.refreshTokenIdsStorage.getCurrentRefreshTokenState(
         user.id,
         activeUser.deviceKey,
       );
@@ -2864,6 +2874,10 @@ export class AuthenticationService {
     activeUser: ActiveUserData,
     rawAccessToken: string,
   ): Promise<{ ssoCode: string }> {
+    if (activeUser.portalApiKeyId) {
+      throw new ForbiddenException('An embedded session cannot create an SSO session');
+    }
+
     const refreshTokenState =
       await this.refreshTokenIdsStorage.getCurrentRefreshTokenState(
         activeUser.sub,

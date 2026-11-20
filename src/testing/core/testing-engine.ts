@@ -165,7 +165,8 @@ export class TestingEngine {
         }
 
         const durationMs = Date.now() - scenarioStart;
-        ctx.ui?.recordScenario({
+        // Only browser scenarios are in the run video: an API scenario shows nothing in it, so it gets no place there.
+        if (scenario.type === "ui") ctx.ui?.recordScenario({
           scenarioId: scenario.id,
           name: scenario.name,
           attempt,
@@ -251,6 +252,7 @@ export class TestingEngine {
     let result: unknown;
 
     ctx.stepPath = stepPath;
+    ctx.stepData = [];
     reporter.onStepStart({ scenarioId: ctx.scenarioId, phase, step, stepPath, ...(setup ? { setup } : {}) });
 
     try {
@@ -277,6 +279,8 @@ export class TestingEngine {
       const durationMs = Date.now() - stepStart;
       // Taken for every mobile step so the figure never carries over; only a slow one is worth reporting.
       const slowestCallMs = ctx.mobile?.takeSlowestCallMs() ?? 0;
+      const data = ctx.stepData ?? [];
+      ctx.stepData = undefined;
       reporter.onStepEnd({
         scenarioId: ctx.scenarioId,
         phase,
@@ -286,6 +290,7 @@ export class TestingEngine {
         durationMs,
         stepPath,
         ...(slowestCallMs >= SLOW_CALL_REPORT_MS ? { slowestCallMs } : {}),
+        ...(data.length ? { data } : {}),
         ...(setup ? { setup } : {}),
       });
     }
