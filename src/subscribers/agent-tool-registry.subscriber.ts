@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import * as fs from 'fs/promises';
+import * as path from 'path';
 import { DataSource, EntityManager, EntitySubscriberInterface, InsertEvent, RemoveEvent, SoftRemoveEvent, UpdateEvent } from 'typeorm';
 import { SOLID_CORE_MODULE_NAME } from 'src/constants';
 import { AgentToolRegistry } from 'src/entities/agent-tool-registry.entity';
@@ -173,12 +174,15 @@ export class AgentToolRegistrySubscriber implements EntitySubscriberInterface<Ag
         }
         const tools = Array.isArray(metadata.agenthubTools) ? metadata.agenthubTools : [];
         const index = tools.findIndex((item: { name: string }) => item.name === tool.name);
+        const moduleRoot = path.dirname(path.dirname(filePath));
+        const sourceDirectory = path.join(moduleRoot, 'agent-hub', 'tools');
+        await fs.mkdir(sourceDirectory, { recursive: true });
+        await fs.writeFile(path.join(sourceDirectory, `${tool.name}.py`), tool.sourceCode ?? '');
         const entry = {
             name: tool.name,
             type: tool.type,
             iconName: tool.iconName,
             description: tool.description,
-            sourceCode: tool.sourceCode,
             checksum: tool.checksum,
             status: tool.status,
             tags: (tool.tags ?? []).map((tag) => tag.name).sort(),
@@ -195,6 +199,7 @@ export class AgentToolRegistrySubscriber implements EntitySubscriberInterface<Ag
     private async removeTool(moduleName: string | undefined, name: string): Promise<void> {
         if (!moduleName || moduleName === SOLID_CORE_MODULE_NAME) return;
         const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(moduleName);
+        const moduleRoot = path.dirname(path.dirname(filePath));
         let metadata: any;
         try {
             this.logger.warn(`METADATA READ START pid=${process.pid} at=${Date.now()} path=${filePath}`);
@@ -202,14 +207,16 @@ export class AgentToolRegistrySubscriber implements EntitySubscriberInterface<Ag
             this.logger.warn(`METADATA READ END pid=${process.pid} at=${Date.now()} path=${filePath}`);
         } catch (error: any) {
             this.logger.error(`Failed to read module metadata at ${filePath}: ${error?.message ?? error}`);
-            return;
         }
-        if (!Array.isArray(metadata.agenthubTools)) return;
-        const tools = metadata.agenthubTools.filter((tool: { name?: string }) => tool.name !== name);
-        if (tools.length === metadata.agenthubTools.length) return;
-        metadata.agenthubTools = tools;
-        this.logger.warn(`METADATA WRITE START pid=${process.pid} at=${Date.now()} path=${filePath}`);
-        await fs.writeFile(filePath, JSON.stringify(metadata, null, 2));
-        this.logger.warn(`METADATA WRITE END pid=${process.pid} at=${Date.now()} path=${filePath}`);
+        if (Array.isArray(metadata?.agenthubTools)) {
+            const tools = metadata.agenthubTools.filter((tool: { name?: string }) => tool.name !== name);
+            if (tools.length !== metadata.agenthubTools.length) {
+                metadata.agenthubTools = tools;
+                this.logger.warn(`METADATA WRITE START pid=${process.pid} at=${Date.now()} path=${filePath}`);
+                await fs.writeFile(filePath, JSON.stringify(metadata, null, 2));
+                this.logger.warn(`METADATA WRITE END pid=${process.pid} at=${Date.now()} path=${filePath}`);
+            }
+        }
+        await fs.rm(path.join(moduleRoot, 'agent-hub', 'tools', `${name}.py`), { force: true });
     }
 }

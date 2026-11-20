@@ -1,4 +1,4 @@
-import { IsInt,IsOptional, IsString, IsNotEmpty, IsJSON, IsDate, ValidateNested, IsArray } from 'class-validator';
+import { IsInt,IsOptional, IsString, IsNotEmpty, IsJSON, IsDate, ValidateNested, IsArray, MaxLength, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { UpdateAgentSessionDto } from './update-agent-session.dto';
@@ -34,6 +34,37 @@ export class UpdateAgentProcessDto {
     @IsInt()
     @ApiProperty()
     pid: number;
+
+    @IsOptional()
+    @IsString()
+    @IsNotEmpty()
+    @ApiProperty({ required: false, nullable: true, type: String })
+    runner?: string | null;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(512)
+    @ApiProperty({ required: false, nullable: true, type: String, maxLength: 512 })
+    runnerRef?: string | null;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ required: false, nullable: true, type: String })
+    runtimeVersion?: string | null;
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
+    @ApiProperty({ required: false, nullable: true, type: Number, minimum: 1 })
+    cpu?: number | null;
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
+    @ApiProperty({ required: false, nullable: true, type: Number, minimum: 1 })
+    memory?: number | null;
 
     @IsNotEmpty()
     @IsOptional()

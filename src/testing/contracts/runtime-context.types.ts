@@ -1,4 +1,5 @@
 import type { ApiAdapter } from "../adapters/api/api-adapter";
+import type { MobileAdapter } from "../adapters/mobile/mobile-adapter";
 import type { PlaywrightAdapter } from "../adapters/ui/playwright-adapter";
 import type { Reporter } from "../reporter/reporter.types";
 import type { SpecRegistry } from "../core/spec-registry";
@@ -27,6 +28,7 @@ export interface TestContext {
   resources: ResourceStore;
   api?: ApiAdapter;
   ui?: PlaywrightAdapter;
+  mobile?: MobileAdapter;
   last?: { apiResponse?: ApiResponse };
   reporter: Reporter;
   specRegistry?: SpecRegistry;
@@ -42,4 +44,42 @@ export interface TestContext {
   options?: {
     printApiLogs?: boolean;
   };
+  /**
+   * Location of the step currently executing, as a path into the scenario
+   * (`steps[3].when`, `steps[5].then[1]`). Heal reports use it to address the step.
+   */
+  stepPath?: string;
+  /** Values the current step generated or extracted, reported with its result. Reset for every step. */
+  stepData?: StepDataUsed[];
+}
+
+/**
+ * A value a step made up or pulled out while it ran, so a run's results show the data it actually used: a
+ * `${random:...}` token or `util.random` value, or the text a `match` regex extracted (`| match:` or
+ * `ui.storeText`'s `match`). Values from secrets are never recorded.
+ */
+export interface StepDataUsed {
+  kind: "random" | "match";
+  /** What produced it, e.g. `${random:emailAddress}`, `random:firstName`, `match:(\d{6})`. */
+  source: string;
+  value: string;
+  /** The resource name the step saved the value under, when it has one. */
+  saveAs?: string;
+}
+
+/**
+ * A step that passed only because a fallback or fingerprint replaced its selector (UI) or locator (mobile). A mobile heal
+ * names which locator it replaced: the base one, or the override for the platform the run was on.
+ */
+export interface HealEvent {
+  scenarioId: string;
+  stepPath?: string;
+  op: string;
+  stepName?: string;
+  field: "selector" | "locator" | "locator.android" | "locator.ios";
+  /** The selector string (UI), or the `{ by, value, index? }` locator (mobile) that missed. */
+  from: string | Record<string, unknown>;
+  to: string | Record<string, unknown>;
+  strategy: "fallback" | "fingerprint";
+  policy: "report" | "auto";
 }

@@ -27,7 +27,16 @@ export class CreateMediaStorageProviderMetadataDto {
     readonly bucketName: string;
 
     // isPublic
+    // Multipart form posts send "false" as text. Implicit conversion would turn that into true
+    // (any non-empty text is truthy), so read the raw submitted value instead.
     @IsOptional()
+    @Transform(({ obj, key }) => {
+        const raw = obj[key];
+        if (raw === 'true') return true;
+        if (raw === 'false') return false;
+        if (raw === '') return undefined;
+        return raw;
+    })
     @IsBoolean()
     readonly isPublic: boolean;
 

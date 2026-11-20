@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsArray, IsBoolean, IsEnum, IsInt, IsOptional, IsString, Matches, ValidateNested } from "class-validator";
 import { LegacyTableType } from "src/enums/legacy-table-type.enum";
@@ -56,21 +56,25 @@ export class CreateModelMetadataDto {
     @IsString()
     readonly dataSourceType: string;
 
-    @ApiProperty({ description: "Enable Soft Delete" })
+    @ApiPropertyOptional({ description: "Enable Soft Delete" })
+    @IsOptional()
     @IsBoolean()
-    readonly enableSoftDelete: boolean;
+    readonly enableSoftDelete?: boolean;
 
-    @ApiProperty({ description: "Enable Soft Delete" })
+    @ApiPropertyOptional({ description: "Enable Audit Tracking" })
+    @IsOptional()
     @IsBoolean()
-    readonly enableAuditTracking: boolean
+    readonly enableAuditTracking?: boolean
 
-    @ApiProperty({ description: "Internationalisation" })
+    @ApiPropertyOptional({ description: "Internationalisation" })
+    @IsOptional()
     @IsBoolean()
-    readonly internationalisation: boolean
+    readonly internationalisation?: boolean
 
-    @ApiProperty({ description: "Draft publish workflow" })
+    @ApiPropertyOptional({ description: "Draft publish workflow" })
+    @IsOptional()
     @IsBoolean()
-    readonly draftPublishWorkflow: boolean
+    readonly draftPublishWorkflow?: boolean
 
     @ApiProperty({ description: "Related module id" })
     @IsInt()
@@ -96,13 +100,15 @@ export class CreateModelMetadataDto {
     @Type(() => CreateFieldMetadataDto)
     fields: CreateFieldMetadataDto[];
 
-    @ApiProperty({ description: 'System models are not included in the code generation, the assumption being that system models have manually written code.', })
+    @ApiPropertyOptional({ description: 'System models are not included in the code generation, the assumption being that system models have manually written code.' })
+    @IsOptional()
     @IsBoolean()
-    isSystem: boolean;
+    isSystem?: boolean;
 
-    @ApiProperty({ description: 'Child models are not included in the code generation, the assumption being that child models have manually written code.', })
+    @ApiPropertyOptional({ description: 'Child models are not included in the code generation, the assumption being that child models have manually written code.' })
+    @IsOptional()
     @IsBoolean()
-    isChild: boolean;
+    isChild?: boolean;
 
     @ApiProperty({ description: 'Parent model id' })
     @IsInt()

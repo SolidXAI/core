@@ -9,6 +9,7 @@ import {
   IsIn,
   IsInt,
   IsNotIn,
+  IsNumber,
   IsOptional,
   IsString,
   Matches,
@@ -290,12 +291,12 @@ export class CreateFieldMetadataDto {
   index: boolean;
 
   @ApiProperty({ description: 'for text fields, this is length. for numeric fields, this is the range of values allowed. Only for type=shortText,longText,richText,json,int,decimal,date,dateTime,time', })
-  @IsInt()
+  @IsNumber()
   @IsOptional()
   max: number;
 
   @ApiProperty({ description: 'for text fields, this is length. for numeric fields, this is the range of values allowed. Only for type=shortText,longText,richText,json,int,decimal,date,dateTime,time', })
-  @IsInt()
+  @IsNumber()
   @IsOptional()
   min: number;
 
@@ -331,7 +332,7 @@ export class CreateFieldMetadataDto {
   mediaStorageProviderId?: number;
 
   @ApiProperty({ description: 'Configured Media storage provider. Only for type=mediaSingle,mediaMultiple. When you need to specify the storage provider by name.', })
-  @IsInt()
+  @IsString()
   @IsOptional()
   mediaStorageProviderUserKey?: string;
 

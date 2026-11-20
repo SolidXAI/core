@@ -1308,9 +1308,12 @@ export class ModelMetadataService {
       for (let i = 0; i < model.fields.length; i++) {
         const field = model.fields[i];
         if (field.isSystem) continue;
-        listViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}` } })
         formViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}` } })
-        treeViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}` } })
+        // List and tree layouts already include id as their first column.
+        if (field.name !== "id") {
+          listViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}` } })
+          treeViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}` } })
+        }
       }
       this.populateVAMConfigInFileInternal(formViewLayoutFields, model, listViewLayoutFields, treeViewLayoutFields, metaData);
       // Write the updated object back to the file

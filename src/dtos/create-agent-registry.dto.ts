@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
-import { IsNotEmpty, IsJSON, IsInt, IsNumber, ValidateNested, IsArray, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsJSON, IsInt, IsNumber, ValidateNested, IsArray, IsOptional, Min, ValidateIf } from 'class-validator';
 import { Type } from 'class-transformer';
 import { UpdateAgentToolDto } from './update-agent-tool.dto';
 import { UpdateAgentSkillDto } from './update-agent-skill.dto';
@@ -76,6 +76,39 @@ export class CreateAgentRegistryDto {
     @IsInt()
     @ApiProperty({ required: false })
     configVersion?: number;
+
+    @IsOptional()
+    @IsString()
+    @IsNotEmpty()
+    @ApiProperty({ required: false, nullable: true, type: String })
+    runner?: string | null;
+
+    @ValidateIf((_object, value) => value !== undefined)
+    @IsInt()
+    @Min(0)
+    @ApiProperty({ required: false, minimum: 0 })
+    minProcesses?: number;
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
+    @ApiProperty({ required: false, nullable: true, type: Number, minimum: 1 })
+    maxProcesses?: number | null;
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
+    @ApiProperty({ required: false, nullable: true, type: Number, minimum: 1 })
+    processCpu?: number | null;
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
+    @ApiProperty({ required: false, nullable: true, type: Number, minimum: 1 })
+    processMemory?: number | null;
 
     @IsOptional()
     @IsInt()

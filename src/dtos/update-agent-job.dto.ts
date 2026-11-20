@@ -61,6 +61,12 @@ export class UpdateAgentJobDto {
     @ApiProperty()
     leaseExpiresAt: Date;
 
+    @IsOptional()
+    @Type(() => Date)
+    @IsDate()
+    @ApiProperty({ required: false, nullable: true, type: Date })
+    dispatchedAt?: Date | null;
+
     @IsNotEmpty()
     @IsOptional()
     @IsInt()

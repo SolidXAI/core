@@ -1,10 +1,11 @@
 import { randomUUID } from 'crypto';
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { BadRequestException, Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { Auth } from 'src/decorators/auth.decorator';
 import { Public } from 'src/decorators/public.decorator';
 import { AuthType } from 'src/enums/auth-type.enum';
+import { cancelTestRun } from 'src/testing/runner/run-cancellation';
 import { PublisherFactory } from 'src/services/queues/publisher-factory.service';
 import {
   TestRunJobPayload,
@@ -40,5 +41,20 @@ export class TestRunController {
     );
 
     return { runId, jobId, status: 'queued' };
+  }
+
+  /**
+   * Stops a run this process is executing, by the `externalRunId` it was triggered with: the browser (or device
+   * session) is closed and no further scenario starts. `canceled: false` means no such run is being executed
+   * here (it already ended, or it has not been picked up yet).
+   */
+  @Public()
+  @Post('cancel')
+  @HttpCode(HttpStatus.OK)
+  cancel(@Body() body: { externalRunId?: string | number }) {
+    if (body?.externalRunId === undefined || body.externalRunId === null || body.externalRunId === '') {
+      throw new BadRequestException('externalRunId is required');
+    }
+    return { canceled: cancelTestRun(String(body.externalRunId)) };
   }
 }

@@ -31,6 +31,9 @@ export interface ActiveUserData {
    */
   deviceKey?: string;
 
+  /** The API key backing a short-lived admin embed access token. */
+  portalApiKeyId?: number;
+
   /**
    * The subject's (user) roles.
    * These are part of the JWT token, we simply decode them.

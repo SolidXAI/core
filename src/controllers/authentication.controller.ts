@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Logger, Param, ParseIntPipe, Patch, Post, Res, Headers } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Header, HttpCode, HttpStatus, Logger, Param, ParseIntPipe, Patch, Post, Res, Headers } from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ActiveUser } from "../decorators/active-user.decorator";
@@ -31,6 +31,12 @@ export class AuthenticationController {
         private readonly authService: AuthenticationService,
         private readonly apiKeyService: ApiKeyService,
     ) { }
+
+    private requireInteractiveSession(user: ActiveUserData) {
+        if (user?.portalApiKeyId) {
+            throw new ForbiddenException('This operation requires an interactive session');
+        }
+    }
 
     @Public()
     // @SkipThrottle({ login: false, short: true, burst: true, sustained: true }) //Enable the login throttle only
@@ -95,6 +101,7 @@ export class AuthenticationController {
     @ApiBearerAuth("jwt")
     @Post('change-password')
     changePassword(@Body() changePasswordDto: ChangePasswordDto, @ActiveUser() activeUser: ActiveUserData) {
+        this.requireInteractiveSession(activeUser);
         return this.authService.changePassword(changePasswordDto, activeUser);
     }
 
@@ -124,6 +131,7 @@ export class AuthenticationController {
         @Body() dto: CreateApiKeyDto,
         @ActiveUser() activeUser: ActiveUserData,
     ) {
+        this.requireInteractiveSession(activeUser);
         return this.apiKeyService.generate(activeUser.sub, dto);
     }
 
@@ -133,7 +141,9 @@ export class AuthenticationController {
     generateApiKeyForUser(
         @Param('userId', ParseIntPipe) userId: number,
         @Body() dto: CreateApiKeyDto,
+        @ActiveUser() activeUser: ActiveUserData,
     ) {
+        this.requireInteractiveSession(activeUser);
         return this.apiKeyService.generate(userId, dto);
     }
 
@@ -153,6 +163,15 @@ export class AuthenticationController {
     @Get('api-keys/me')
     async apiKeyMe(@Headers('solidx-api-key') apiKey: string) {
         return this.apiKeyService.apiKeyMe(apiKey);
+    }
+
+    @Public()
+    @ApiHeader({ name: 'solidx-api-key', required: true, description: 'API key held by the embedding application server' })
+    @Header('Cache-Control', 'no-store')
+    @HttpCode(HttpStatus.OK)
+    @Post('api-keys/portal-session')
+    createPortalSession(@Headers('solidx-api-key') apiKey: string) {
+        return this.apiKeyService.createPortalSession(apiKey);
     }
 
     @Post('sso/code')

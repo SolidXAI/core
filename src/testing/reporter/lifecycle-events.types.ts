@@ -1,3 +1,4 @@
+import type { HealEvent, StepDataUsed } from "../contracts/runtime-context.types";
 import type { ScenarioType } from "../contracts/testing-metadata.types";
 
 /**
@@ -17,7 +18,8 @@ export type LifecycleEventType =
  * referenced by `storageKey`/`url` to keep webhook payloads small.
  */
 export interface ArtifactRef {
-  kind: "console" | "network" | "screenshot" | "video" | "har" | "api-log";
+  /** `timeline`: where each scenario is in the run video (run-timeline.json). */
+  kind: "console" | "network" | "screenshot" | "video" | "har" | "api-log" | "timeline";
   name: string;
   contentType: string;
   transport: "inline" | "storage";
@@ -34,6 +36,14 @@ export interface StepResultData {
   phase: string;
   operation: string;
   name?: string;
+  /** Position in the scenario file, e.g. `steps[3].when`. */
+  stepPath?: string;
+  /** Mobile only: the longest single device lookup in the step, reported when it was slow (a stalled device). */
+  slowestCallMs?: number;
+  /** Random values the step generated and text its `match` regexes extracted, so the results show the data used. */
+  data?: StepDataUsed[];
+  /** Set for a step that ran as setup for the scenario ("reset", "login"), not as one of its own. */
+  setup?: string;
   ok: boolean;
   durationMs: number;
   error?: string;
@@ -65,11 +75,20 @@ export interface ScenarioEndData {
   scenarioId: string;
   name?: string;
   ok: boolean;
+  /**
+   * Absent from older runners, where `ok` alone decides passed/failed. A skipped
+   * scenario has `ok: false` so a consumer that ignores `status` never counts it as passed.
+   */
+  status?: "passed" | "failed" | "skipped";
+  /** Set when `status` is `skipped`. */
+  skip?: { reason: "dependency_failed"; dependency: string };
   durationMs: number;
   error?: string;
   steps: StepResultData[];
   /** console/network/api-log/screenshot/video for THIS scenario. */
   artifacts: ArtifactRef[];
+  /** Selectors replaced by a fallback or fingerprint while the scenario ran. */
+  heals?: HealEvent[];
 }
 
 export interface RunEndData {
@@ -77,6 +96,7 @@ export interface RunEndData {
   total: number;
   passed: number;
   failed: number;
+  skipped?: number;
   durationMs: number;
   exitCode?: number;
   error?: string;

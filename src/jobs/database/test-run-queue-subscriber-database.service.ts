@@ -8,20 +8,23 @@ import { MqMessageQueueService } from '../../services/mq-message-queue.service';
 import { QueuesModuleOptions } from "../../interfaces";
 import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
 import { PollerService } from 'src/services/poller.service';
+import { toMobileAdapterOptions } from '../../testing/adapters/mobile/run-options';
 import { runFromMetadata } from '../../testing/runner/run-from-metadata';
-import { readScenariosFile } from '../../testing/runner/read-scenarios-file';
+import { registerRunCancellation, releaseRunCancellation } from '../../testing/runner/run-cancellation';
+import { readScenarioFiles, readScenariosFile } from '../../testing/runner/read-scenarios-file';
 import {
   LifecycleWebhookReporter,
   WebhookPostFn,
 } from '../../testing/reporter/lifecycle-webhook-reporter';
 import { FileServiceArtifactSink } from '../../testing/reporter/file-service-artifact-sink';
 import { FILE_SERVICE, IFileService } from '../../services/file/file-service.interface';
+import { FILE_STORAGE_PATH_BUILDER, IStoragePathBuilder } from '../../services/file/storage-path-builder';
 import { TestRunJobPayload } from '../../dtos/test-run-request.dto';
 import { SecretService } from '../../services/secret.service';
 
 /**
  * Executes a queued test run on the worker tier (QUEUES_SERVICE_ROLE=subscriber).
- * Resolves scenarios from `scenariosPath` (read from disk here, at execution time —
+ * Resolves scenarios from `scenarioPaths` (one file per scenario) or `scenariosPath` (read from disk here, at execution time —
  * the worker shares the filesystem with the caller) or from inline `scenarios`, then
  * runs them via {@link runFromMetadata} with a {@link LifecycleWebhookReporter} that
  * streams run.start → scenario.* → run.end to the caller's webhookUrl. A failing TEST
@@ -39,6 +42,7 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
         readonly poller: PollerService,
         private readonly httpService: HttpService,
         @Inject(FILE_SERVICE) private readonly fileService: IFileService,
+        @Inject(FILE_STORAGE_PATH_BUILDER) private readonly pathBuilder: IStoragePathBuilder,
         private readonly secretService: SecretService,
     ) {
         super(mqMessageService, mqMessageQueueService, poller);
@@ -65,8 +69,9 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
 
         // Persist binary artifacts (screenshots, whole-run video) to shared storage via the
         // core FILE_SERVICE (disk by default, S3 when DEFAULT_FILE_SERVICE=s3) instead of
-        // shipping them inline / storing blobs in the DB.
-        const artifactSink = new FileServiceArtifactSink(this.fileService, { prefix: 'testing-hub' });
+        // shipping them inline / storing blobs in the DB. They go where SolidX keeps its media
+        // (the path builder resolves the configured media folder or bucket), not into the working directory.
+        const artifactSink = new FileServiceArtifactSink(this.fileService, { prefix: 'testing-hub', pathBuilder: this.pathBuilder });
 
         const reporter = new LifecycleWebhookReporter({
             webhookUrl: p.webhookUrl,
@@ -79,10 +84,14 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
 
         let scenarios = p.scenarios;
         let data = p.data;
-        if (p.scenariosPath) {
-            const read = readScenariosFile(p.scenariosPath);
+        const scenarioPaths = Array.isArray(p.scenarioPaths) && p.scenarioPaths.length ? p.scenarioPaths : null;
+        if (scenarioPaths || p.scenariosPath) {
+            const source = scenarioPaths ? `${scenarioPaths.length} scenario file(s)` : p.scenariosPath;
+            const read = scenarioPaths ? readScenarioFiles(scenarioPaths) : readScenariosFile(p.scenariosPath);
             if (!read.ok) {
-                const reason = `Scenario file unreadable: ${p.scenariosPath} (${read.error})`;
+                const reason = scenarioPaths
+                    ? `Scenario file unreadable (${read.error})`
+                    : `Scenario file unreadable: ${p.scenariosPath} (${read.error})`;
                 this.testRunLogger.warn(`Test run ${p.runId} — ${reason}`);
                 reporter.onRunStart({ total: 0, startedAt: new Date().toISOString(), scenarioIds: [] });
                 await reporter.flushPending(1, reason);
@@ -90,12 +99,20 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
             }
             scenarios = read.scenarios;
             data = read.data ?? data;
-            this.testRunLogger.debug(`Test run ${p.runId} loaded ${scenarios.length} scenario(s) from ${p.scenariosPath}`);
+            this.testRunLogger.debug(`Test run ${p.runId} loaded ${scenarios.length} scenario(s) from ${source}`);
         }
 
         let exitCode = 0;
+        // Why the run ended early, when it did. A failed scenario is reported by its own events, but a refusal before any
+        // scenario starts (a device that is not ready, a scenario that cannot run on it) has no scenario to carry the
+        // reason, so it goes out on run.end.
+        let failureReason: string | undefined;
+        // A caller that knows this run by its externalRunId can cancel it (POST /test-runs/cancel).
+        const cancelKey = p.externalRunId ? String(p.externalRunId) : undefined;
+        const signal = cancelKey ? registerRunCancellation(cancelKey) : undefined;
         try {
             await runFromMetadata({
+                signal,
                 scenarios,
                 data,
                 includeTags: p.includeTags,
@@ -104,7 +121,8 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
                 reporter,
                 env: p.variables,
                 api: { baseUrl: p.baseUrl },
-                ui: { baseUrl: p.uiBaseUrl, headless: p.headless ?? true, capture: p.capture, recordVideo: p.recordVideo ?? true },
+                ui: { baseUrl: p.uiBaseUrl, headless: p.headless ?? true, capture: p.capture, recordVideo: p.recordVideo ?? true, healing: p.healing, viewport: p.viewport },
+                mobile: p.mobile ? toMobileAdapterOptions(p.mobile, { recordVideo: p.recordVideo, capture: p.capture, healing: p.healing }) : undefined,
                 options: { printApiLogs: p.printApiLogs ?? true },
                 failFast: p.failFast,
                 externalRunId: p.externalRunId,
@@ -113,9 +131,11 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
         } catch (err: any) {
             // A failed scenario is surfaced via the run.end webhook, not as a job failure.
             exitCode = 1;
-            this.testRunLogger.warn(`Test run ${p.runId} completed with failures: ${err?.message ?? err}`);
+            failureReason = String(err?.message ?? err);
+            this.testRunLogger.warn(`Test run ${p.runId} completed with failures: ${failureReason}`);
         } finally {
-            await reporter.flushPending(exitCode);
+            if (cancelKey) releaseRunCancellation(cancelKey);
+            await reporter.flushPending(exitCode, failureReason);
         }
 
         return { runId: p.runId, exitCode };

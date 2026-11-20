@@ -2,7 +2,7 @@ import * as readline from "readline";
 import type { StepPhase } from "../contracts/runtime-context.types";
 import type { OpStep, ScenarioSpec } from "../contracts/testing-metadata.types";
 import type { SolidTestSpecResult } from "../contracts/test-spec.types";
-import type { Reporter } from "./reporter.types";
+import type { Reporter, RunEndArgs, ScenarioResult, ScenarioSkipInfo } from "./reporter.types";
 
 type RunStartArgs = Parameters<NonNullable<Reporter["onRunStart"]>>[0];
 
@@ -43,7 +43,7 @@ export class ProgressReporter implements Reporter {
 
   onScenarioEnd(
     scenario: ScenarioSpec,
-    result: { ok: boolean; error?: unknown; durationMs: number },
+    result: ScenarioResult,
   ): void {
     this.completed += 1;
     if (result.ok) {
@@ -52,6 +52,11 @@ export class ProgressReporter implements Reporter {
       this.failed += 1;
     }
     this.withFooterPaused(() => this.delegate.onScenarioEnd(scenario, result));
+  }
+
+  onScenarioSkipped(scenario: ScenarioSpec, info: ScenarioSkipInfo): void {
+    this.completed += 1;
+    this.withFooterPaused(() => this.delegate.onScenarioSkipped?.(scenario, info));
   }
 
   onStepStart(args: {
@@ -91,14 +96,8 @@ export class ProgressReporter implements Reporter {
     this.withFooterPaused(() => this.delegate.attach?.(args));
   }
 
-  onRunEnd(args: {
-    ok: boolean;
-    total: number;
-    passed: number;
-    failed: number;
-    durationMs: number;
-  }): void {
-    this.completed = args.passed + args.failed;
+  onRunEnd(args: RunEndArgs): void {
+    this.completed = args.passed + args.failed + (args.skipped ?? 0);
     this.passed = args.passed;
     this.failed = args.failed;
     this.total = args.total;

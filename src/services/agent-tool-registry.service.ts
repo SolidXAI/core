@@ -43,18 +43,18 @@ export class AgentToolRegistryService extends AgentConfigCatalogService<AgentToo
 
   private lifecycleRunner(): { python: string; runtimeRoot: string; sourceRoot?: string } {
     const binary = process.platform === 'win32' ? 'python.exe' : 'python';
-    const configuredSourceRoot = process.env.SOLIDX_AGENTHUB_RUNTIME_PATH;
+    const configuredSourceRoot = process.env.AGENT_HUB_RUNTIME_PATH;
     const sourceRoot = configuredSourceRoot
       && existsSync(join(configuredSourceRoot, 'src', 'agenthub', 'tools', 'tool_lifecycle_check.py'))
       ? configuredSourceRoot
       : undefined;
     const solidxVenv = { root: join(homedir(), '.solidx', 'agenthub-venv'), sourceRoot };
-    const localVenv = process.env.SOLIDX_AGENTHUB_RUNTIME_PATH
-      ? { root: join(process.env.SOLIDX_AGENTHUB_RUNTIME_PATH, '.venv'), sourceRoot }
+    const localVenv = process.env.AGENT_HUB_RUNTIME_PATH
+      ? { root: join(process.env.AGENT_HUB_RUNTIME_PATH, '.venv'), sourceRoot }
       : undefined;
-    const preference = process.env.SOLIDX_AGENTHUB_RUNTIME_PREFERENCE?.trim().toLowerCase() || 'solidx';
+    const preference = process.env.AGENT_HUB_RUNTIME_PREFERENCE?.trim().toLowerCase() || 'solidx';
     if (preference !== 'solidx' && preference !== 'local') {
-      throw new ServiceUnavailableException('SOLIDX_AGENTHUB_RUNTIME_PREFERENCE must be "solidx" or "local".');
+      throw new ServiceUnavailableException('AGENT_HUB_RUNTIME_PREFERENCE must be "solidx" or "local".');
     }
     const candidates = (preference === 'local' ? [localVenv, solidxVenv] : [solidxVenv, localVenv])
       .filter((candidate): candidate is NonNullable<typeof candidate> => candidate !== undefined);

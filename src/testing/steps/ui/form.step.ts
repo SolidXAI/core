@@ -3,14 +3,11 @@ import * as path from "path";
 import type { TestContext } from "../../contracts/runtime-context.types";
 import type { OpStep } from "../../contracts/testing-metadata.types";
 import { StepRegistry } from "../../core/step-registry";
+import { resolveTarget, type TargetInput } from "../../adapters/ui/resolve-target";
 
-type FillInput = { selector: string; value: string; timeoutMs?: number };
-type SelectInput = { selector: string; value: string; timeoutMs?: number };
-type UploadFileInput = {
-  selector: string;
-  filePath: string | string[];
-  timeoutMs?: number;
-};
+type FillInput = TargetInput & { value: string };
+type SelectInput = TargetInput & { value: string };
+type UploadFileInput = TargetInput & { filePath: string | string[] };
 
 function requirePage(ctx: TestContext, op: string) {
   if (!ctx.ui || !ctx.ui.page) {
@@ -29,7 +26,8 @@ export function registerFormSteps(registry: StepRegistry): void {
     if (input.value === undefined) {
       throw new Error('Missing "value" in step.with for op "ui.fill"');
     }
-    await page.fill(input.selector, String(input.value), {
+    const selector = await resolveTarget(ctx, step, input);
+    await page.fill(selector, String(input.value), {
       timeout: ctx.ui?.resolveTimeout(input.timeoutMs),
     });
   });
@@ -43,7 +41,8 @@ export function registerFormSteps(registry: StepRegistry): void {
     if (input.value === undefined) {
       throw new Error('Missing "value" in step.with for op "ui.select"');
     }
-    await page.selectOption(input.selector, String(input.value), {
+    const selector = await resolveTarget(ctx, step, input);
+    await page.selectOption(selector, String(input.value), {
       timeout: ctx.ui?.resolveTimeout(input.timeoutMs),
     });
   });
@@ -61,7 +60,8 @@ export function registerFormSteps(registry: StepRegistry): void {
     const resolved = Array.isArray(input.filePath)
       ? input.filePath.map((p) => path.resolve(cwd, String(p)))
       : path.resolve(cwd, String(input.filePath));
-    await page.setInputFiles(input.selector, resolved, {
+    const selector = await resolveTarget(ctx, step, input);
+    await page.setInputFiles(selector, resolved, {
       timeout: ctx.ui?.resolveTimeout(input.timeoutMs),
     });
   });

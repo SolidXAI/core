@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { DiscoveryService, ModuleRef } from '@nestjs/core';
 import { getDataSourceToken } from '@nestjs/typeorm';
 import { classify } from '../helpers/string.helper';
@@ -22,6 +22,20 @@ import { RoleMetadataService } from 'src/services/role-metadata.service';
 import { UserService } from 'src/services/user.service';
 import { getMediaStorageProvider } from 'src/services/mediaStorageProviders';
 import { TestingDataRecord, TestingRoleSpec, TestingUserSpec } from 'src/testing/contracts/testing-metadata.types';
+
+export interface TestDataSpec {
+  roles?: TestingRoleSpec[];
+  users?: TestingUserSpec[];
+  data?: TestingDataRecord[];
+}
+
+export interface TestDataLoadSummary {
+  rolesProcessed: number;
+  usersProcessed: number;
+  data: { created: number; updated: number; skipped: number };
+}
+
+const isBlank = (value: unknown): boolean => value === undefined || value === null || value === '';
 
 @Injectable()
 export class ModuleTestDataService {
@@ -217,27 +231,61 @@ export class ModuleTestDataService {
       throw new Error('Module metadata missing from test data payload.');
     }
 
-    // console.log(JSON.stringify(moduleMetadata, null, 2));
-
-    const testingRoles: TestingRoleSpec[] = overallMetadata?.testing?.roles ?? [];
-    const testingUsers: TestingUserSpec[] = overallMetadata?.testing?.users ?? [];
-    const testingData: TestingDataRecord[] = overallMetadata?.testing?.data ?? [];
-
-    if (testingRoles.length > 0) {
-      await this.seedTestRoles(testingRoles);
-    }
-    if (testingUsers.length > 0) {
-      await this.seedTestUsers(testingUsers);
-    }
-
-    if (testingData.length === 0) {
-      this.logger.debug(`No test data found for ${moduleMetadata.name}`);
-      return;
-    }
-
     const modelsByName = new Map<string, CreateModelMetadataDto>(
       (moduleMetadata.models ?? []).map((m) => [m.singularName, m]),
     );
+    await this.applyTestingSpec(overallMetadata?.testing ?? {}, modelsByName, this.newLoadSummary());
+  }
+
+  /**
+   * Loads a testing spec (roles, users, data) into the running application.
+   * Used by the test-data endpoint. Model definitions come from the application's own
+   * metadata, so the spec only needs to carry the data. Data records are upserted by
+   * user key, so loading the same spec twice does not create duplicates.
+   */
+  async loadTestData(testing: TestDataSpec): Promise<TestDataLoadSummary> {
+    if (!testing || typeof testing !== 'object') {
+      throw new Error('testing must be an object with optional roles, users and data arrays.');
+    }
+    const testingData = testing.data ?? [];
+    for (const entry of testingData) {
+      if (!entry || typeof entry.modelUserKey !== 'string' || entry.modelUserKey.length === 0) {
+        throw new Error('Every testing.data entry needs a non-empty modelUserKey.');
+      }
+    }
+
+    const modelsByName = await this.loadModelDefinitions(testingData);
+    const summary = this.newLoadSummary();
+    await this.applyTestingSpec(testing, modelsByName, summary);
+    return summary;
+  }
+
+  private newLoadSummary(): TestDataLoadSummary {
+    return { rolesProcessed: 0, usersProcessed: 0, data: { created: 0, updated: 0, skipped: 0 } };
+  }
+
+  private async applyTestingSpec(
+    testing: TestDataSpec,
+    modelsByName: Map<string, CreateModelMetadataDto>,
+    summary: TestDataLoadSummary,
+  ): Promise<void> {
+    const testingRoles: TestingRoleSpec[] = testing?.roles ?? [];
+    const testingUsers: TestingUserSpec[] = testing?.users ?? [];
+    const testingData: TestingDataRecord[] = testing?.data ?? [];
+
+    if (testingRoles.length > 0) {
+      await this.seedTestRoles(testingRoles);
+      summary.rolesProcessed += testingRoles.length;
+    }
+    if (testingUsers.length > 0) {
+      await this.seedTestUsers(testingUsers);
+      summary.usersProcessed += testingUsers.length;
+    }
+
+    if (testingData.length === 0) {
+      this.logger.debug('No test data records to load.');
+      return;
+    }
 
     for (const entry of testingData) {
       const modelUserKey = entry.modelUserKey;
@@ -261,7 +309,7 @@ export class ModuleTestDataService {
           }
 
           const userKeyValue = payload[userKeyProp];
-          if (userKeyValue === null || userKeyValue === undefined || userKeyValue === '') {
+          if (isBlank(userKeyValue)) {
             delete payload[userKeyProp];
             continue;
           }
@@ -313,26 +361,40 @@ export class ModuleTestDataService {
         delete payload[field.name];
       }
 
-      // Upsert entity, capturing the saved result for post-save steps
-      let savedEntity: any;
+      // Upsert by the model's user key, read from data. recUserKeyValue is only the name scenarios use
+      // in ${data:...} lookups, not the stored key, so it is never written to the database.
+      // A record whose data has no user key is skipped, so repeated loads never duplicate it.
       const userKeyField = modelDef.userKeyFieldUserKey;
-      const recordUserKeyValue = entry.recUserKeyValue ?? payload[userKeyField];
-      const recordLabel = `${modelUserKey}.${userKeyField}=${recordUserKeyValue}`;
-      if (userKeyField && payload[userKeyField] !== undefined) {
+      let savedEntity: any;
+      let action: 'created' | 'updated';
+      if (!userKeyField) {
+        this.logger.warn(`Model ${modelUserKey} has no user key field; inserting test record without idempotency.`);
+        savedEntity = await entityRepo.save(entityRepo.create(payload));
+        action = 'created';
+      } else {
+        if (isBlank(payload[userKeyField])) {
+          console.log(`Skipping test data record for ${modelUserKey}: data has no "${userKeyField}" value.`);
+          this.logger.warn(`Skipping test data record for ${modelUserKey}: data has no "${userKeyField}" value.`);
+          summary.data.skipped++;
+          continue;
+        }
+
+        const userKeyValue = payload[userKeyField];
+        const recordLabel = `${modelUserKey}.${userKeyField}=${userKeyValue}`;
         const existing = await entityRepo.findOne({
-          where: { [userKeyField]: payload[userKeyField] },
+          where: { [userKeyField]: userKeyValue },
         });
         if (existing) {
           console.log(`Updating test data record: ${recordLabel}`);
           savedEntity = await entityRepo.save(entityRepo.merge(existing, payload));
+          action = 'updated';
         } else {
           console.log(`Creating test data record: ${recordLabel}`);
           savedEntity = await entityRepo.save(entityRepo.create(payload));
+          action = 'created';
         }
-      } else {
-        console.log(`Creating test data record without user key lookup: ${modelUserKey}`);
-        savedEntity = await entityRepo.save(entityRepo.create(payload));
       }
+      summary.data[action]++;
 
       if (multiRelationPayload.length > 0) {
         await this.seedMultiRelations(savedEntity.id, modelUserKey, multiRelationPayload, modelsByName);
@@ -342,6 +404,60 @@ export class ModuleTestDataService {
         await this.seedEntityMedia(savedEntity.id, modelUserKey, mediaPayload);
       }
     }
+  }
+
+  /**
+   * Resolves model definitions from the application's loaded metadata. Only the models the data
+   * touches are loaded: the models named in the data, plus the co-model of each relation the data
+   * actually sets (`<field>UserKey` / `<field>UserKeys`), which may live in another module.
+   */
+  private async loadModelDefinitions(entries: TestingDataRecord[]): Promise<Map<string, CreateModelMetadataDto>> {
+    const usedKeysByModel = new Map<string, Set<string>>();
+    for (const entry of entries) {
+      const used = usedKeysByModel.get(entry.modelUserKey) ?? new Set<string>();
+      Object.keys(entry.data ?? {}).forEach((key) => used.add(key));
+      usedKeysByModel.set(entry.modelUserKey, used);
+    }
+
+    const defs = new Map<string, CreateModelMetadataDto>();
+    const queue = [...usedKeysByModel.keys()];
+    const modelService = this.modelMetadataService;
+
+    while (queue.length > 0) {
+      const name = queue.shift() as string;
+      if (defs.has(name)) continue;
+
+      let entity: any;
+      try {
+        entity = await modelService.findOneBySingularName(name, {
+          fields: { mediaStorageProvider: true },
+          userKeyField: true,
+        });
+      } catch (error) {
+        if (error instanceof NotFoundException) {
+          throw new Error(`Test data modelUserKey not found in application metadata: ${name}`);
+        }
+        throw error;
+      }
+
+      const def = {
+        singularName: entity.singularName,
+        internationalisation: !!entity.internationalisation,
+        userKeyFieldUserKey: entity.userKeyField?.name,
+        fields: (entity.fields ?? []).map((f: any) => ({ ...f })),
+      } as unknown as CreateModelMetadataDto;
+      defs.set(name, def);
+
+      const used = usedKeysByModel.get(name);
+      for (const field of def.fields as any[]) {
+        if (field.type !== 'relation' || !field.relationCoModelSingularName) continue;
+        if (used?.has(`${field.name}UserKey`) || used?.has(`${field.name}UserKeys`)) {
+          queue.push(field.relationCoModelSingularName);
+        }
+      }
+    }
+
+    return defs;
   }
 
   private async unlinkTestData(overallMetadata: any): Promise<void> {

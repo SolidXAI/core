@@ -81,6 +81,22 @@ export class DiskFileService implements IFileService {
   }
 
   /**
+   * Get size of a file without reading it
+   * @returns null if the file does not exist
+   */
+  async stat(filePath: string): Promise<{ size: number } | null> {
+    try {
+      const stats = await fsPromises.stat(filePath);
+      return { size: stats.size };
+    } catch (error: any) {
+      if (error?.code === 'ENOENT') {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Copy a file from source to destination
    * Automatically creates parent directories if they don't exist
    */

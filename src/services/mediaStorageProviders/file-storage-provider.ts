@@ -9,7 +9,8 @@ import { Readable } from "stream";
 import * as fs from "fs";
 import { SettingService } from "../setting.service";
 import { MediaDownloadUrlService } from "src/services/media-download-url.service";
-import {buildDiskMediaPath,buildMediaRecordCreateInput,buildStoredMediaFileName,resolveMediaIsPublic,} from "src/services/media-storage.utils";
+import { MediaFileStorageService } from "src/services/media-file-storage.service";
+import {buildDiskMediaPath,buildMediaRecordCreateInput,buildStoredMediaFileName,} from "src/services/media-storage.utils";
 
 @Injectable()
 export class FileStorageProvider<T> implements MediaStorageProvider<T> {
@@ -20,7 +21,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         readonly mediaRepository: MediaRepository,
         private readonly settingService: SettingService,
         private readonly mediaDownloadUrlService: MediaDownloadUrlService,
-
+        private readonly mediaFileStorageService: MediaFileStorageService,
     ) { }
 
     async retrieve(entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
@@ -33,11 +34,8 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         // media.forEach(m => {
         // });
         for (const m of media) {
-            const storageProvider = this.resolveMediaStorageProvider(m, mediaFieldMetadata);
-            const isPublic = resolveMediaIsPublic(storageProvider);
-            m['_full_url'] = isPublic === false
-                ? await this.mediaDownloadUrlService.getPrivateUrl(m.id, m.relativeUri, storageProvider)
-                : await this.fileService.getUrl(buildDiskMediaPath(m.relativeUri, this.settingService, storageProvider));
+            m.mediaStorageProviderMetadata = m.mediaStorageProviderMetadata || mediaFieldMetadata?.mediaStorageProvider;
+            m['_full_url'] = await this.mediaDownloadUrlService.buildFullUrl(m);
         }
 
 
@@ -72,7 +70,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         return result;
     }
 
-    async storeStreams(streamPairs: [Readable, string][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
+    async storeStreams(streamPairs: [Readable, string, { mimeType?: string; originalFileName?: string }?][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
         // if (!(entity instanceof CommonEntity)) {
         //     throw new Error("Entity must be an instance of CommonEntity"); //FIXME This needs to be handled through generics. e.g T extends CommonEntity
         // }
@@ -81,6 +79,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         for (const pair of streamPairs) {
             const stream = pair[0];
             const fileName = pair[1];
+            const extraMeta = pair[2];
             const fullPath = buildDiskMediaPath(fileName, this.settingService, storageProvider);
             await this.fileService.writeStream(fullPath, stream);
             const { size: fileSize } = await fs.promises.stat(fullPath);
@@ -88,6 +87,8 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
                 buildMediaRecordCreateInput(this.getEntityId(entity), mediaFieldMetadata, storageProvider, {
                     relativeUri: fileName,
                     fileSize,
+                    mimeType: extraMeta?.mimeType,
+                    originalFileName: extraMeta?.originalFileName,
                 })
             ) as unknown as Media;
             result.push(mediaEntity);
@@ -105,8 +106,9 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         await this.mediaRepository.deleteByEntityIdAndFieldIdAndModelMetadataId(entityId, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
 
         for (const media of existingMedia) {
-            const storageProvider = this.resolveMediaStorageProvider(media, mediaFieldMetadata);
-            await this.fileService.delete(buildDiskMediaPath(media.relativeUri, this.settingService, storageProvider));
+            // A row may live on a different provider type than this class handles, so the shared
+            // service picks disk or S3 from the row's own provider.
+            await this.mediaFileStorageService.deleteFile(media, this.resolveMediaStorageProvider(media, mediaFieldMetadata));
         }
         // existingMedia.forEach(media => {
         // });

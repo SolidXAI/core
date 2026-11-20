@@ -3,6 +3,10 @@ import { BadRequestException, ForbiddenException, forwardRef, Inject, Injectable
 import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { Brackets, EntityManager, EntityMetadata, In } from 'typeorm';
+import { HttpService } from '@nestjs/axios';
+import { ClsService } from 'nestjs-cls';
+import { Readable } from 'stream';
+import { v4 as uuidv4 } from 'uuid';
 
 import { classify } from '@angular-devkit/core/src/utils/strings';
 import { CHATTER_MESSAGE_STATUS, CHATTER_MESSAGE_SUBTYPE, CHATTER_MESSAGE_TYPE, CHATTER_MESSAGE_USER_FIELDS } from 'src/constants/chatter-message.constants';
@@ -11,9 +15,12 @@ import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { MediaFieldCrudManager, SolidMediaType } from 'src/helpers/field-crud-managers/MediaFieldCrudManager';
 import { PostChatterMessageDto } from 'src/dtos/post-chatter-message.dto';
 import { UpdateChatterNoteMessageDto } from 'src/dtos/update-chatter-note-message.dto';
+import { ImportChatterFromOdooDto } from 'src/dtos/import-chatter-from-odoo.dto';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 import { lowerFirst } from 'src/helpers/string.helper';
+import { sanitizeStoredMediaFileName } from 'src/services/media-storage.utils';
 import { ChatterMentionNotificationPayload } from 'src/interfaces/chatter-mention-notification.interface';
+import { OdooChatterImportQueuePayload } from 'src/jobs/rabbitmq/odoo-chatter-import-queue-options';
 import { ChatterMessageDetailsRepository } from 'src/repository/chatter-message-details.repository';
 import { ChatterMessageRepository } from 'src/repository/chatter-message.repository';
 import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
@@ -30,6 +37,23 @@ import { RequestContextService } from './request-context.service';
 import { Logger } from '@nestjs/common';
 import { SolidIntrospectService } from './solid-introspect.service';
 import { PublisherFactory } from './queues/publisher-factory.service';
+
+/** Shape of a Odoo `mail.message` row, as returned by `search_read` - see ODOO_CHATTER_IMPORT_PLAN.md */
+interface OdooMessage {
+    id: number;
+    res_id: number;
+    date: string;
+    author_id?: [number, string];
+    body?: string;
+    tracking_value_ids?: number[];
+    attachment_ids?: number[];
+}
+
+interface OdooAttachmentStream {
+    stream: Readable;
+    mimeType: string;
+    originalFileName: string;
+}
 
 interface ChatterMention {
     username: string;
@@ -71,6 +95,8 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         readonly requestContextService: RequestContextService,
         private readonly modelMetadataHelperService: ModelMetadataHelperService,
         private readonly publisherFactory: PublisherFactory<ChatterMentionNotificationPayload>,
+        private readonly httpService: HttpService,
+        private readonly clsService: ClsService,
     ) {
         super(entityManager, repo, 'chatterMessage', 'solid-core', moduleRef);
     }
@@ -501,6 +527,388 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         }
 
         await this.publishChatterMentionNotifications(savedMessage, model);
+
+        return savedMessage;
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Import chatter history from Odoo - see ODOO_CHATTER_IMPORT_PLAN.md for the full design.
+    // ---------------------------------------------------------------------------------------
+
+    private odooRpcUrl(baseUrl: string, path: string): string {
+        return `${baseUrl.replace(/\/+$/, '')}${path}`;
+    }
+
+    /**
+     * Logs into Odoo once and returns the `session_id` cookie. The password is used here,
+     * synchronously, and never travels any further - only this cookie goes into the queue
+     * payload, so a leaked queue message exposes a revocable 7-day session, not the admin
+     * password itself.
+     */
+    private async odooAuthenticate(baseUrl: string, db: string, login: string, password: string): Promise<string> {
+        const response = await this.httpService.axiosRef.post(
+            this.odooRpcUrl(baseUrl, '/web/session/authenticate'),
+            { jsonrpc: '2.0', method: 'call', params: { db, login, password } },
+            { headers: { 'Content-Type': 'application/json' } },
+        );
+
+        if (response.data?.error) {
+            throw new BadRequestException(`Odoo authentication failed: ${response.data.error.data?.message || response.data.error.message}`);
+        }
+
+        const setCookieHeaders: string[] = response.headers?.['set-cookie'] ?? [];
+        const sessionCookie = setCookieHeaders
+            .map(cookie => cookie.split(';')[0])
+            .find(cookie => cookie.startsWith('session_id='));
+
+        if (!sessionCookie) {
+            throw new BadRequestException('Odoo authentication succeeded but returned no session cookie');
+        }
+
+        return sessionCookie;
+    }
+
+    /** Generic Odoo JSON-RPC read, e.g. `odooCallKw(base, cookie, 'mail.message', 'search_read', [domain, fields], { limit, order })`. */
+    private async odooCallKw<T = any>(
+        baseUrl: string,
+        sessionCookie: string,
+        model: string,
+        method: string,
+        args: any[],
+        kwargs: Record<string, any> = {},
+    ): Promise<T> {
+        const response = await this.httpService.axiosRef.post(
+            this.odooRpcUrl(baseUrl, '/web/dataset/call_kw'),
+            { jsonrpc: '2.0', method: 'call', params: { model, method, args, kwargs } },
+            { headers: { 'Content-Type': 'application/json', Cookie: sessionCookie } },
+        );
+
+        if (response.data?.error) {
+            throw new BadRequestException(`Odoo ${model}.${method} failed: ${response.data.error.data?.message || response.data.error.message}`);
+        }
+
+        return response.data.result;
+    }
+
+    /** Downloads one Odoo attachment via the standard `/web/content/{id}?download=true` convention. */
+    private async odooFetchAttachment(baseUrl: string, sessionCookie: string, attachmentId: number): Promise<OdooAttachmentStream> {
+        const response = await this.httpService.axiosRef.get(
+            this.odooRpcUrl(baseUrl, `/web/content/${attachmentId}?download=true`),
+            { headers: { Cookie: sessionCookie }, responseType: 'stream' },
+        );
+
+        const disposition: string = response.headers?.['content-disposition'] ?? '';
+        const fileNameMatch = disposition.match(/filename="?([^";]+)"?/i);
+
+        return {
+            stream: response.data,
+            mimeType: response.headers?.['content-type'] || 'application/octet-stream',
+            originalFileName: fileNameMatch?.[1] || `odoo-attachment-${attachmentId}`,
+        };
+    }
+
+    /**
+     * Odoo's `mail.tracking.value.field_id` display name is always suffixed with the owning
+     * model's display name, e.g. "Designation (Employees)" - strip that trailing "(...)" since
+     * it's redundant noise in a table that's already scoped to one record.
+     */
+    private stripOdooModelSuffix(label: string): string {
+        return (label || '').replace(/\s*\([^)]*\)\s*$/, '').trim() || label;
+    }
+
+    private escapeHtml(value: any): string {
+        if (value === null || value === undefined || value === false || value === '') {
+            return '—';
+        }
+        return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    /** Minimal safety pass over Odoo's own message HTML - strips script tags / inline event handlers, keeps everything else (links, styling) intact. */
+    private sanitizeOdooBodyHtml(html: string): string {
+        if (!html) {
+            return '';
+        }
+        return html
+            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+            .replace(/\son\w+\s*=\s*"[^"]*"/gi, '')
+            .replace(/\son\w+\s*=\s*'[^']*'/gi, '');
+    }
+
+    /** One of `old_value_char|integer|float|text|datetime` is populated on a `mail.tracking.value`, depending on the field's type. */
+    private extractOdooTrackingValue(trackingValue: any, prefix: 'old' | 'new'): any {
+        for (const key of ['char', 'integer', 'float', 'text', 'datetime']) {
+            const value = trackingValue[`${prefix}_value_${key}`];
+            if (value !== false && value !== null && value !== undefined && value !== '') {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private formatOdooDate(odooDate: string): Date {
+        // Odoo returns naive UTC timestamps as "YYYY-MM-DD HH:mm:ss".
+        return new Date(`${odooDate.replace(' ', 'T')}Z`);
+    }
+
+    private buildOdooMessageHtml(message: OdooMessage, trackingValues: any[]): string {
+        const hasTracking = trackingValues && trackingValues.length > 0;
+        const authorName = this.escapeHtml(message.author_id?.[1] || 'Unknown Odoo user');
+        const when = message.date ? this.formatOdooDate(message.date).toLocaleString() : '';
+
+        const parts: string[] = ['<div class="odoo-import-log">'];
+        parts.push(
+            `<div class="odoo-import-log__meta"><strong>Imported from Odoo</strong> — ` +
+            `${hasTracking ? 'Changed' : 'Posted'} by <strong>${authorName}</strong>` +
+            `${when ? ` on <strong>${this.escapeHtml(when)}</strong>` : ''}</div>`,
+        );
+
+        if (hasTracking) {
+            const rows = trackingValues.map(trackingValue => {
+                const label = this.escapeHtml(this.stripOdooModelSuffix(trackingValue.field_id?.[1] || trackingValue.display_name || 'Field'));
+                const oldValue = this.escapeHtml(this.extractOdooTrackingValue(trackingValue, 'old'));
+                const newValue = this.escapeHtml(this.extractOdooTrackingValue(trackingValue, 'new'));
+                return `<tr><td>${label}</td><td>${oldValue}</td><td>${newValue}</td></tr>`;
+            }).join('');
+            parts.push(
+                `<table class="odoo-import-log__table" border="1" cellpadding="4" cellspacing="0">` +
+                `<thead><tr><th>Field</th><th>Previous Value</th><th>Changed Value</th></tr></thead>` +
+                `<tbody>${rows}</tbody></table>`,
+            );
+        }
+
+        if (message.body && message.body.trim()) {
+            parts.push(`<div class="odoo-import-log__note">${this.sanitizeOdooBodyHtml(message.body)}</div>`);
+        }
+
+        parts.push('</div>');
+        return parts.join('');
+    }
+
+    /**
+     * Fixed system user id attributed as `createdBy`/`updatedBy` on every imported message
+     * (the real Odoo author is rendered as text inside the HTML instead - see buildOdooMessageHtml -
+     * since that Odoo user will usually not exist as a SolidX `User`). Override via
+     * ODOO_IMPORT_SYSTEM_USER_ID if user id 1 isn't the right system/admin account to attribute to.
+     */
+    private getOdooImportSystemUserId(): number {
+        const envUserId = Number(process.env.ODOO_IMPORT_SYSTEM_USER_ID);
+        return Number.isInteger(envUserId) && envUserId > 0 ? envUserId : 1;
+    }
+
+    /**
+     * `POST /chatter-message/importFromOdoo` - authenticates against Odoo once (synchronously,
+     * so the password never travels through the queue), then hands off the actual import to a
+     * RabbitMQ job so the HTTP caller isn't blocked on it.
+     */
+    async importFromOdoo(dto: ImportChatterFromOdooDto) {
+        const odooSessionCookie = await this.odooAuthenticate(dto.odooBaseUrl, dto.odooDb, dto.odooLogin, dto.odooPassword);
+
+        const payload: OdooChatterImportQueuePayload = {
+            odooModelName: dto.odooModelName,
+            odooBaseUrl: dto.odooBaseUrl,
+            odooSessionCookie,
+            solidxModelName: lowerFirst(dto.solidxModelName),
+            odooId: dto.odooId,
+            fromDate: dto.fromDate,
+            batchSize: dto.batchSize ?? 100,
+        };
+
+        // `publisherFactory` is injected as `PublisherFactory<ChatterMentionNotificationPayload>`
+        // above, but NestJS resolves it by class token regardless of the generic parameter (TS
+        // generics don't exist at runtime) - it's the same singleton either way, so this cast is
+        // safe rather than adding a second constructor dependency for the same provider.
+        await this.publisherFactory.publish({ payload } as any, 'OdooChatterImportQueuePublisher');
+
+        return { message: 'Odoo chatter import started' };
+    }
+
+    /**
+     * Fetches one page of SolidX `coModelName` records to import chatter for - either the single
+     * record matching `odooId` (throws if it doesn't exist - an explicit single-record request
+     * should fail loudly) or a page of every record with a non-null `odooId`.
+     */
+    private async fetchSolidxRecordsToImport(
+        coModelName: string,
+        odooId: number | undefined,
+        offset: number,
+        limit: number,
+    ): Promise<{ id: number; odooId: number }[]> {
+        const coModelService = this.getCoModelService(coModelName);
+
+        if (odooId !== undefined && odooId !== null) {
+            if (offset > 0) {
+                return []; // single-record mode - nothing more after the first page.
+            }
+            const result = await coModelService.find({ limit: 1, offset: 0, filters: { odooId: { $eq: odooId } } } as any);
+            const record = result?.records?.[0];
+            if (!record) {
+                throw new BadRequestException(`No SolidX "${coModelName}" record found with odooId=${odooId}`);
+            }
+            return [record];
+        }
+
+        const result = await coModelService.find({ limit, offset, filters: { odooId: { $notNull: true } } } as any);
+        return result?.records ?? [];
+    }
+
+    /**
+     * The actual worker, invoked from `OdooChatterImportQueueSubscriberRabbitmq`. Runs entirely
+     * outside an HTTP request, but `CRUDService.find()` (called by `fetchSolidxRecordsToImport`)
+     * unconditionally calls `RequestContextService.setRequestFilter()` -> `ClsService#set`, which
+     * throws ("No CLS context available") unless a CLS context has been established first -
+     * normally done by a request-scoped middleware/guard, which obviously never runs for a queue
+     * job. `clsService.run()` establishes that context manually for the duration of this call.
+     */
+    async runOdooChatterImport(payload: OdooChatterImportQueuePayload) {
+        return this.clsService.run(() => this.runOdooChatterImportInner(payload));
+    }
+
+    private async runOdooChatterImportInner(payload: OdooChatterImportQueuePayload) {
+        const batchSize = payload.batchSize || 100;
+
+        let messagesImported = 0;
+        let messagesSkipped = 0;
+        let recordsFailed = 0;
+        let recordsProcessed = 0;
+        let offset = 0;
+
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            const records = await this.fetchSolidxRecordsToImport(payload.solidxModelName, payload.odooId, offset, batchSize);
+            if (!records.length) {
+                break;
+            }
+            offset += records.length;
+
+            for (const record of records) {
+                recordsProcessed++;
+                try {
+                    const domain: any[] = [['model', '=', payload.odooModelName], ['res_id', '=', record.odooId]];
+                    if (payload.fromDate) {
+                        domain.push(['date', '>=', payload.fromDate]);
+                    }
+
+                    // Odoo's search_read treats limit:0 as "return zero rows", not "no limit" -
+                    // paginate properly instead, same as the outer SolidX record loop.
+                    let messageOffset = 0;
+                    // eslint-disable-next-line no-constant-condition
+                    while (true) {
+                        const messages: OdooMessage[] = await this.odooCallKw(
+                            payload.odooBaseUrl,
+                            payload.odooSessionCookie,
+                            'mail.message',
+                            'search_read',
+                            [domain, ['id', 'res_id', 'date', 'author_id', 'body', 'tracking_value_ids', 'attachment_ids']],
+                            { order: 'id asc', limit: batchSize, offset: messageOffset },
+                        );
+
+                        if (!messages || messages.length === 0) {
+                            break;
+                        }
+                        messageOffset += messages.length;
+
+                        for (const message of messages) {
+                            const trackingValues = message.tracking_value_ids?.length
+                                ? await this.odooCallKw(payload.odooBaseUrl, payload.odooSessionCookie, 'mail.tracking.value', 'read', [message.tracking_value_ids])
+                                : [];
+
+                            const attachments: OdooAttachmentStream[] = [];
+                            for (const attachmentId of message.attachment_ids ?? []) {
+                                attachments.push(await this.odooFetchAttachment(payload.odooBaseUrl, payload.odooSessionCookie, attachmentId));
+                            }
+
+                            const imported = await this.importMessageFromOdoo({
+                                coModelName: payload.solidxModelName,
+                                coModelEntityId: record.id,
+                                odooMessageId: message.id,
+                                messageBody: this.buildOdooMessageHtml(message, trackingValues),
+                                createdAt: this.formatOdooDate(message.date),
+                                attachments,
+                            });
+
+                            if (imported) {
+                                messagesImported++;
+                            } else {
+                                messagesSkipped++;
+                            }
+                        }
+                    }
+                } catch (error: any) {
+                    recordsFailed++;
+                    this._logger.error(`Failed importing Odoo chatter for ${payload.solidxModelName} (odooId=${record.odooId}): ${error.message}`, error.stack);
+                }
+            }
+        }
+
+        return { recordsProcessed, messagesImported, messagesSkipped, recordsFailed };
+    }
+
+    /**
+     * Idempotent single-message writer used by the Odoo import job. Unlike `postMessage`, this
+     * is a trusted system operation with no active HTTP user, so it does not call
+     * `assertRecordAccess` - it relies on `odooMessageId` uniqueness (checked here) instead of
+     * a persisted job/checkpoint table for both dedup and resumability; see
+     * `runOdooChatterImport`'s cursor derivation for the resume side of that.
+     */
+    async importMessageFromOdoo(input: {
+        coModelName: string;
+        coModelEntityId: number;
+        odooMessageId: number;
+        messageBody: string;
+        createdAt: Date;
+        attachments: OdooAttachmentStream[];
+    }): Promise<ChatterMessage | null> {
+        const existing = await this.repo.findOne({ where: { odooMessageId: input.odooMessageId } });
+        if (existing) {
+            return null;
+        }
+
+        const chatterMessage = new ChatterMessage();
+        chatterMessage.messageType = CHATTER_MESSAGE_TYPE.CUSTOM;
+        chatterMessage.messageSubType = CHATTER_MESSAGE_SUBTYPE.NOTE;
+        chatterMessage.status = CHATTER_MESSAGE_STATUS.COMPLETED;
+        chatterMessage.messageBody = input.messageBody;
+        chatterMessage.coModelEntityId = input.coModelEntityId;
+        chatterMessage.coModelName = input.coModelName;
+        chatterMessage.odooMessageId = input.odooMessageId;
+        // Backdate both timestamps to the original Odoo message date, not "now" - this is an
+        // import of historical data, so nothing was actually created/updated in SolidX at import
+        // time. createdAt alone isn't enough: @UpdateDateColumn defaults to the current time on
+        // insert just like @CreateDateColumn would if left unset, so updatedAt must be set too or
+        // it silently shows today's date regardless of createdAt being correct.
+        chatterMessage.createdAt = input.createdAt;
+        chatterMessage.updatedAt = input.createdAt;
+
+        const model = await this.modelMetadataRepo.findOne({
+            where: { singularName: input.coModelName },
+            relations: { userKeyField: true, module: true },
+        });
+        chatterMessage.modelDisplayName = model?.displayName ?? null;
+
+        this.stampMessageAuditFields(chatterMessage, this.getOdooImportSystemUserId());
+
+        const savedMessage = await this.repo.save(chatterMessage);
+
+        if (input.attachments?.length) {
+            const chatterModel = await this.modelMetadataService.findOneBySingularName('chatterMessage', {
+                fields: { model: true, mediaStorageProvider: true },
+                module: true,
+            });
+            const mediaField = chatterModel?.fields?.find(field => field.type === 'mediaMultiple' && field.name === 'messageAttachments');
+
+            if (mediaField) {
+                const storageProviderType = mediaField.mediaStorageProvider.type as MediaStorageProviderType;
+                const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
+                const streamPairs: [Readable, string, { mimeType?: string; originalFileName?: string }][] = input.attachments.map(attachment => [
+                    attachment.stream,
+                    `${uuidv4()}-${sanitizeStoredMediaFileName(attachment.originalFileName)}`,
+                    { mimeType: attachment.mimeType, originalFileName: attachment.originalFileName },
+                ]);
+                await storageProvider.storeStreams(streamPairs, savedMessage, mediaField);
+            } else {
+                this._logger.warn(`Could not resolve "messageAttachments" media field on chatterMessage - skipping ${input.attachments.length} Odoo attachment(s) for message ${input.odooMessageId}`);
+            }
+        }
 
         return savedMessage;
     }

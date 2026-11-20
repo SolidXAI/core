@@ -4,6 +4,7 @@ import { registerFormSteps } from "./form.step";
 import { registerActionSteps } from "./actions.step";
 import { registerAssertionSteps } from "./assertions.step";
 import { registerManualSteps } from "./manual.step";
+import { registerAriaSnapshotSteps } from "./aria-snapshot.step";
 
 export function registerUiSteps(registry: StepRegistry): void {
   registerNavigationSteps(registry);
@@ -11,4 +12,5 @@ export function registerUiSteps(registry: StepRegistry): void {
   registerActionSteps(registry);
   registerAssertionSteps(registry);
   registerManualSteps(registry);
+  registerAriaSnapshotSteps(registry);
 }
