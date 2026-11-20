@@ -89,6 +89,11 @@ export class TestRunRequestDto {
   @IsBoolean()
   recordVideo?: boolean;
 
+  /** Which runs keep their whole-run video: "failed" (default) or "always". */
+  @IsOptional()
+  @IsIn(['failed', 'always'])
+  keepVideo?: 'failed' | 'always';
+
   /** Selector healing for UI steps: off | report (default) | auto. */
   @IsOptional()
   @IsIn(['off', 'report', 'auto'])
