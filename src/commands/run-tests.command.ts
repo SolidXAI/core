@@ -138,10 +138,6 @@ export class TestRunCommand extends CommandRunner {
           },
           options: { printApiLogs },
           failFast: options?.failFast,
-          env: {
-            ...(apiBaseUrl ? { BASE_URL: apiBaseUrl } : {}),
-            ...(uiBaseUrl ? { FRONTEND_BASE_URL: uiBaseUrl } : {}),
-          },
           resolveSecrets: (keys) => this.secretService.resolveAvailable(keys),
           specs: specEntries.length
             ? (registry) => loadSpecRegistrations(specEntries, metadataPath, registry)
