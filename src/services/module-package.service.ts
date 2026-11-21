@@ -1414,9 +1414,10 @@ export class ModulePackageService {
     }
 
     private async listArchiveEntries(archiveFilePath: string): Promise<string[]> {
+        const isWindows = process.platform === 'win32';
         const output = await this.commandService.executeCommandWithArgs({
-            command: 'unzip',
-            args: ['-Z1', archiveFilePath],
+            command: isWindows ? 'tar' : 'unzip',
+            args: isWindows ? ['-tf', archiveFilePath] : ['-Z1', archiveFilePath],
         });
 
         return output
@@ -1426,16 +1427,19 @@ export class ModulePackageService {
     }
 
     private async readArchiveEntry(archiveFilePath: string, entryPath: string): Promise<string> {
+        const isWindows = process.platform === 'win32';
+        const normalizedEntry = entryPath.replace(/\\/g, '/');
         return this.commandService.executeCommandWithArgs({
-            command: 'unzip',
-            args: ['-p', archiveFilePath, entryPath],
+            command: isWindows ? 'tar' : 'unzip',
+            args: isWindows ? ['-xf', archiveFilePath, '-O', normalizedEntry] : ['-p', archiveFilePath, normalizedEntry],
         });
     }
 
     private async extractArchive(archiveFilePath: string, extractDirPath: string) {
+        const isWindows = process.platform === 'win32';
         await this.commandService.executeCommandWithArgs({
-            command: 'unzip',
-            args: ['-o', archiveFilePath, '-d', extractDirPath],
+            command: isWindows ? 'tar' : 'unzip',
+            args: isWindows ? ['-xf', archiveFilePath, '-C', extractDirPath] : ['-o', archiveFilePath, '-d', extractDirPath],
         });
     }
 
