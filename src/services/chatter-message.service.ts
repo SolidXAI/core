@@ -1020,7 +1020,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         const changedRelationFields = [];
         if (potentialRelationFields.length > 0) {
-            const metadata = this.entityManager.connection.entityMetadatas.find(m => m.name === modelName);
+            const metadata = this.findEntityMetadata(model, modelName);
             const populatedOldEntity = await this.populateRelationFields(databaseEntity, potentialRelationFields, metadata);
 
             for (const field of potentialRelationFields) {
@@ -1103,7 +1103,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         // Populate relation fields so display values (e.g. names) are resolvable.
         // The related entities themselves still exist in the DB after a delete.
         const relationFields = auditFields.filter(field => field.type === 'relation');
-        const entityMetadata = this.entityManager.connection.entityMetadatas.find(m => m.name === modelName);
+        const entityMetadata = this.findEntityMetadata(model, modelName);
         const populatedEntity = relationFields.length > 0 && entityMetadata
             ? await this.populateRelationFields(databaseEntity, relationFields, entityMetadata)
             : { ...databaseEntity };
@@ -1334,8 +1334,18 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         return value.map(item => this.extractRelationId(item)).filter(id => id !== null);
     }
 
-    private async populateRelationFields(databaseEntity: any, relationFields: any[], metadata: EntityMetadata): Promise<any> {
+    private findEntityMetadata(model: any, modelName: string): EntityMetadata | undefined {
+        const dsName = model?.dataSource || 'default';
+        const em: EntityManager = dsName === 'default' ? this.entityManager : this.moduleRef.get(`${dsName}EntityManager`, { strict: false });
+        return em?.connection.entityMetadatas.find(m => m.name === modelName);
+    }
+
+    private async populateRelationFields(databaseEntity: any, relationFields: any[], metadata: EntityMetadata | undefined): Promise<any> {
         const populatedEntity = { ...databaseEntity };
+        if (!metadata) {
+            return populatedEntity;
+        }
+        const em = metadata.connection.manager;
 
         for (const field of relationFields) {
             const relationValue = databaseEntity[field.name];
@@ -1356,7 +1366,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             if (field.relationType === 'many-to-one') {
                 const relationId = this.extractRelationId(relationValue);
                 if (relationId) {
-                    const relatedEntity = await this.entityManager.findOne(targetEntity as any, {
+                    const relatedEntity = await em.findOne(targetEntity as any, {
                         where: { id: relationId }
                     });
                     populatedEntity[field.name] = relatedEntity;
@@ -1366,7 +1376,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             } else if (field.relationType === 'many-to-many' || field.relationType === 'manyToMany') {
                 const relationIds = this.extractRelationIds(relationValue);
                 if (relationIds.length > 0) {
-                    const relatedEntities = await this.entityManager.findByIds(targetEntity as any, relationIds);
+                    const relatedEntities = await em.findByIds(targetEntity as any, relationIds);
                     populatedEntity[field.name] = relatedEntities;
                 } else {
                     populatedEntity[field.name] = relationValue;
