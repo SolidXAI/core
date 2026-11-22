@@ -6,6 +6,10 @@ import { CRUDService } from './crud.service';
 import { AgentConfigVersion } from '../entities/agent-config-version.entity';
 import { AgentConfigVersionRepository } from '../repository/agent-config-version.repository';
 import { AgentRegistryRepository } from '../repository/agent-registry.repository';
+import { AgentToolRepository } from '../repository/agent-tool.repository';
+import { AgentToolRegistryRepository } from '../repository/agent-tool-registry.repository';
+import { toolLinksAt, toolFieldAt, TOOL_COMPARISON_FIELDS, ToolLinkAudit } from '../helpers/agent-tool-comparison';
+import { AGENT_GENERAL_CONFIG_FIELDS, compareAgentGeneralConfig } from '../helpers/agent-general-config-comparison';
 import { AgentSkillRepository } from '../repository/agent-skill.repository';
 import { AgentSkillRegistryRepository } from '../repository/agent-skill-registry.repository';
 import { ChatterMessageRepository } from '../repository/chatter-message.repository';
@@ -28,7 +32,7 @@ export class AgentConfigVersionRecordService extends CRUDService<AgentConfigVers
             throw new BadRequestException('Provide a positive agent ID and two different config-version IDs.');
         }
         const activeUser = this.moduleRef.get(RequestContextService, { strict: false }).getActiveUser();
-        const models = ['agentRegistry', 'agentConfigVersion', 'agentSkill', 'agentSkillRegistry', 'chatterMessage', 'chatterMessageDetails'];
+        const models = ['agentRegistry', 'agentConfigVersion', 'agentSkill', 'agentSkillRegistry', 'agentTool', 'agentToolRegistry', 'chatterMessage', 'chatterMessageDetails'];
         if (!activeUser || models.some((model) => !this.crudHelperService.hasReadPermissionOnModel(activeUser, model))) {
             throw new ForbiddenException('You do not have permission to compare these configurations.');
         }
@@ -41,7 +45,8 @@ export class AgentConfigVersionRecordService extends CRUDService<AgentConfigVers
                 order: { createdAt: 'ASC', id: 'ASC' },
             }),
             this.moduleRef.get(AgentRegistryRepository, { strict: false }).findOne({
-                where: { id: agentId }, select: { id: true, name: true, title: true, reasoningModelKey: true, fastModelKey: true },
+                where: { id: agentId }, select: { id: true, reasoningModelKey: true, fastModelKey: true,
+                    ...Object.fromEntries(Object.keys(AGENT_GENERAL_CONFIG_FIELDS).map((field) => [field, true])) },
             }),
         ]);
         if (!agent || versions.length !== 2) {
@@ -49,19 +54,20 @@ export class AgentConfigVersionRecordService extends CRUDService<AgentConfigVers
         }
         const [older, newer] = versions;
 
-        // 3. Fetch prompt changes in the range and model history, oldest first.
-        // Model history outside the range resolves values for historical versions.
+        // 3. Fetch prompt changes in the range and configuration history, oldest first.
+        // History outside the range resolves values for historical versions.
         // Prompt values are reserved for the actual-diff endpoint.
         const chatter = this.moduleRef.get(ChatterMessageRepository, { strict: false });
         const query = await chatter.createSecurityRuleAwareQueryBuilder('entity');
-        const fields = ['systemPrompt', 'reasoningModelKey', 'fastModelKey'];
+        const historicalFields = ['reasoningModelKey', 'fastModelKey', ...Object.keys(AGENT_GENERAL_CONFIG_FIELDS)];
+        const fields = ['systemPrompt', ...historicalFields];
         const agentRegistryEntries = await query.innerJoin('entity.chatterMessageDetails', 'detail')
             .andWhere('entity.messageType = :messageType', { messageType: 'audit' })
             .andWhere('entity.coModelName = :modelName', { modelName: 'agentRegistry' })
             .andWhere('entity.coModelEntityId = :agentId', { agentId })
             .andWhere('detail.fieldName IN (:...fields)', { fields })
             .andWhere(new Brackets((where) => {
-                where.where('detail.fieldName IN (:...modelFields)', { modelFields: ['reasoningModelKey', 'fastModelKey'] })
+                where.where('detail.fieldName IN (:...historicalFields)', { historicalFields })
                     .orWhere("detail.fieldName = 'systemPrompt' AND entity.createdAt > :start AND entity.createdAt <= :end");
             }))
             .setParameters({ start: LocalDateTimeTransformer.to(older.createdAt), end: LocalDateTimeTransformer.to(newer.createdAt) })
@@ -76,7 +82,7 @@ export class AgentConfigVersionRecordService extends CRUDService<AgentConfigVers
             .getRawMany();
 
         // 4. Group entries and identify whether the persona changed in the window.
-        const agentRegistryChanges = { systemPrompt: [], reasoningModelKey: [], fastModelKey: [] };
+        const agentRegistryChanges: Record<string, any[]> = Object.fromEntries(fields.map((field) => [field, []]));
         for (const entry of agentRegistryEntries) {
             agentRegistryChanges[entry.fieldName].push({
                 ...entry,
@@ -225,6 +231,8 @@ export class AgentConfigVersionRecordService extends CRUDService<AgentConfigVers
             });
         }
 
+        const toolRows = await this.getToolComparison(agentId, older.createdAt, newer.createdAt);
+
         // 11. Return the UI contract without loading persona or skill content.
         const headers = versions.map((version) => ({ id: version.id, versionNumber: version.versionNumber,
             name: version.name ?? null, description: version.description ?? null, createdAt: version.createdAt.toISOString() }));
@@ -235,20 +243,117 @@ export class AgentConfigVersionRecordService extends CRUDService<AgentConfigVers
                     left: { label: 'System prompt', summary: promptChanged ? 'Previous instructions' : 'No recorded changes' },
                     right: { label: 'System prompt', summary: promptChanged ? 'Updated instructions' : 'No recorded changes' } },
                 skills: { title: 'Skills', status: skillRows.some((row) => row.status !== 'matched') ? 'changed' : 'matched', rows: skillRows },
+                tools: { title: 'Tools', status: toolRows.some((row) => row.status !== 'matched') ? 'changed' : 'matched', rows: toolRows },
+                generalConfiguration: compareAgentGeneralConfig(agent as unknown as Record<string, unknown>,
+                    Object.values(agentRegistryChanges).flat(), older.createdAt, newer.createdAt),
                 modelConfiguration: { title: 'Model configuration', status: groups.some((group) => group.status === 'changed') ? 'changed' : 'matched', groups },
             },
         };
     }
 
+    private async getToolComparison(agentId: number, older: Date, newer: Date) {
+        const chatter = this.moduleRef.get(ChatterMessageRepository, { strict: false });
+        const links = await this.moduleRef.get(AgentToolRepository, { strict: false }).find({
+            where: { agentRegistry: { id: agentId } }, withDeleted: true,
+            relations: { agentToolRegistry: true },
+            select: { id: true, createdAt: true, deletedAt: true, requiresApproval: true, agentToolRegistry: { id: true } },
+        });
+        const currentIds = links.map((link) => link.id);
+        const query = await chatter.createSecurityRuleAwareQueryBuilder('entity');
+        query.andWhere('entity.messageType = :messageType', { messageType: 'audit' })
+            .andWhere('entity.coModelName = :modelName', { modelName: 'agentTool' });
+        // Include historical, deleted and reassigned links, plus updates without a user key.
+        const identities = query.clone().leftJoin('entity.chatterMessageDetails', 'identityDetail')
+            .select('entity.coModelEntityId').distinct(true)
+            .andWhere(new Brackets((where) => {
+                where.where('entity.modelUserKey LIKE :agentKey')
+                    .orWhere("identityDetail.fieldName = 'agentToolKey' AND (identityDetail.oldValue LIKE :agentKey OR identityDetail.newValue LIKE :agentKey)")
+                    .orWhere("identityDetail.fieldName = 'agentRegistry' AND (identityDetail.oldValue = :agentValue OR identityDetail.newValue = :agentValue)");
+                if (currentIds.length) where.orWhere('entity.coModelEntityId IN (:...currentIds)', { currentIds });
+            })).setParameters({ agentKey: `${agentId}:%`, agentValue: String(agentId) });
+        const raw = await query.leftJoin('entity.chatterMessageDetails', 'detail')
+            .andWhere(`entity.coModelEntityId IN (${identities.getQuery()})`).setParameters(identities.getParameters())
+            .select('entity.id', 'messageId').addSelect('entity.coModelEntityId', 'linkId')
+            .addSelect('entity.messageSubType', 'eventType').addSelect('entity.modelUserKey', 'key')
+            .addSelect('entity.createdAt', 'createdAt').addSelect('detail.fieldName', 'fieldName')
+            .addSelect('detail.oldValue', 'oldValue').addSelect('detail.newValue', 'newValue')
+            .orderBy('entity.createdAt', 'ASC').addOrderBy('entity.id', 'ASC').addOrderBy('detail.id', 'ASC').getRawMany();
+        const entries: ToolLinkAudit[] = raw.map((entry) => ({ ...entry, messageId: Number(entry.messageId), linkId: Number(entry.linkId), createdAt: LocalDateTimeTransformer.from(entry.createdAt) }));
+        const current = links.map((link) => ({ ...link, agentId, toolId: link.agentToolRegistry.id }));
+        const left = toolLinksAt(agentId, older, current, entries);
+        const right = toolLinksAt(agentId, newer, current, entries);
+        const ids = [...new Set([...left.keys(), ...right.keys()])].sort((a, b) => a - b);
+        if (!ids.length) return [];
+        const catalog = await this.moduleRef.get(AgentToolRegistryRepository, { strict: false }).find({
+            where: { id: In(ids) }, withDeleted: true, select: { id: true, name: true },
+        });
+        const catalogQuery = await chatter.createSecurityRuleAwareQueryBuilder('entity');
+        // Only names are loaded here; source and other values are fetched on demand.
+        const changes = await catalogQuery.innerJoin('entity.chatterMessageDetails', 'detail')
+            .andWhere('entity.messageType = :messageType', { messageType: 'audit' })
+            .andWhere('entity.coModelName = :modelName', { modelName: 'agentToolRegistry' })
+            .andWhere('entity.coModelEntityId IN (:...ids)', { ids })
+            .andWhere('detail.fieldName IN (:...fields)', { fields: Object.keys(TOOL_COMPARISON_FIELDS) })
+            .select('entity.coModelEntityId', 'toolId').addSelect('entity.createdAt', 'createdAt')
+            .addSelect('detail.fieldName', 'fieldName')
+            .addSelect("CASE WHEN detail.fieldName = 'name' THEN detail.oldValue ELSE NULL END", 'oldValue')
+            .addSelect("CASE WHEN detail.fieldName = 'name' THEN detail.newValue ELSE NULL END", 'newValue')
+            .orderBy('entity.createdAt', 'ASC').addOrderBy('entity.id', 'ASC').addOrderBy('detail.id', 'ASC').getRawMany();
+        for (const entry of changes) entry.createdAt = LocalDateTimeTransformer.from(entry.createdAt);
+        return ids.map((id) => {
+            const before = left.get(id), after = right.get(id);
+            const history = changes.filter((entry) => Number(entry.toolId) === id);
+            const changed = history.some((entry) => entry.createdAt > older && entry.createdAt <= newer);
+            const status = !before ? 'added' : !after ? 'removed' : changed || before.requiresApproval !== after.requiresApproval ? 'changed' : 'matched';
+            const sides = [before, after].map((link, index) => link ? {
+                label: toolFieldAt(history, 'name', index === 0 ? older : newer, catalog.find((tool) => tool.id === id)?.name) || `Tool ${id}`,
+                summary: link.requiresApproval ? 'Requires approval' : 'No approval required',
+            } : null);
+            return { id: String(id), status, diffKey: status === 'matched' ? null : `tool:${id}`, left: sides[0], right: sides[1] };
+        });
+    }
+
     async getComparisonDiff(agentId: number, leftVersionId: number, rightVersionId: number, diffKey = 'systemPrompt') {
         const skillId = /^skill:[1-9]\d*$/.test(diffKey) ? Number(diffKey.slice(6)) : null;
-        if (diffKey !== 'systemPrompt' && (!Number.isSafeInteger(skillId) || skillId <= 0)) {
-            throw new BadRequestException('Provide systemPrompt or a skill:<id> diff key.');
+        const toolId = /^tool:[1-9]\d*$/.test(diffKey) ? Number(diffKey.slice(5)) : null;
+        if (diffKey !== 'systemPrompt' && ![skillId, toolId].some((id) => Number.isSafeInteger(id) && id > 0)) {
+            throw new BadRequestException('Provide systemPrompt, skill:<id>, or tool:<id> as the diff key.');
         }
 
         // 1. Reuse the same access checks, version ownership and date ordering.
         const comparison = await this.getComparison(agentId, leftVersionId, rightVersionId);
         const { left, right } = comparison.versions;
+
+        if (toolId !== null) {
+            const row = comparison.sections.tools.rows.find((item) => item.id === String(toolId));
+            if (!row || row.status === 'matched') throw new NotFoundException('There are no recorded changes for this tool in the comparison.');
+            const query = await this.moduleRef.get(ChatterMessageRepository, { strict: false }).createSecurityRuleAwareQueryBuilder('entity');
+            const [rawEntries, tool] = await Promise.all([
+                query.innerJoin('entity.chatterMessageDetails', 'detail')
+                    .andWhere('entity.messageType = :messageType', { messageType: 'audit' })
+                    .andWhere('entity.coModelName = :modelName', { modelName: 'agentToolRegistry' })
+                    .andWhere('entity.coModelEntityId = :toolId', { toolId })
+                    .andWhere('detail.fieldName IN (:...fields)', { fields: Object.keys(TOOL_COMPARISON_FIELDS) })
+                    .select('entity.createdAt', 'createdAt').addSelect('detail.fieldName', 'fieldName')
+                    .addSelect('detail.oldValue', 'oldValue').addSelect('detail.newValue', 'newValue')
+                    .orderBy('entity.createdAt', 'ASC').addOrderBy('entity.id', 'ASC').addOrderBy('detail.id', 'ASC').getRawMany(),
+                this.moduleRef.get(AgentToolRegistryRepository, { strict: false }).findOne({
+                    where: { id: toolId }, withDeleted: true, relations: { module: true, tags: true },
+                }),
+            ]);
+            if (!tool && !rawEntries.length) throw new NotFoundException('The historical configuration for this tool is unavailable.');
+            const entries = rawEntries.map((entry) => ({ ...entry, createdAt: LocalDateTimeTransformer.from(entry.createdAt) }));
+            const settings = [row.left, row.right].map((side) => side ? String(side.summary === 'Requires approval') : '');
+            const rows = [{ id: 'requiresApproval', title: 'Requires approval', oldValue: settings[0], newValue: settings[1] }];
+            for (const [field, title] of Object.entries(TOOL_COMPARISON_FIELDS)) {
+                const fallback = field === 'module' ? tool?.module?.id : field === 'tags' ? tool?.tags?.map((tag) => tag.id).join(', ') : tool?.[field];
+                const values = [left, right].map((version, index) => (index === 0 ? row.left : row.right)
+                    ? toolFieldAt(entries, field, new Date(version.createdAt), fallback) : '');
+                const changed = entries.some((entry) => entry.fieldName === field && entry.createdAt > new Date(left.createdAt) && entry.createdAt <= new Date(right.createdAt));
+                if (changed || values[0] !== values[1]) rows.push({ id: field, title, oldValue: values[0], newValue: values[1] });
+            }
+            return { diffKey, title: row.right?.label || row.left?.label || `Tool ${toolId}`, language: 'text', oldValue: '', newValue: '', rows };
+        }
 
         if (skillId !== null) {
             // 2. Only expose skills included in this comparison with recorded changes.
