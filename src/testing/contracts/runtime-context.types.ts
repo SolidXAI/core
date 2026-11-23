@@ -49,6 +49,8 @@ export interface TestContext {
    * (`steps[3].when`, `steps[5].then[1]`). Heal reports use it to address the step.
    */
   stepPath?: string;
+  /** Owner heals are attributed to when it differs from `scenarioId`: `setup:<id>` for a setup's ready check steps. */
+  healOwnerId?: string;
   /** Values the current step generated or extracted, reported with its result. Reset for every step. */
   stepData?: StepDataUsed[];
 }

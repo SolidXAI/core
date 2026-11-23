@@ -305,6 +305,155 @@ describe("runIndependent: validation, order and dispatch", () => {
   });
 });
 
+describe("runIndependent: teardown", () => {
+  /** Records the order of scenario ends and teardown ends. */
+  class Timeline extends Recorder {
+    log: string[] = [];
+    onScenarioEnd(scenario: ScenarioSpec, result: { ok: boolean; error?: unknown }) {
+      super.onScenarioEnd(scenario, result);
+      this.log.push(`end:${scenario.id}`);
+    }
+    onScenarioBlocked(scenario: ScenarioSpec, blockedBy: any) {
+      super.onScenarioBlocked(scenario, blockedBy);
+      this.log.push(`blocked:${scenario.id}`);
+    }
+    onTeardownEnd(args: { setupId: string; ok: boolean }) {
+      super.onTeardownEnd(args);
+      this.log.push(`teardown:${args.setupId}`);
+    }
+  }
+  const ok = [{ op: "assert.equals", with: { actual: 1, expected: 1 } }] as ScenarioSpec["steps"];
+  const bad = [{ op: "assert.equals", with: { actual: 1, expected: 2 } }] as ScenarioSpec["steps"];
+  const withTeardown = (id: string, extra: Partial<SetupSpec> = {}) => apiSetup(id, { teardown: ok, ...extra });
+
+  it("tears a run-scoped setup down once, right after its last consumer", async () => {
+    const reporter = new Timeline();
+    await runFromMetadata({
+      setups: [withTeardown("s1")],
+      scenarios: [pass("a", { restoreFrom: "s1" }), pass("b", { restoreFrom: "s1" }), pass("c")],
+      reporter,
+    });
+    expect(reporter.log).toEqual(["end:a", "end:b", "teardown:s1", "end:c"]);
+    expect(reporter.teardownEnds).toEqual([{ setupId: "s1", ok: true }]);
+    // Teardown steps are reported under the setup, with their own paths.
+    const steps = reporter.stepEnds.filter((e) => e.setup === "teardown");
+    expect(steps).toEqual([expect.objectContaining({ scenarioId: "setup:s1", stepPath: "teardown[0]", ok: true })]);
+  });
+
+  it("tears a run-scoped setup down even when its last consumer fails, and when the setup was marked failed", async () => {
+    const reporter = new Timeline();
+    await expect(
+      runFromMetadata({
+        setups: [withTeardown("s1")],
+        scenarios: [fail("a", { restoreFrom: "s1" })],
+        reporter,
+        failFast: false,
+      }),
+    ).rejects.toThrow();
+    expect(reporter.log).toEqual(["end:a", "teardown:s1"]);
+    expect(reporter.runEnd).toMatchObject({ passed: 0, failed: 1 });
+  });
+
+  it("tears a scenario-scoped setup down after each consumer", async () => {
+    const reporter = new Timeline();
+    await runFromMetadata({
+      setups: [withTeardown("s1", { scope: "scenario" })],
+      scenarios: [pass("a", { restoreFrom: "s1" }), fail("b", { restoreFrom: "s1" }), pass("c", { restoreFrom: "s1" })],
+      reporter,
+      failFast: false,
+    }).catch(() => undefined);
+    expect(reporter.log).toEqual(["end:a", "teardown:s1", "end:b", "teardown:s1", "end:c", "teardown:s1"]);
+  });
+
+  it("tears down a fresh acquisition after its consumer, and the shared run setup after the last one", async () => {
+    const reporter = new Timeline();
+    await runFromMetadata({
+      setups: [withTeardown("s1")],
+      scenarios: [pass("a", { restoreFrom: { setup: "s1", fresh: true } }), pass("b", { restoreFrom: "s1" })],
+      reporter,
+    });
+    expect(reporter.log).toEqual(["end:a", "teardown:s1", "end:b", "teardown:s1"]);
+  });
+
+  it("tears a child down before its parent", async () => {
+    const reporter = new Timeline();
+    await runFromMetadata({
+      setups: [withTeardown("parent"), withTeardown("child", { from: "parent", scope: "scenario" })],
+      scenarios: [pass("a", { restoreFrom: "child" })],
+      reporter,
+    });
+    expect(reporter.log).toEqual(["end:a", "teardown:child", "teardown:parent"]);
+  });
+
+  it("tears a run-scoped child down before its run-scoped parent when both end at the same consumer", async () => {
+    const reporter = new Timeline();
+    await runFromMetadata({
+      setups: [withTeardown("parent"), withTeardown("child", { from: "parent" })],
+      scenarios: [pass("a", { restoreFrom: "parent" }), pass("b", { restoreFrom: "child" })],
+      reporter,
+    });
+    expect(reporter.log).toEqual(["end:a", "end:b", "teardown:child", "teardown:parent"]);
+  });
+
+  it("still tears down setups that ran when failFast stops the run early", async () => {
+    const reporter = new Timeline();
+    await expect(
+      runFromMetadata({
+        setups: [withTeardown("s1"), withTeardown("s2", { scope: "scenario" })],
+        scenarios: [pass("a", { restoreFrom: "s1" }), fail("b", { restoreFrom: "s2" }), pass("c", { restoreFrom: "s1" })],
+        reporter,
+      }),
+    ).rejects.toThrow();
+    expect(reporter.ends.map((e) => e.id)).toEqual(["a", "b"]);
+    expect(reporter.log).toEqual(["end:a", "end:b", "teardown:s2", "teardown:s1"]);
+  });
+
+  it("tears down a setup whose consumers are all blocked by another setup only if it ran", async () => {
+    const reporter = new Timeline();
+    await expect(
+      runFromMetadata({
+        setups: [withTeardown("s1"), apiSetup("broken", { steps: bad, teardown: ok })],
+        scenarios: [pass("a", { restoreFrom: "broken" })],
+        reporter,
+        failFast: false,
+      }),
+    ).rejects.toThrow(/blocked/);
+    // A setup that never came up has nothing to undo; s1 was never used.
+    expect(reporter.teardownEnds).toEqual([]);
+  });
+
+  it("reports a failing teardown without changing the totals or the run's outcome", async () => {
+    const reporter = new Timeline();
+    await runFromMetadata({
+      setups: [withTeardown("s1", { teardown: bad })],
+      scenarios: [pass("a", { restoreFrom: "s1" }), pass("b")],
+      reporter,
+    });
+    expect(reporter.teardownEnds).toEqual([{ setupId: "s1", ok: false }]);
+    expect(reporter.runEnd).toMatchObject({ ok: true, total: 2, passed: 2, failed: 0, blocked: 0 });
+  });
+
+  it("runs no teardown when the run is canceled", async () => {
+    const controller = new AbortController();
+    const reporter = new Timeline();
+    const end = reporter.onScenarioEnd.bind(reporter);
+    reporter.onScenarioEnd = (scenario, result) => {
+      end(scenario, result);
+      controller.abort();
+    };
+    await expect(
+      runFromMetadata({
+        setups: [withTeardown("s1"), withTeardown("s2", { scope: "scenario" })],
+        scenarios: [pass("a", { restoreFrom: "s2" }), pass("b", { restoreFrom: "s1" })],
+        reporter,
+        signal: controller.signal,
+      }),
+    ).rejects.toBeInstanceOf(RunCanceledError);
+    expect(reporter.teardownEnds).toEqual([]);
+    expect(reporter.stepEnds.filter((e) => e.setup === "teardown")).toEqual([]);
+  });
+});
+
 // Needs a real Chromium; skipped (not failed) when it is not installed on this machine.
 describe("runIndependent: browser", () => {
   let chromiumAvailable = false;
@@ -455,6 +604,55 @@ describe("runIndependent: browser", () => {
     expect(reporter.scenarioSetups["search"]).toMatchObject({ id: "auth-default", reused: false, readyCheck: "retried" });
     expect(reporter.setupEnds.filter((e) => e.ok && !e.reused)).toHaveLength(2);
     expect(reporter.runEnd).toMatchObject({ ok: true, passed: 1, failed: 0, blocked: 0 });
+  }, 120_000);
+
+  it("refreshes a stale parent session when a child's ready check fails, and tears down in a signed-in context", async () => {
+    if (!chromiumAvailable) {
+      console.warn("Chromium is not installed; skipping the browser run test");
+      return;
+    }
+    sessions.clear();
+    // The child inherits the parent's session cookie. Signing the shared session out on the server makes both stale:
+    // re-running only the child would build on the dead parent session and fail its ready check again.
+    const child: SetupSpec = {
+      id: "on-search",
+      name: "On the search page",
+      type: "ui",
+      scope: "run",
+      from: "auth-default",
+      steps: [goto("/search"), expectText("#search", "search ok")],
+      ready: [goto("/search"), expectText("#search", "search ok")],
+      // Runs in a new context seeded from the setup's state: signed in.
+      teardown: [goto("/"), expectText("#who", "user")],
+    };
+    const searchChild = (id: string): ScenarioSpec => ({ ...search, id, restoreFrom: "on-search" });
+    const signOutShared: ScenarioSpec = {
+      id: "sign-out-shared",
+      type: "ui",
+      restoreFrom: "auth-default",
+      steps: [goto("/"), { op: "ui.click", with: { selector: "text=Log out" } }, expectText("#who", "anon")],
+    };
+    const reporter = new Recorder();
+    await runFromMetadata({
+      scenarios: [searchChild("search-1"), signOutShared, searchChild("search-2")],
+      setups: [signIn, child],
+      ui: { baseUrl, recordVideo: false },
+      reporter,
+    });
+    expect(reporter.ends.map((e) => [e.id, e.ok, e.error])).toEqual([
+      ["search-1", true, undefined],
+      ["sign-out-shared", true, undefined],
+      ["search-2", true, undefined],
+    ]);
+    expect(reporter.scenarioSetups["search-2"]).toMatchObject({ id: "on-search", reused: false, readyCheck: "retried" });
+    // The parent ran twice: once at the start and again after search-2's failed ready check.
+    expect(reporter.setupEnds.filter((e) => e.setupId === "auth-default" && e.ok && !e.reused)).toHaveLength(2);
+    // Both runs of the child are torn down after its last consumer; the first one's session was signed out.
+    expect(reporter.teardownEnds).toEqual([
+      { setupId: "on-search", ok: true },
+      { setupId: "on-search", ok: false },
+    ]);
+    expect(reporter.runEnd).toMatchObject({ ok: true, passed: 3, failed: 0, blocked: 0 });
   }, 120_000);
 
   it("blocks the consumer when the ready check fails again after the setup is re-run", async () => {

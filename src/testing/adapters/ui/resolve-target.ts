@@ -105,7 +105,7 @@ export async function resolveTarget(
     // A slow page can attach the primary just after the grace window; prefer it then.
     if (await attached(page, primary, 0)) return primary;
     ui.recordHeal({
-      scenarioId: ctx.scenarioId,
+      scenarioId: ctx.healOwnerId ?? ctx.scenarioId,
       stepPath: ctx.stepPath,
       op: step.op,
       stepName: step.name,

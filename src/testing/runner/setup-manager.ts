@@ -53,7 +53,12 @@ const ENVIRONMENT_KEY = "default";
 export class SetupManager {
   private readonly hashes = new Map<string, string>();
   private readonly failed = new Map<string, string>();
-  private readonly pendingTeardown = new Map<string, SetupState>();
+  /**
+   * Run-scoped setups that ran and have teardown steps, in the order each first ran (a parent always before its
+   * children), with every state they ran to: one per run, so a re-run after a failed ready check does not lose the
+   * earlier run's teardown.
+   */
+  private readonly pendingTeardown = new Map<string, SetupState[]>();
   /** Per consumer: scope "scenario" or fresh acquisitions (parents included) that have teardown steps. */
   private readonly consumerTeardowns = new Map<string, TeardownDue[]>();
 
@@ -144,7 +149,11 @@ export class SetupManager {
       const hasTeardown = (setup.teardown?.length ?? 0) > 0;
       if (setup.scope === "run" && !opts.fresh) {
         this.deps.store.set(key, cloneState(state));
-        if (hasTeardown) this.pendingTeardown.set(setupId, cloneState(state));
+        if (hasTeardown) {
+          const states = this.pendingTeardown.get(setupId) ?? [];
+          states.push(cloneState(state));
+          this.pendingTeardown.set(setupId, states);
+        }
       } else if (hasTeardown) {
         const due = this.consumerTeardowns.get(forScenarioId) ?? [];
         due.push({ setupId, state: cloneState(state) });
@@ -158,11 +167,20 @@ export class SetupManager {
     throw new SetupFailedError(setupId, message);
   }
 
-  /** Drop a run-scoped setup's cached state so the next acquire runs it again (used after a failed ready check). */
+  /**
+   * Drop a run-scoped setup's cached state, and its parents', so the next acquire runs them again (used after a
+   * failed ready check: the consumer's state was built on the whole chain, and a stale parent session would break
+   * the re-run too).
+   */
   invalidate(setupId: string): void {
-    const setup = this.deps.setups.get(setupId);
-    if (setup === undefined) return;
-    this.deps.store.delete(this.keyFor(setup));
+    const seen = new Set<string>();
+    for (let id: string | undefined = setupId; id !== undefined && !seen.has(id); ) {
+      seen.add(id);
+      const setup = this.deps.setups.get(id);
+      if (setup === undefined) return;
+      this.deps.store.delete(this.keyFor(setup));
+      id = setup.from;
+    }
   }
 
   /** Mark a setup failed for the rest of the run; later acquires throw at once. */
@@ -170,9 +188,15 @@ export class SetupManager {
     this.failed.set(setupId, error);
   }
 
-  /** Run-scoped setups that ran in this run and have teardown steps, with the state to run teardown from. */
+  /**
+   * Run-scoped setups that ran in this run and have teardown steps, with the state to run teardown from: children
+   * before their parents, and for a setup that ran more than once (re-run after a failed ready check) one entry per
+   * run, newest first.
+   */
   ranWithTeardown(): TeardownDue[] {
-    return Array.from(this.pendingTeardown, ([setupId, state]) => ({ setupId, state: cloneState(state) }));
+    return Array.from(this.pendingTeardown)
+      .reverse()
+      .flatMap(([setupId, states]) => [...states].reverse().map((state) => ({ setupId, state: cloneState(state) })));
   }
 
   /**

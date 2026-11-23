@@ -194,6 +194,27 @@ describe("SetupManager", () => {
     expect(again.reused).toBe(false);
   });
 
+  it("invalidates the whole reused chain, parents included, so a stale parent runs again", async () => {
+    const { manager, calls } = build([setup("parent"), setup("child", { from: "parent" })]);
+
+    await manager.acquire("child", { forScenarioId: "s1", fresh: false });
+    manager.invalidate("child");
+    const again = await manager.acquire("child", { forScenarioId: "s2", fresh: false });
+
+    expect(calls.map((c) => c.setup.id)).toEqual(["parent", "child", "parent", "child"]);
+    expect(again.reused).toBe(false);
+  });
+
+  it("does not run a parent again after invalidating only an unrelated setup", async () => {
+    const { manager, calls } = build([setup("parent"), setup("child", { from: "parent" }), setup("other")]);
+
+    await manager.acquire("child", { forScenarioId: "s1", fresh: false });
+    manager.invalidate("other");
+    await manager.acquire("child", { forScenarioId: "s2", fresh: false });
+
+    expect(calls.map((c) => c.setup.id)).toEqual(["parent", "child"]);
+  });
+
   it("refuses an acquire for a setup marked failed with markFailed", async () => {
     const { manager, runSteps } = build([setup("auth-default")]);
 
@@ -218,6 +239,26 @@ describe("SetupManager", () => {
     await manager.acquire("auth-default", { forScenarioId: "s1", fresh: false });
 
     expect(manager.ranWithTeardown().map((r) => r.setupId)).toEqual(["auth-default"]);
+  });
+
+  it("lists run-scoped teardowns children first, and keeps every run of a setup that was invalidated and re-run", async () => {
+    const teardown = [STEP];
+    let n = 0;
+    // Every run of the parent exports the next number, so its two states can be told apart.
+    const { manager } = build([setup("parent", { teardown, exports: ["n"] }), setup("child", { from: "parent", teardown })], {
+      resources: { parent: { get n() { return ++n; } } },
+    });
+
+    await manager.acquire("child", { forScenarioId: "s1", fresh: false });
+    manager.invalidate("child");
+    await manager.acquire("child", { forScenarioId: "s2", fresh: false });
+
+    expect(manager.ranWithTeardown().map((d) => [d.setupId, d.state.exports.n])).toEqual([
+      ["child", 2],
+      ["child", 1],
+      ["parent", 2],
+      ["parent", 1],
+    ]);
   });
 
   it("does not list a fresh run-scoped setup for teardown", async () => {

@@ -10,8 +10,8 @@ import { withTimeout } from "./timeout";
  * Path of a step inside `scenario.steps`, matching the file layout so a consumer can
  * patch the exact step: `steps[2]`, `steps[3].when`, `steps[5].then[1]`.
  */
-export function stepPathFor(block: StepBlock, blockIndex: number, stepIndex: number): string {
-  const base = `steps[${blockIndex}]`;
+export function stepPathFor(block: StepBlock, blockIndex: number, stepIndex: number, root = "steps"): string {
+  const base = `${root}[${blockIndex}]`;
   if ("given" in block) return `${base}.given`;
   if ("when" in block) return `${base}.when`;
   if ("and" in block) return `${base}.and`;
@@ -182,7 +182,11 @@ export class TestingEngine {
           startedAt: scenarioStart,
           endedAt: scenarioStart + durationMs,
         });
-        const heals = [...(ctx.ui?.getHeals() ?? []), ...(ctx.mobile?.getHeals() ?? [])];
+        // Heals found by a setup's, ready check's or teardown's steps belong to that setup (owner `setup:<id>`), never to
+        // the scenario, whose own steps[i] they do not address.
+        const heals = [...(ctx.ui?.getHeals() ?? []), ...(ctx.mobile?.getHeals() ?? [])].filter(
+          (heal) => !heal.scenarioId.startsWith("setup:"),
+        );
         reporter.onScenarioEnd(scenario, {
           ok: !scenarioError,
           error: scenarioError,
@@ -205,13 +209,18 @@ export class TestingEngine {
    * Runs `steps` in `ctx` without reporting a scenario start or end, so setups, ready checks and teardowns reuse the
    * step machinery. Each step is reported with `setup: label` under `scenarioId: ownerId`. Throws the first step's
    * error (naming the step), and stops there.
+   *
+   * Step paths name their block: `ready[i]` for a ready check, `teardown[i]` for a teardown and `steps[i]` for
+   * anything else (a setup's own steps). `healOwnerId`, when given, is the owner heals found by these steps are
+   * attributed to (a setup's `setup:<id>`), even when `ownerId` is a consumer scenario, as it is for ready steps.
    */
-  async runSteps(steps: StepBlock[], ctx: TestContext, label: string, ownerId: string): Promise<void> {
-    const partCtx: TestContext = { ...ctx, scenarioId: ownerId };
+  async runSteps(steps: StepBlock[], ctx: TestContext, label: string, ownerId: string, healOwnerId?: string): Promise<void> {
+    const partCtx: TestContext = { ...ctx, scenarioId: ownerId, ...(healOwnerId ? { healOwnerId } : {}) };
+    const root = label === "ready" ? "ready" : label === "teardown" ? "teardown" : "steps";
     for (const [blockIndex, block] of steps.entries()) {
       const normalized = normalizeBlock(block);
       for (const [stepIndex, step] of normalized.steps.entries()) {
-        const stepPath = stepPathFor(block, blockIndex, stepIndex);
+        const stepPath = stepPathFor(block, blockIndex, stepIndex, root);
         try {
           await this.runStep(normalized.phase, step, partCtx, stepPath, label);
         } catch (err: any) {

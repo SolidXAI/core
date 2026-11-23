@@ -17,7 +17,7 @@ import { parseRestoreFrom, type RestoreRef } from "./restore-ref";
 import { setupChain, validateIndependent } from "./setup-graph";
 import { orderForRun } from "./run-order";
 import { InMemorySessionStore, type SetupState } from "./session-store";
-import { SetupFailedError, SetupManager, type AcquireResult, type SetupManagerDeps } from "./setup-manager";
+import { SetupFailedError, SetupManager, type AcquireResult, type SetupManagerDeps, type TeardownDue } from "./setup-manager";
 
 type Outcome = "passed" | "failed" | "blocked";
 
@@ -170,7 +170,8 @@ export async function runIndependent(opts: RunnerOptions): Promise<void> {
       params: {},
     };
     try {
-      await engine.runSteps(steps, ctx, kind, ownerId);
+      // Heals found here belong to the setup, even in a ready check, which is reported under the consumer.
+      await engine.runSteps(steps, ctx, kind, ownerId, `setup:${setup.id}`);
     } catch (error) {
       // Failure artifacts go out before the caller reports the attempt's end, or they are dropped.
       if (usesUi && ui.page && reporter.attach) {
@@ -347,6 +348,59 @@ export async function runIndependent(opts: RunnerOptions): Promise<void> {
     return "next";
   };
 
+  /** Run-scoped setups already torn down, so none runs twice. */
+  const tornDown = new Set<string>();
+  let inFlight: ScenarioSpec | undefined;
+
+  /**
+   * Runs one teardown in a new context seeded with the state it is due from. Never throws and never changes a
+   * scenario's status or the totals: a failure is reported through onTeardownEnd only.
+   */
+  const runTeardown = async (due: TeardownDue, forScenarioId: string): Promise<void> => {
+    const setup = setups.get(due.setupId);
+    if (!setup?.teardown?.length) return;
+    const started = Date.now();
+    let error: unknown;
+    try {
+      await runSteps({ kind: "teardown", setup, steps: setup.teardown, attempt: 1, forScenarioId, startFrom: due.state });
+    } catch (e) {
+      error = e;
+    }
+    // A canceled run closed its browser: report nothing for a teardown the cancel cut off.
+    if (opts.signal?.aborted) return;
+    try {
+      reporter.onTeardownEnd?.({
+        setupId: due.setupId,
+        ok: error === undefined,
+        durationMs: Date.now() - started,
+        ...(error !== undefined ? { error } : {}),
+      });
+    } catch {
+      // A reporter failure must not change the run.
+    }
+  };
+
+  /** Teardowns due after `scenario` (at `index`), none when the run was canceled. */
+  const tearDownAfter = async (scenario: ScenarioSpec, index: number | undefined): Promise<void> => {
+    if (opts.signal?.aborted) return;
+    for (const due of manager.takeConsumerTeardowns(scenario.id)) {
+      if (opts.signal?.aborted) return;
+      await runTeardown(due, scenario.id);
+    }
+    if (index === undefined) return;
+    await tearDownRunScoped((setupId) => lastConsumerIndex.get(setupId) === index, scenario.id);
+  };
+
+  /** Teardowns of the run-scoped setups `due` picks, children first; every run of a setup, each setup only once. */
+  const tearDownRunScoped = async (due: (setupId: string) => boolean, forScenarioId: string): Promise<void> => {
+    const picked = manager.ranWithTeardown().filter((d) => !tornDown.has(d.setupId) && due(d.setupId));
+    for (const d of picked) tornDown.add(d.setupId);
+    for (const d of picked) {
+      if (opts.signal?.aborted) return;
+      await runTeardown(d, forScenarioId);
+    }
+  };
+
   try {
     // Scenarios that cannot run fail with the reason, and the run goes on.
     for (const scenario of invalid) {
@@ -362,12 +416,12 @@ export async function runIndependent(opts: RunnerOptions): Promise<void> {
     secretsByScenario = await resolveSecretsByScenario([...ordered, ...planned.map(setupAsScenario)], opts.resolveSecrets);
 
     for (const [index, scenario] of ordered.entries()) {
+      inFlight = scenario;
       const next = await runOne(scenario);
-      // R8 HOOK (after each scenario, whatever its outcome; not reached when the run is canceled, because
-      // throwIfCanceled throws first): run manager.takeConsumerTeardowns(scenario.id), and the teardown of every
-      // run-scoped setup in manager.ranWithTeardown() whose lastConsumerIndex === index.
-      void index;
-      void lastConsumerIndex;
+      // After each scenario, whatever its outcome: its own teardowns (children first), then the run-scoped setups
+      // it was the last consumer of.
+      await tearDownAfter(scenario, index);
+      inFlight = undefined;
       if (next === "stop") break;
     }
     if (runError) throw runError;
@@ -380,8 +434,12 @@ export async function runIndependent(opts: RunnerOptions): Promise<void> {
     runError = error;
     throw error;
   } finally {
-    // R8 HOOK (finally): unless opts.signal?.aborted (the browser is already closed), run the teardown of every
-    // run-scoped setup that ran and has not been torn down yet. It must come before onRunEnd and finishMedia.
+    // The run stopped early (failFast, an error) or finished: tear down what is still up. A canceled run skips this.
+    if (!opts.signal?.aborted) {
+      // The scenario whose runOne threw still has its own teardowns to run.
+      if (inFlight) await tearDownAfter(inFlight, undefined);
+      await tearDownRunScoped(() => true, ordered[ordered.length - 1]?.id ?? "");
+    }
     reporter.onRunEnd?.({
       ok: !runError && failed === 0 && blocked === 0,
       total: reported.length,
