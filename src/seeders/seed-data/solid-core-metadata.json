@@ -4372,6 +4372,20 @@
             ]
           },
           {
+            "name": "isTransactional",
+            "displayName": "Is Transactional",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "is_transactional",
+            "isSystem": true
+          },
+          {
             "name": "smsProviderTemplateId",
             "displayName": "SMS Provider Template Id",
             "type": "shortText",
@@ -20767,6 +20781,15 @@
           {
             "type": "field",
             "attrs": {
+              "name": "isTransactional",
+              "label": "Is Transactional",
+              "sortable": true,
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "smsProviderTemplateId",
               "label": "Template Provider Id",
               "sortable": true,
@@ -20875,6 +20898,13 @@
                             "attrs": {
                               "name": "smsProviderTemplateId",
                               "label": "Sms Provider Template Id"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "isTransactional",
+                              "label": "Is Transactional"
                             }
                           },
                           {

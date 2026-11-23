@@ -22,6 +22,8 @@ export class SmsTemplate extends CommonEntity {
     active: boolean = true;
     @Column({ name: "type", type: "varchar", nullable: true })
     type: string;
+    @Column({ name: "is_transactional", type: "boolean", nullable: true, default: false })
+    isTransactional: boolean = false;
 
     @Index()
     @ManyToOne(() => ModuleMetadata, { nullable: true, onDelete: 'SET NULL' })
