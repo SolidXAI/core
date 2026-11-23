@@ -304,4 +304,38 @@ describe("runFromMetadata browser sessions", () => {
       expect.objectContaining({ id: "restored", ok: true }),
     ]);
   }, 60_000);
+
+  describe("whole-run video", () => {
+    const uiScenario: ScenarioSpec = {
+      id: "open",
+      type: "ui",
+      steps: [
+        { op: "ui.goto", with: { url: "/" } },
+        { op: "ui.expectText", with: { selector: "#who", equals: "anonymous" } },
+      ],
+    };
+
+    async function keptArtifactNames(keepVideo: "failed" | "always" | undefined, scenarios: ScenarioSpec[]): Promise<string[]> {
+      const kept: string[] = [];
+      const base = recordingReporter([]);
+      const reporter: Reporter = {
+        ...base,
+        attachRunArtifact: (args: { name: string }) => void kept.push(args.name),
+      };
+      await runFromMetadata({ scenarios, ui: { baseUrl, recordVideo: true }, reporter, keepVideo });
+      return kept.filter((name) => name.endsWith(".webm"));
+    }
+
+    it("discards the video of a passing run by default", async () => {
+      expect(await keptArtifactNames(undefined, [uiScenario])).toEqual([]);
+    }, 60_000);
+
+    it("keeps the video of a passing run when keepVideo is always", async () => {
+      expect((await keptArtifactNames("always", [uiScenario])).length).toBeGreaterThan(0);
+    }, 60_000);
+
+    it("keeps no video for a run with only API scenarios, even when keepVideo is always", async () => {
+      expect(await keptArtifactNames("always", [pass("api-only")])).toEqual([]);
+    }, 60_000);
+  });
 });
