@@ -9,7 +9,7 @@ import { createDefaultStepRegistry } from "./default-registry";
  * Bumped when the step contract changes in a way vendored copies must notice. Consumers
  * compare it with the version they were written against.
  */
-export const RUNTIME_VERSION = "1.5.0";
+export const RUNTIME_VERSION = "1.6.0";
 
 /**
  * Scenario features this runner understands. Authoring tools only emit a feature the
@@ -63,7 +63,17 @@ export { StepRegistry } from "../core/step-registry";
 export { TestingEngine, stepPathFor } from "../core/testing-engine";
 export { interpolateDeep, collectSecretKeys } from "../core/interpolation";
 export { normalizeBlock } from "../core/normalize-steps";
-export { buildTestDataIndex } from "../runner/run-from-metadata";
+export { buildTestDataIndex, runFromMetadata } from "../runner/run-from-metadata";
+export type { RunnerOptions } from "../runner/run-from-metadata";
+export { RunCanceledError } from "../runner/run-cancellation";
+export type {
+  BlockedBy,
+  Reporter,
+  RunEndArgs,
+  ScenarioResult,
+  ScenarioSetupInfo,
+  ScenarioSkipInfo,
+} from "../reporter/reporter.types";
 export {
   expandWithDependencies,
   orderByDependencies,

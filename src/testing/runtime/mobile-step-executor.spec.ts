@@ -1,6 +1,6 @@
 import { FakeClock, FakeDriver, FakeElement } from "../adapters/mobile/fake-driver";
 import type { ScenarioSpec } from "../contracts/testing-metadata.types";
-import { CAPABILITIES, RUNTIME_VERSION, listOps } from "./index";
+import { CAPABILITIES, RUNTIME_VERSION, RunCanceledError, listOps, runFromMetadata } from "./index";
 import { createMobileStepExecutor } from "./step-executor";
 import type { MobileStepExecutorOptions } from "./step-executor";
 
@@ -172,6 +172,11 @@ describe("runtime manifest", () => {
       "mobile.type",
     ]);
     expect(CAPABILITIES).toEqual(expect.arrayContaining(["mobileRuntime", "mobileSelfHealing", "mobileSessionModes", "mobileReset", "restoreFrom"]));
-    expect(RUNTIME_VERSION).toBe("1.5.0");
+    expect(RUNTIME_VERSION).toBe("1.6.0");
+  });
+
+  it("exports the runner so a vendored copy can run scenarios alone with their setups", () => {
+    expect(typeof runFromMetadata).toBe("function");
+    expect(typeof RunCanceledError).toBe("function");
   });
 });
