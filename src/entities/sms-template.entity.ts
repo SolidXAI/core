@@ -22,7 +22,7 @@ export class SmsTemplate extends CommonEntity {
     active: boolean = true;
     @Column({ name: "type", type: "varchar", nullable: true })
     type: string;
-    @Column({ name: "is_transactional", type: "boolean", nullable: true, default: false })
+    @Column({ name: "is_transactional", nullable: true, default: false })
     isTransactional: boolean = false;
 
     @Index()
