@@ -28,7 +28,7 @@ export class AgentConfigVersionController {
     @ApiQuery({ name: 'agentId', type: Number })
     @ApiQuery({ name: 'leftVersionId', type: Number })
     @ApiQuery({ name: 'rightVersionId', type: Number })
-    @ApiQuery({ name: 'diffKey', type: String, description: 'systemPrompt or skill:<catalog skill ID>' })
+    @ApiQuery({ name: 'diffKey', type: String, description: 'systemPrompt, skill:<catalog skill ID>, or tool:<catalog tool ID>' })
     @Get('compare/diff')
     comparisonDiff(
         @Query('agentId', ParseIntPipe) agentId: number,

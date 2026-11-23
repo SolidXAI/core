@@ -70,7 +70,7 @@
     const iframe = document.createElement("iframe");
     iframe.title = options.title || "SolidX admin screen";
     iframe.referrerPolicy = "no-referrer";
-    iframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-downloads");
+    iframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-downloads allow-popups allow-popups-to-escape-sandbox");
     iframe.style.cssText = "display:block;width:100%;height:100%;border:0";
     iframe.src = frameUrl.href;
 

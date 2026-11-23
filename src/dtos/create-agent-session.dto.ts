@@ -7,6 +7,7 @@ import { UpdateAgentJobDto } from './update-agent-job.dto';
 import { UpdateAgentEventDto } from './update-agent-event.dto';
 import { UpdateAgentSessionCheckpointDto } from './update-agent-session-checkpoint.dto';
 import { UpdateAgentHumanRequestDto } from './update-agent-human-request.dto';
+import { UpdateAgentBrowserSessionDto } from './update-agent-browser-session.dto';
 
 export class CreateAgentSessionDto {
     @IsOptional()
@@ -182,4 +183,21 @@ export class CreateAgentSessionDto {
     @IsOptional()
     @ApiProperty()
     agentHumanRequestsCommand: string;
+
+    @IsOptional()
+    @ApiProperty()
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => UpdateAgentBrowserSessionDto)
+    agentBrowserSessions: UpdateAgentBrowserSessionDto[];
+
+    @IsOptional()
+    @IsArray()
+    @ApiProperty()
+    agentBrowserSessionsIds: number[];
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty()
+    agentBrowserSessionsCommand: string;
 }

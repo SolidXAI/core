@@ -4372,6 +4372,20 @@
             ]
           },
           {
+            "name": "isTransactional",
+            "displayName": "Is Transactional",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "is_transactional",
+            "isSystem": true
+          },
+          {
             "name": "smsProviderTemplateId",
             "displayName": "SMS Provider Template Id",
             "type": "shortText",
@@ -11296,6 +11310,33 @@
             "isRelationManyToManyOwner": null,
             "relationFieldFixedFilter": null,
             "enableAuditTracking": true
+          },
+          {
+            "name": "agentBrowserSessions",
+            "displayName": "Agent Browser Sessions",
+            "description": null,
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": true,
+            "relationType": "one-to-many",
+            "relationCoModelFieldName": "session",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "agentBrowserSession",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null,
+            "relationFieldFixedFilter": null,
+            "enableAuditTracking": true
           }
         ]
       },
@@ -11941,6 +11982,328 @@
             "min": null,
             "max": null,
             "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          }
+        ],
+        "moduleUserKey": "solid-core"
+      },
+      {
+        "singularName": "agentBrowserSession",
+        "pluralName": "agentBrowserSessions",
+        "displayName": "Agent Browser Session",
+        "description": "The browser behind an AgentHub session (browser tools): its pool lease, Steel session and saved state. Written by the AgentHub runtime.",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_agent_browser_session",
+        "isChild": false,
+        "isSystem": true,
+        "enableSoftDelete": false,
+        "enableAuditTracking": false,
+        "draftPublishWorkflow": false,
+        "internationalisation": false,
+        "legacyTableType": "none",
+        "fields": [
+          {
+            "name": "session",
+            "displayName": "Session",
+            "description": null,
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": true,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": "agentBrowserSessions",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "agentSession",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null,
+            "relationFieldFixedFilter": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "leaseId",
+            "displayName": "Lease Id",
+            "description": null,
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "containerName",
+            "displayName": "Container Name",
+            "description": null,
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "steelSessionId",
+            "displayName": "Steel Session Id",
+            "description": null,
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "afterCursor",
+            "displayName": "After Cursor",
+            "description": null,
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "eventsCursor",
+            "displayName": "Events Cursor",
+            "description": null,
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "epoch",
+            "displayName": "Epoch",
+            "description": null,
+            "type": "int",
+            "ormType": "integer",
+            "isSystem": true,
+            "defaultValue": "0",
+            "min": null,
+            "max": null,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "activeTab",
+            "displayName": "Active Tab",
+            "description": null,
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "currentUrl",
+            "displayName": "Current Url",
+            "description": null,
+            "type": "longText",
+            "ormType": "text",
+            "isSystem": true,
+            "defaultValue": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "controlMode",
+            "displayName": "Control Mode",
+            "description": "Who drives the browser: the agent, or the user after a handoff or takeover.",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": "agent",
+            "selectionStaticValues": [
+              "agent:Agent",
+              "human:Human"
+            ],
+            "selectionValueType": "string",
+            "isMultiSelect": false,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "status",
+            "displayName": "Status",
+            "description": "At most one browser per session is not released.",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": "active",
+            "selectionStaticValues": [
+              "active:Active",
+              "state_saved:State Saved",
+              "released:Released"
+            ],
+            "selectionValueType": "string",
+            "isMultiSelect": false,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "contextEncrypted",
+            "displayName": "Context Encrypted",
+            "description": "The browser's saved sign-ins and storage, encrypted by the AgentHub runtime.",
+            "type": "longText",
+            "ormType": "text",
+            "isSystem": true,
+            "defaultValue": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": true,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": false
+          },
+          {
+            "name": "handoffExpiresAt",
+            "displayName": "Handoff Expires At",
+            "description": null,
+            "type": "datetime",
+            "ormType": "timestamptz",
+            "isSystem": true,
+            "defaultValue": null,
+            "required": false,
             "unique": false,
             "index": false,
             "private": false,
@@ -13863,6 +14226,32 @@
       "viewUserKey": "agentSessionCheckpoint-tree-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "agentSessionCheckpoint"
+    },
+    {
+      "displayName": "Agent Browser Session List Action",
+      "name": "agentBrowserSession-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "agentBrowserSession-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentBrowserSession"
+    },
+    {
+      "displayName": "Agent Browser Session Tree View Action",
+      "name": "agentBrowserSession-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "agentBrowserSession-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentBrowserSession"
     },
     {
       "displayName": "Agent Human Request List Action",
@@ -20392,6 +20781,15 @@
           {
             "type": "field",
             "attrs": {
+              "name": "isTransactional",
+              "label": "Is Transactional",
+              "sortable": true,
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "smsProviderTemplateId",
               "label": "Template Provider Id",
               "sortable": true,
@@ -20500,6 +20898,13 @@
                             "attrs": {
                               "name": "smsProviderTemplateId",
                               "label": "Sms Provider Template Id"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "isTransactional",
+                              "label": "Is Transactional"
                             }
                           },
                           {
@@ -28808,7 +29213,20 @@
             "attrs": {
               "name": "status",
               "isSearchable": true,
-              "sortable": true
+              "sortable": true,
+              "viewWidget": "PillWidget",
+              "pillColorMap": {
+                "queued": "#e5e7eb",
+                "running": "#dbeafe",
+                "active": "#dcfce7",
+                "awaiting_input": "#fef3c7",
+                "awaiting_approval": "#fef3c7",
+                "completed": "#dcfce7",
+                "failed": "#fee2e2",
+                "cancelled": "#e5e7eb",
+                "expired": "#e5e7eb",
+                "default": "#e5e7eb"
+              }
             }
           },
           {
@@ -29364,7 +29782,17 @@
           {
             "type": "field",
             "attrs": {
-              "name": "status"
+              "name": "status",
+              "viewWidget": "PillWidget",
+              "pillColorMap": {
+                "queued": "#e5e7eb",
+                "running": "#dbeafe",
+                "awaiting_input": "#fef3c7",
+                "succeeded": "#dcfce7",
+                "failed": "#fee2e2",
+                "cancelled": "#e5e7eb",
+                "default": "#e5e7eb"
+              }
             }
           },
           {
@@ -30018,6 +30446,266 @@
       }
     },
     {
+      "name": "agentBrowserSession-list-view",
+      "displayName": "Agent Browser Session",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentBrowserSession",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "session"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "controlMode"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "containerName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "currentUrl"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "handoffExpiresAt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "agentBrowserSession-form-view",
+      "displayName": "Agent Browser Session",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentBrowserSession",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Agent Browser Session",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "session"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "status"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "controlMode"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "handoffExpiresAt"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "currentUrl"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "activeTab"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-2",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "containerName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "leaseId"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "steelSessionId"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "epoch"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "afterCursor"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "eventsCursor"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "agentBrowserSession-tree-view",
+      "displayName": "Agent Browser Session",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentBrowserSession",
+      "layout": {
+        "type": "tree",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "session"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "controlMode"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "containerName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "currentUrl"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "handoffExpiresAt"
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "agentHumanRequest-list-view",
       "displayName": "Agent Human Request",
       "type": "list",
@@ -30111,7 +30799,15 @@
               "name": "status",
               "isSearchable": true,
               "sortable": true,
-              "viewWidget": "PillWidget"
+              "viewWidget": "PillWidget",
+              "pillColorMap": {
+                "pending": "#fef3c7",
+                "answered": "#dcfce7",
+                "rejected": "#fee2e2",
+                "cancelled": "#e5e7eb",
+                "expired": "#e5e7eb",
+                "default": "#e5e7eb"
+              }
             }
           },
           {
