@@ -1,5 +1,6 @@
 import type { HealEvent, StepDataUsed } from "../contracts/runtime-context.types";
-import type { ScenarioType } from "../contracts/testing-metadata.types";
+import type { ScenarioType, SetupScope } from "../contracts/testing-metadata.types";
+import type { BlockedBy, ScenarioSetupInfo } from "./reporter.types";
 
 /**
  * Incremental lifecycle events emitted by {@link LifecycleWebhookReporter} so an
@@ -10,7 +11,10 @@ export type LifecycleEventType =
   | "run.start"
   | "scenario.start"
   | "scenario.end"
-  | "run.end";
+  | "run.end"
+  | "setup.start"
+  | "setup.end"
+  | "teardown.end";
 
 /**
  * Reference to a captured artifact (console/network/api log, screenshot, video, HAR).
@@ -61,6 +65,10 @@ export interface RunStartData {
   scenarioIds: string[];
   scenarios: ScenarioDescriptor[];
   startedAt: string;
+  /** Setups the run may use (run-scoped and scenario-scoped). */
+  setups?: Array<{ id: string; name: string; scope: SetupScope }>;
+  order?: "file" | "shuffle";
+  shuffleSeed?: string;
 }
 
 export interface ScenarioStartData {
@@ -79,9 +87,13 @@ export interface ScenarioEndData {
    * Absent from older runners, where `ok` alone decides passed/failed. A skipped
    * scenario has `ok: false` so a consumer that ignores `status` never counts it as passed.
    */
-  status?: "passed" | "failed" | "skipped";
+  status?: "passed" | "failed" | "skipped" | "blocked";
   /** Set when `status` is `skipped`. */
   skip?: { reason: "dependency_failed"; dependency: string };
+  /** Set when `status` is `blocked`: the setup or gate that stopped the scenario. */
+  blockedBy?: BlockedBy;
+  /** How this scenario's setup was brought up, when it has one. */
+  setup?: ScenarioSetupInfo;
   durationMs: number;
   error?: string;
   steps: StepResultData[];
@@ -91,12 +103,43 @@ export interface ScenarioEndData {
   heals?: HealEvent[];
 }
 
+/** A setup attempt starts. Not sent for a reused setup (that sends only setup.end with `reused: true`). */
+export interface SetupStartData {
+  setupId: string;
+  name: string;
+  attempt: number;
+  forScenarioId: string;
+}
+
+/** One setup attempt. Steps and artifacts describe the attempt; a reused setup sends none. */
+export interface SetupEndData {
+  setupId: string;
+  name: string;
+  attempt: number;
+  forScenarioId: string;
+  ok: boolean;
+  reused: boolean;
+  durationMs: number;
+  error?: string;
+  steps: StepResultData[];
+  /** Console/network/screenshot artifacts captured when the setup failed; empty otherwise. */
+  artifacts: ArtifactRef[];
+}
+
+export interface TeardownEndData {
+  setupId: string;
+  ok: boolean;
+  durationMs: number;
+  error?: string;
+}
+
 export interface RunEndData {
   ok: boolean;
   total: number;
   passed: number;
   failed: number;
   skipped?: number;
+  blocked?: number;
   durationMs: number;
   exitCode?: number;
   error?: string;

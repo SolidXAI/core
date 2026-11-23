@@ -1,6 +1,6 @@
 // Purpose: Basic console reporter implementation.
 
-import type { Reporter, RunEndArgs, ScenarioResult, ScenarioSkipInfo } from "./reporter.types";
+import type { BlockedBy, Reporter, RunEndArgs, ScenarioResult, ScenarioSkipInfo } from "./reporter.types";
 import type { OpStep } from "../contracts/testing-metadata.types";
 
 const INDENT = "  ";
@@ -150,8 +150,11 @@ export class ConsoleReporter implements Reporter {
   private passedScenarios = 0;
   private failedScenarios = 0;
 
-  onRunStart(_args: { total: number }): void {
-    // Progress-aware reporters use this hook; the plain console reporter has no setup.
+  onRunStart(args: { total: number; order?: "file" | "shuffle"; shuffleSeed?: string }): void {
+    // Progress-aware reporters use this hook. Only a shuffled run prints a line: its seed, so the order can be reproduced.
+    if (args.order === "shuffle") {
+      console.log(`Order: shuffle${args.shuffleSeed ? ` (seed ${args.shuffleSeed})` : ""}`);
+    }
   }
 
   onScenarioStart(scenario: { id: string; name?: string }): void {
@@ -182,6 +185,31 @@ export class ConsoleReporter implements Reporter {
   onScenarioSkipped(scenario: { id: string; name?: string }, info: ScenarioSkipInfo): void {
     const label = scenario.name ? `${scenario.id} (${scenario.name})` : scenario.id;
     console.log(`\n⊘ Scenario: ${label} skipped (${info.reason}: ${info.dependency})`);
+  }
+
+  onScenarioBlocked(scenario: { id: string; name?: string }, blockedBy: BlockedBy): void {
+    const name = scenario.name ?? scenario.id;
+    const reason =
+      blockedBy.kind === "setup"
+        ? `blocked by setup "${blockedBy.id}"`
+        : `because "${blockedBy.id}" did not pass`;
+    console.log(`\n⊘ BLOCKED ${name}: ${reason}`);
+  }
+
+  onSetupStart(_args: { setupId: string; attempt: number; forScenarioId: string }): void {
+    // One line per setup is printed when it ends.
+  }
+
+  onSetupEnd(args: { setupId: string; ok: boolean; durationMs: number; reused: boolean }): void {
+    if (args.reused) {
+      console.log(`setup ${args.setupId} reused`);
+      return;
+    }
+    console.log(`setup ${args.setupId} ${args.ok ? "ok" : "failed"} ${(args.durationMs / 1000).toFixed(1)}s`);
+  }
+
+  onTeardownEnd(args: { setupId: string; ok: boolean; durationMs: number }): void {
+    console.log(`teardown ${args.setupId} ${args.ok ? "ok" : "failed"} ${(args.durationMs / 1000).toFixed(1)}s`);
   }
 
   onStepStart(args: {
@@ -264,10 +292,11 @@ export class ConsoleReporter implements Reporter {
     const durationSeconds = (args.durationMs / 1000).toFixed(2);
     const finalStatus = args.ok ? "PASSED" : "FAILED";
     const skipped = args.skipped ? `, skipped=${args.skipped}` : "";
+    const blocked = args.blocked ? `, blocked=${args.blocked}` : "";
 
     console.log("\n════════ Test Run Summary ════════");
     console.log(`Result: Test run ${finalStatus}`);
-    console.log(`Cases: total=${args.total}, passed=${args.passed}, failed=${args.failed}${skipped}`);
+    console.log(`Cases: total=${args.total}, passed=${args.passed}, failed=${args.failed}${skipped}${blocked}`);
     console.log(`Duration: ${durationSeconds}s`);
     console.log("══════════════════════════════════");
   }

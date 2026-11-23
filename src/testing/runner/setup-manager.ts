@@ -13,22 +13,6 @@ export class SetupFailedError extends Error {
   }
 }
 
-/**
- * Setup events. They are optional until R9 adds them to Reporter; R9 can replace this type with the real methods.
- */
-export interface SetupReporterHooks {
-  onSetupStart?(args: { setupId: string; attempt: number; forScenarioId: string }): void;
-  onSetupEnd?(args: {
-    setupId: string;
-    attempt: number;
-    ok: boolean;
-    durationMs: number;
-    error?: string;
-    reused: boolean;
-    forScenarioId: string;
-  }): void;
-}
-
 export interface SetupManagerDeps {
   /** Valid setups only, keyed by id (the first setup with an id wins). */
   setups: Map<string, SetupSpec>;
@@ -46,7 +30,7 @@ export interface SetupManagerDeps {
     /** For kind "ready": run in the consumer's already-open context instead of a new one. */
     inCurrentContext?: boolean;
   }) => Promise<{ state?: SetupState; resources: Record<string, unknown> }>;
-  reporter: Reporter & SetupReporterHooks;
+  reporter: Reporter;
 }
 
 export interface AcquireResult {

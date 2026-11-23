@@ -2,7 +2,14 @@ import * as readline from "readline";
 import type { StepPhase } from "../contracts/runtime-context.types";
 import type { OpStep, ScenarioSpec } from "../contracts/testing-metadata.types";
 import type { SolidTestSpecResult } from "../contracts/test-spec.types";
-import type { Reporter, RunEndArgs, ScenarioResult, ScenarioSkipInfo } from "./reporter.types";
+import type {
+  BlockedBy,
+  Reporter,
+  RunEndArgs,
+  ScenarioResult,
+  ScenarioSetupInfo,
+  ScenarioSkipInfo,
+} from "./reporter.types";
 
 type RunStartArgs = Parameters<NonNullable<Reporter["onRunStart"]>>[0];
 
@@ -32,7 +39,7 @@ export class ProgressReporter implements Reporter {
     this.completed = 0;
     this.passed = 0;
     this.failed = 0;
-    this.delegate.onRunStart?.(args);
+    this.withFooterPaused(() => this.delegate.onRunStart?.(args));
     this.startTimer();
     this.renderFooter();
   }
@@ -57,6 +64,35 @@ export class ProgressReporter implements Reporter {
   onScenarioSkipped(scenario: ScenarioSpec, info: ScenarioSkipInfo): void {
     this.completed += 1;
     this.withFooterPaused(() => this.delegate.onScenarioSkipped?.(scenario, info));
+  }
+
+  onScenarioBlocked(scenario: ScenarioSpec, blockedBy: BlockedBy): void {
+    this.completed += 1;
+    this.withFooterPaused(() => this.delegate.onScenarioBlocked?.(scenario, blockedBy));
+  }
+
+  onSetupStart(args: { setupId: string; attempt: number; forScenarioId: string }): void {
+    this.withFooterPaused(() => this.delegate.onSetupStart?.(args));
+  }
+
+  onSetupEnd(args: {
+    setupId: string;
+    attempt: number;
+    forScenarioId: string;
+    ok: boolean;
+    durationMs: number;
+    error?: unknown;
+    reused: boolean;
+  }): void {
+    this.withFooterPaused(() => this.delegate.onSetupEnd?.(args));
+  }
+
+  onTeardownEnd(args: { setupId: string; ok: boolean; durationMs: number; error?: unknown }): void {
+    this.withFooterPaused(() => this.delegate.onTeardownEnd?.(args));
+  }
+
+  onScenarioSetup(scenarioId: string, info: ScenarioSetupInfo): void {
+    this.withFooterPaused(() => this.delegate.onScenarioSetup?.(scenarioId, info), false);
   }
 
   onStepStart(args: {
@@ -97,7 +133,7 @@ export class ProgressReporter implements Reporter {
   }
 
   onRunEnd(args: RunEndArgs): void {
-    this.completed = args.passed + args.failed + (args.skipped ?? 0);
+    this.completed = args.passed + args.failed + (args.skipped ?? 0) + (args.blocked ?? 0);
     this.passed = args.passed;
     this.failed = args.failed;
     this.total = args.total;
