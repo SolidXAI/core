@@ -40,8 +40,34 @@ export interface TestingMetadata {
     users?: TestingUserSpec[];
     data?: TestingDataRecord[];
     scenarios: ScenarioSpec[];
+    setups?: SetupSpec[];
   };
 }
+
+export type SetupScope = "run" | "scenario";
+
+/** A named starting state that scenarios restore from. Not a test: never selected, counted or reported as a scenario. */
+export interface SetupSpec {
+  id: string;
+  name: string;
+  type: "ui" | "api" | "mixed";
+  scope: SetupScope;
+  /** Parent setup whose state is restored before these steps run. */
+  from?: string;
+  steps: StepBlock[];
+  /** Check-only steps proving a restored state works. Required for ui and mixed. First step must be ui.goto. */
+  ready?: StepBlock[];
+  /** saveAs names from `steps` that consumers can read as ${res:<name>}. */
+  exports?: string[];
+  /** Steps that undo the setup's server-side effects. */
+  teardown?: StepBlock[];
+}
+
+/** `restoreFrom` on a scenario: a setup id, or `{ setup, fresh: true }` to run that setup again just for this scenario. */
+export type RestoreFromRef = string | { setup: string; fresh?: boolean };
+
+/** sessionStorage per origin, captured at the end of a setup. Playwright's storageState does not include it. */
+export type SessionStorageByOrigin = Record<string, Record<string, string>>;
 
 export interface ScenarioSpec {
   id: string;
@@ -57,18 +83,16 @@ export interface ScenarioSpec {
   stepTimeoutMs?: number;
   retries?: number;
   /**
-   * Scenarios that must pass before this one runs. Selecting this scenario pulls its
-   * dependencies into the run; a failed dependency skips it with `dependency_failed`.
-   * Using it anywhere in a run switches that run from fail-fast to dependency-aware.
+   * UI and API scenarios: a skip rule only. If a listed scenario is in the same run and does not pass, this one is
+   * reported as blocked. It does not add scenarios to the run. Mobile scenarios: legacy behaviour (pulls the dependency
+   * into the run and orders it first).
    */
   dependsOn?: string[];
   /**
-   * Start as the identity another scenario signed in as: `restoreFrom: "login"` means `login` runs first, its state is saved
-   * (it needs no `saveSession`), and this scenario starts from it (`session: "restore"`). It is also a dependency, so it need
-   * not be listed in `dependsOn`, which keeps only ordering and data dependencies. Only client state is restored (cookies and
-   * storage on the web, the signed-in app on mobile), never the page or screen. One scenario id, not a list.
+   * UI and API scenarios: the setup this scenario starts from (see SetupSpec). Mobile scenarios: the id of another
+   * scenario whose session is restored (legacy behaviour).
    */
-  restoreFrom?: string;
+  restoreFrom?: RestoreFromRef;
   /** Keep this scenario's browser storage state (cookies + localStorage) after it passes. */
   saveSession?: boolean;
   /**

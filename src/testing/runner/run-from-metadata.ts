@@ -1,5 +1,5 @@
 import type { Reporter } from "../reporter/reporter.types";
-import type { TestingMetadata, TestingDataRecord, ScenarioSpec } from "../contracts/testing-metadata.types";
+import type { TestingMetadata, TestingDataRecord, ScenarioSpec, SetupSpec } from "../contracts/testing-metadata.types";
 import type { ApiAdapterOptions } from "../adapters/api/api.types";
 import type { PlaywrightAdapterOptions } from "../adapters/ui/ui.types";
 import type { MobileAdapterOptions } from "../adapters/mobile/mobile.types";
@@ -98,6 +98,14 @@ export type RunnerOptions = {
   metadata?: TestingMetadata;
   scenarios?: ScenarioSpec[];
   data?: TestingDataRecord[];
+  /** Setups come from here, else from `metadata.testing.setups`. */
+  setups?: SetupSpec[];
+  /** "file" (default) keeps file order; "shuffle" randomises it with shuffleSeed. */
+  order?: "file" | "shuffle";
+  /** Seed for order "shuffle". Generated and reported in run.start when absent. */
+  shuffleSeed?: string;
+  /** Identifies the application for the session store key. Defaults to "local". */
+  applicationKey?: string;
   externalRunId?: string;
   env?: Record<string, string>;
   scenarioIds?: string[];

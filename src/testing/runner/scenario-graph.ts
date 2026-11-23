@@ -21,7 +21,8 @@ export function expandRestoreFrom(scenarios: ScenarioSpec[], resetId?: string): 
     if (scenario.restoreFrom === undefined) return scenario;
     const problem = restoreFromProblem(scenario, byId, resetId);
     if (problem) throw new Error(problem);
-    const source = scenario.restoreFrom as string;
+    const source = typeof scenario.restoreFrom === "string" ? scenario.restoreFrom : undefined;
+    if (source === undefined) throw new Error(`Scenario "${scenario.id}" has an invalid restoreFrom (expected one scenario id)`);
     sources.add(source);
     const others = dependenciesOf(scenario).filter((id) => id !== source);
     const before = dependenciesOf(scenario);
@@ -150,7 +151,8 @@ export function orderByDependencies(scenarios: ScenarioSpec[]): ScenarioSpec[] {
  * `saveSession`.
  */
 export function sessionSourceFor(scenario: ScenarioSpec, byId: Map<string, ScenarioSpec>): string | undefined {
-  if (scenario.restoreFrom) return scenario.restoreFrom;
+  const restored = typeof scenario.restoreFrom === "string" ? scenario.restoreFrom : undefined;
+  if (restored) return restored;
   const seen = new Set<string>();
   const queue = dependenciesOf(scenario);
   while (queue.length) {
