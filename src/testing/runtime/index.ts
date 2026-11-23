@@ -29,6 +29,10 @@ export const CAPABILITIES = [
   "heals",
   "skippedStatus",
   "stepPath",
+  "setups",
+  "restoreFromFresh",
+  "blockedStatus",
+  "shuffleOrder",
 ] as const;
 
 export type RuntimeCapability = (typeof CAPABILITIES)[number];
@@ -72,8 +76,13 @@ export type { HealEvent, StepPhase, TestContext } from "../contracts/runtime-con
 export type {
   HealingPolicy,
   OpStep,
+  RestoreFromRef,
   ScenarioSessionMode,
   ScenarioSpec,
+  SessionStorageByOrigin,
+  SetupScope,
+  SetupSpec,
   StepBlock,
   TargetFingerprint,
 } from "../contracts/testing-metadata.types";
+export { parseRestoreFrom } from "../runner/restore-ref";

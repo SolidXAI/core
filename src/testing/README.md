@@ -70,6 +70,81 @@ A run needs `RunnerOptions.mobile`, or the `mobile` block of `POST /test-runs`:
 between scenarios (who is logged in, the cart), so one scenario can break the next. Leave `clearData` out
 only when a scenario deliberately relies on state prepared outside the test.
 
+## Setups and independent scenarios
+Every UI and API scenario can run on its own, in any order and in any subset. A scenario starts in a new browser
+context (UI) or with an empty variable store (API). Nothing it does (cookies, storage, current page, `saveAs`
+values) is visible to another scenario. Shared starting state comes from **setups**.
+
+### Setup
+A named starting state, such as "signed in as the default user". A setup is not a test: it is never selected,
+counted or reported as a scenario, and it has no scenario history.
+
+```json
+{
+  "id": "auth-default",
+  "name": "Signed in as the default user",
+  "type": "ui",
+  "scope": "run",
+  "from": "optional-parent-setup-id",
+  "steps":    [ { "given": { "op": "ui.goto", "with": { "url": "/login" } } } ],
+  "ready":    [ { "given": { "op": "ui.goto", "with": { "url": "/" } } },
+                { "then":  { "op": "ui.expectVisible", "with": { "selector": ".user-menu" } } } ],
+  "exports":  ["login"],
+  "teardown": []
+}
+```
+
+| Field | Required | Meaning |
+|---|---|---|
+| `id` | yes | Unique per application across scenarios and setups. Convention: `auth-<role>`, `<thing>-exists`. |
+| `name` | yes | Label shown in run results. |
+| `type` | yes | `ui`, `api` or `mixed`. |
+| `scope` | yes | `run`: runs at most once per run and is shared by every consumer. `scenario`: runs again for every consumer. |
+| `from` | no | Parent setup id. The parent's state is restored first, then these steps run. No cycles. |
+| `steps` | yes | Ordinary steps, same syntax as scenarios. |
+| `ready` | yes for `ui`/`mixed` | Check-only steps proving a restored state works. The first step must be `ui.goto`. |
+| `exports` | no | `saveAs` names from `steps` that consumers read as `${res:<name>}`. |
+| `teardown` | no | Steps that undo the setup's server-side effects. |
+
+Setups are passed in `RunnerOptions.setups` or `metadata.testing.setups`. The worker also reads them from a
+`{ testing: { scenarios, setups } }` scenarios file when the run payload has no `setups`.
+
+### `restoreFrom` and `dependsOn` on a scenario
+- `restoreFrom` names **one setup** (never a scenario). It takes `"auth-default"` or
+  `{ "setup": "auth-default", "fresh": true }`. `fresh: true` runs the named setup again just for this scenario and
+  does not share the result, even when the setup is `scope: "run"`. Only the top-level setup is re-run; its `from`
+  parents follow their own `scope`.
+- `dependsOn` is a **skip rule only**: if one of the listed scenarios is in the run and did not pass, this scenario
+  is reported as Blocked. It never adds scenarios to a run and never passes state. When both are in the run, the
+  gating scenario runs first.
+- The first UI step must be `ui.goto`. Restoring never restores the page.
+- `session` accepts only `"fresh"` (the default). `"shared"` and `"restore"` are errors. `saveSession` is not allowed.
+- A UI scenario that clicks logout while restoring a shared sign-in should use `fresh: true`. Otherwise logout ends
+  the session for every other scenario that shares it.
+
+### Which tool to use
+
+| You need | Use | Not |
+|---|---|---|
+| The scenario to start signed in | `restoreFrom: "auth-<role>"` | `dependsOn` on the Login scenario |
+| The scenario to start with a record that exists | `restoreFrom` a setup that creates it | `dependsOn` on the scenario that creates it |
+| The scenario to change or delete that record | a `scope: "scenario"` setup, or `fresh: true` | a shared `scope: "run"` setup |
+| The scenario to end the shared session (logout) | `restoreFrom: { "setup": "auth-<role>", "fresh": true }` | the shared session |
+| An API token from a sign-in call | an API setup that `exports` it | `${res:...}` written by another scenario |
+| Several identities | one setup per role | logout/login bridge scenarios |
+| Skip these if that one failed | `dependsOn` (skip rule only) | `restoreFrom` |
+| A login, search, logout journey | one scenario with all the steps | three scenarios relying on order |
+| To start signed out | nothing (default) | running after a logout scenario |
+
+### Known limits of restored state
+A restore brings back cookies, `localStorage`, IndexedDB, sessionStorage per origin and exported values. It does
+**not** restore the in-memory page, open tabs, service-worker caches or server-side per-connection state. Anything
+the application keeps outside cookies, localStorage, IndexedDB and sessionStorage is not restored either. Setups
+that depend on that kind of state need a `ready` check that proves it works.
+
+Mobile scenarios (`type: "mobile"`) keep the legacy `session`, `saveSession`, `restoreFrom` (naming a scenario),
+`dependsOn` and `reset` behaviour. A run that contains a mobile scenario takes the legacy path.
+
 ## Metadata Shape
 `TestingMetadata` lives under `testing` in module metadata JSON files.
 

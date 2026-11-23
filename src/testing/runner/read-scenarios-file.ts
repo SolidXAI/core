@@ -1,6 +1,6 @@
 import * as fs from "fs";
 
-import type { ScenarioSpec, TestingDataRecord } from "../contracts/testing-metadata.types";
+import type { ScenarioSpec, SetupSpec, TestingDataRecord } from "../contracts/testing-metadata.types";
 
 /**
  * Result of reading a scenario JSON file. `ok:false` means the file was missing,
@@ -9,6 +9,8 @@ import type { ScenarioSpec, TestingDataRecord } from "../contracts/testing-metad
 export interface ReadScenariosResult {
   scenarios: ScenarioSpec[];
   data?: TestingDataRecord[];
+  /** `testing.setups` of a `{ testing: { scenarios, setups } }` document. Undefined when the file has none. */
+  setups?: SetupSpec[];
   ok: boolean;
   error?: string;
 }
@@ -37,7 +39,9 @@ export function readScenariosFile(absPath: string): ReadScenariosResult {
     const scenarios: ScenarioSpec[] = Array.isArray(rawScenarios) ? rawScenarios : [];
     const rawData = parsed?.testing?.data ?? parsed?.data;
     const data: TestingDataRecord[] | undefined = Array.isArray(rawData) ? rawData : undefined;
-    return { scenarios, data, ok: true };
+    const rawSetups = parsed?.testing?.setups;
+    const setups: SetupSpec[] | undefined = Array.isArray(rawSetups) ? rawSetups : undefined;
+    return { scenarios, data, setups, ok: true };
   } catch (err) {
     return { scenarios: [], ok: false, error: (err as Error)?.message || "read_error" };
   }

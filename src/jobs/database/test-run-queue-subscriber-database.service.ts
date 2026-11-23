@@ -84,6 +84,7 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
 
         let scenarios = p.scenarios;
         let data = p.data;
+        let setups = p.setups;
         const scenarioPaths = Array.isArray(p.scenarioPaths) && p.scenarioPaths.length ? p.scenarioPaths : null;
         if (scenarioPaths || p.scenariosPath) {
             const source = scenarioPaths ? `${scenarioPaths.length} scenario file(s)` : p.scenariosPath;
@@ -99,6 +100,8 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
             }
             scenarios = read.scenarios;
             data = read.data ?? data;
+            // A payload without setups takes the ones from the scenarios file, if it has any.
+            setups = p.setups ?? read.setups;
             this.testRunLogger.debug(`Test run ${p.runId} loaded ${scenarios.length} scenario(s) from ${source}`);
         }
 
@@ -115,6 +118,10 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
                 signal,
                 scenarios,
                 data,
+                setups,
+                order: p.order,
+                shuffleSeed: p.shuffleSeed,
+                applicationKey: p.applicationKey,
                 includeTags: p.includeTags,
                 scenarioIds: p.scenarioIds,
                 skipScenarioIds: p.skipScenarioIds,
