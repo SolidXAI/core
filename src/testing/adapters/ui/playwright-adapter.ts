@@ -1,7 +1,7 @@
 import type { Browser, BrowserContext, Page, ConsoleMessage, Response, Request, Video } from "playwright";
 
 import type { HealEvent } from "../../contracts/runtime-context.types";
-import type { HealingPolicy } from "../../contracts/testing-metadata.types";
+import type { HealingPolicy, SessionStorageByOrigin } from "../../contracts/testing-metadata.types";
 import type { AttachOptions, CaptureOptions, PlaywrightAdapterOptions, ViewportOptions } from "./ui.types";
 import { buildTimeline, clipDurationMs, findFfmpeg, joinClips, type ClipTiming, type RunVideoTimeline, type ScenarioMark } from "./run-video";
 
@@ -58,6 +58,8 @@ export class PlaywrightAdapter {
   private browser?: Browser;
   private context?: BrowserContext;
   public page?: Page;
+  /** The tab {@link openContext} opened: its video is the context's clip, whichever tab is active at close. */
+  private contextPage?: Page;
   /** False when wrapping a caller-owned page via {@link attach}: stop() leaves it open. */
   private ownsBrowser = true;
 
@@ -170,12 +172,20 @@ export class PlaywrightAdapter {
     this.context.setDefaultTimeout(this.defaultTimeoutMs);
     this.context.setDefaultNavigationTimeout(this.navigationTimeoutMs);
     this.page = await this.context.newPage();
+    this.contextPage = this.page;
     this.segmentStartedAt = Date.now();
     this.attachCaptureListeners(this.page);
   }
 
-  private async closeContext(): Promise<void> {
-    const video = this.videoDir ? this.page?.video() : undefined;
+  /**
+   * Close the current context and its pages; the browser stays up. Safe to call when no context is open, and
+   * {@link stop} still works afterwards. The run video is kept: this records the context's video as a segment
+   * (finalized by the close) before closing, exactly as {@link newContext} does, so every context a run opens
+   * becomes one clip of the joined run video and nothing is dropped.
+   */
+  async closeContext(): Promise<void> {
+    if (!this.ownsBrowser) return;
+    const video = this.videoDir ? (this.contextPage ?? this.page)?.video() : undefined;
     if (video) this.videoSegments.push({ video, startedAt: this.segmentStartedAt, endedAt: Date.now() });
     try {
       if (this.context) {
@@ -184,6 +194,7 @@ export class PlaywrightAdapter {
     } finally {
       this.context = undefined;
       this.page = undefined;
+      this.contextPage = undefined;
     }
   }
 
@@ -191,20 +202,75 @@ export class PlaywrightAdapter {
    * Replace the current browser context with a new one, optionally seeded with a saved
    * storage state. Used for `session: fresh|restore` scenarios.
    */
-  async newContext(opts?: { storageState?: StorageState }): Promise<void> {
+  async newContext(opts?: { storageState?: StorageState; sessionStorage?: SessionStorageByOrigin }): Promise<void> {
     if (!this.ownsBrowser) {
       throw new Error("PlaywrightAdapter: cannot replace the context of an attached page");
     }
     await this.closeContext();
     await this.openContext(opts?.storageState);
+    if (opts?.sessionStorage) await this.seedSessionStorage(opts.sessionStorage);
   }
 
-  /** Cookies and localStorage of the current context, kept in memory by the caller. */
+  /**
+   * Write saved sessionStorage into the new context's first tab, once. sessionStorage belongs to a tab and an origin,
+   * so for each http(s) origin the tab loads an intercepted empty page of that origin (no request reaches the app),
+   * sets the items there, and finally returns to about:blank. Nothing re-seeds later: an app that removes keys or
+   * clears sessionStorage (logout) and then navigates sees them gone, and a reload keeps what the app changed.
+   * Deliberately not an init script: one that re-adds missing keys on every load signs a logged-out user back in on
+   * the next navigation. Tabs opened later start empty, as new tabs do in a real browser.
+   */
+  private async seedSessionStorage(byOrigin: SessionStorageByOrigin): Promise<void> {
+    const page = this.page;
+    if (!page) return;
+    let seeded = false;
+    for (const [origin, items] of Object.entries(byOrigin)) {
+      if (!isAbsoluteUrl(origin) || !items || Object.keys(items).length === 0) continue;
+      let url: string;
+      try {
+        url = new URL("/__solidx_seed_session_storage__", origin).toString();
+      } catch {
+        continue;
+      }
+      await page.route(url, (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title></title>" }));
+      try {
+        await page.goto(url, { waitUntil: "domcontentloaded", timeout: this.navigationTimeoutMs });
+        // The map is passed as the argument, never spliced into code.
+        await page.evaluate((entries: Record<string, string>) => {
+          for (const [key, value] of Object.entries(entries)) sessionStorage.setItem(key, value);
+        }, items);
+        seeded = true;
+      } finally {
+        await page.unroute(url).catch(() => {});
+      }
+    }
+    if (seeded) await page.goto("about:blank").catch(() => {});
+  }
+
+  /** Cookies, localStorage and IndexedDB of the current context, kept in memory by the caller. */
   async storageState(): Promise<StorageState> {
     if (!this.context) {
       throw new Error("PlaywrightAdapter: no browser context");
     }
-    return this.context.storageState();
+    return this.context.storageState({ indexedDB: true });
+  }
+
+  /** sessionStorage of every open http(s) page, by origin. Pages that cannot be read are ignored. */
+  async captureSessionStorage(): Promise<SessionStorageByOrigin> {
+    const result: SessionStorageByOrigin = {};
+    if (!this.context) return result;
+    for (const page of this.context.pages()) {
+      try {
+        if (page.isClosed() || !/^https?:\/\//i.test(page.url())) continue;
+        const snapshot = await page.evaluate(() => ({
+          origin: location.origin,
+          items: Object.fromEntries(Object.entries(sessionStorage)) as Record<string, string>,
+        }));
+        result[snapshot.origin] = { ...result[snapshot.origin], ...snapshot.items };
+      } catch {
+        // closed page or unreadable frame
+      }
+    }
+    return result;
   }
 
   /** First whole-run video segment, available after {@link stop} has finalized it. */
