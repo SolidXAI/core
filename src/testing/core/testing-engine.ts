@@ -68,19 +68,27 @@ export class TestingEngine {
     this.defaults = defaults;
   }
 
+  /**
+   * `beforeRetry`, when given, is called before every attempt after the first and returns the context base for that
+   * attempt, so a retry can start from the same clean state as the first attempt (a new browser context and variable
+   * store) instead of whatever the failed attempt left behind. An error it throws ends the scenario with that error.
+   */
   async runScenario(
     scenario: ScenarioSpec,
     ctxBase: Omit<TestContext, "scenarioId" | "scenarioType" | "params">,
     setup: ScenarioSetup[] = [],
+    beforeRetry?: (attempt: number) => Promise<Omit<TestContext, "scenarioId" | "scenarioType" | "params">>,
   ): Promise<void> {
     const retries = scenario.retries ?? this.defaults?.retries ?? 0;
     const maxAttempts = Math.max(0, retries) + 1;
     const scenarioTimeoutMs =
       scenario.timeoutMs ?? this.defaults?.timeoutMs;
 
+    let attemptBase = ctxBase;
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      if (attempt > 1 && beforeRetry) attemptBase = await beforeRetry(attempt);
       const ctx: TestContext = {
-        ...ctxBase,
+        ...attemptBase,
         scenarioId: scenario.id,
         scenarioType: scenario.type,
         params: scenario.params ?? {},
@@ -189,6 +197,28 @@ export class TestingEngine {
 
       if (attempt >= maxAttempts) {
         throw scenarioError;
+      }
+    }
+  }
+
+  /**
+   * Runs `steps` in `ctx` without reporting a scenario start or end, so setups, ready checks and teardowns reuse the
+   * step machinery. Each step is reported with `setup: label` under `scenarioId: ownerId`. Throws the first step's
+   * error (naming the step), and stops there.
+   */
+  async runSteps(steps: StepBlock[], ctx: TestContext, label: string, ownerId: string): Promise<void> {
+    const partCtx: TestContext = { ...ctx, scenarioId: ownerId };
+    for (const [blockIndex, block] of steps.entries()) {
+      const normalized = normalizeBlock(block);
+      for (const [stepIndex, step] of normalized.steps.entries()) {
+        const stepPath = stepPathFor(block, blockIndex, stepIndex);
+        try {
+          await this.runStep(normalized.phase, step, partCtx, stepPath, label);
+        } catch (err: any) {
+          const failure = new Error(`${label} failed at ${stepPath}: ${err?.message ?? err}`);
+          (failure as Error & { cause?: unknown }).cause = err;
+          throw failure;
+        }
       }
     }
   }

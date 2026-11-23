@@ -1,6 +1,7 @@
 // Purpose: a run stops at the first failed scenario by default; failFast: false runs every
-// scenario and still reports the run as failed. With dependsOn, a failure skips its dependents
-// and the run keeps going; saved browser sessions are restored for dependent scenarios.
+// scenario and still reports the run as failed. For ui and api runs, dependsOn only gates (a failure
+// blocks its dependents) and a browser session comes only from a setup. The legacy path (any run with a
+// mobile scenario) keeps the old rules: dependsOn pulls scenarios in and skips, and saved sessions restore.
 
 import * as http from "http";
 import type { AddressInfo } from "net";
@@ -8,6 +9,7 @@ import type { AddressInfo } from "net";
 import type { ScenarioSpec } from "../contracts/testing-metadata.types";
 import type { Reporter, RunEndArgs, ScenarioResult, ScenarioSkipInfo } from "../reporter/reporter.types";
 import { runFromMetadata } from "./run-from-metadata";
+import { runLegacy } from "./run-legacy";
 
 function scenario(id: string, passes: boolean): ScenarioSpec {
   return {
@@ -88,6 +90,7 @@ describe("runFromMetadata: failFast", () => {
 type Event =
   | { type: "end"; id: string; ok: boolean; error?: string }
   | { type: "skip"; id: string; dependency: string }
+  | { type: "blocked"; id: string; kind: string; blockedId: string }
   | { type: "run"; args: RunEndArgs };
 
 function recordingReporter(events: Event[]): Reporter {
@@ -98,6 +101,9 @@ function recordingReporter(events: Event[]): Reporter {
     },
     onScenarioSkipped(scenario: ScenarioSpec, info: ScenarioSkipInfo) {
       events.push({ type: "skip", id: scenario.id, dependency: info.dependency });
+    },
+    onScenarioBlocked(scenario: ScenarioSpec, blockedBy: { kind: string; id: string }) {
+      events.push({ type: "blocked", id: scenario.id, kind: blockedBy.kind, blockedId: blockedBy.id });
     },
     onStepStart() {},
     onStepEnd() {},
@@ -144,13 +150,93 @@ describe("runFromMetadata with dependsOn", () => {
     ).rejects.toThrow(/Expected values to be equal/);
     expect(events.filter((e) => e.type !== "run").map((e) => `${e.type}:${(e as any).id}`)).toEqual(["end:login", "end:a", "end:b"]);
     const run = events.find((e) => e.type === "run") as { args: RunEndArgs };
-    expect(run.args).toMatchObject({ ok: false, total: 4, passed: 2, failed: 1, skipped: 0 });
+    expect(run.args).toMatchObject({ ok: false, total: 4, passed: 2, failed: 1, blocked: 0 });
   });
 
-  it("with failFast off, skips dependents of a failure and keeps running independent scenarios", async () => {
+  it("with failFast off, blocks dependents of a failure and keeps running independent scenarios", async () => {
     const events: Event[] = [];
     await expect(
       runFromMetadata({
+        scenarios: [
+          fail("setup"),
+          pass("child", { dependsOn: ["setup"] }),
+          pass("grandchild", { dependsOn: ["child"] }),
+          pass("independent"),
+        ],
+        reporter: recordingReporter(events),
+        failFast: false,
+      }),
+    ).rejects.toThrow();
+    expect(events.filter((e) => e.type !== "run")).toEqual([
+      expect.objectContaining({ type: "end", id: "setup", ok: false }),
+      { type: "blocked", id: "child", kind: "gate", blockedId: "setup" },
+      { type: "blocked", id: "grandchild", kind: "gate", blockedId: "child" },
+      expect.objectContaining({ type: "end", id: "independent", ok: true }),
+    ]);
+    const run = events.find((e) => e.type === "run") as { args: RunEndArgs };
+    expect(run.args).toMatchObject({ ok: false, total: 4, passed: 1, failed: 1, blocked: 2 });
+  });
+
+  it("fails only a scenario whose restoreFrom names an unknown setup, blocks what gates on it, and runs the rest", async () => {
+    const events: Event[] = [];
+    await expect(
+      runFromMetadata({
+        scenarios: [
+          pass("login"),
+          pass("workspace", { restoreFrom: "ui-login" }),
+          pass("after-workspace", { dependsOn: ["workspace"] }),
+          pass("other", { dependsOn: ["login"] }),
+        ],
+        reporter: recordingReporter(events),
+      }),
+    ).rejects.toThrow(/restoreFrom names unknown setup "ui-login"/);
+    expect(events.filter((e) => e.type !== "run")).toEqual([
+      expect.objectContaining({ type: "end", id: "workspace", ok: false }),
+      expect.objectContaining({ type: "end", id: "login", ok: true }),
+      { type: "blocked", id: "after-workspace", kind: "gate", blockedId: "workspace" },
+      expect.objectContaining({ type: "end", id: "other", ok: true }),
+    ]);
+    const run = events.find((e) => e.type === "run") as { args: RunEndArgs };
+    expect(run.args).toMatchObject({ ok: false, total: 4, passed: 2, failed: 1, blocked: 1 });
+  });
+
+  it("reports a broken scenario only when the run selected it or something that needs it", async () => {
+    const events: Event[] = [];
+    await runFromMetadata({
+      scenarios: [pass("login"), pass("workspace", { dependsOn: ["ghost"] })],
+      scenarioIds: ["login"],
+      reporter: recordingReporter(events),
+    });
+    expect(events.filter((e) => e.type !== "run").map((e) => `${e.type}:${(e as any).id}`)).toEqual(["end:login"]);
+  });
+
+  it("does not add a dependsOn target to the run: it is a skip rule only", async () => {
+    const events: Event[] = [];
+    await runFromMetadata({
+      scenarios: [pass("child", { dependsOn: ["parent"] }), pass("parent"), pass("unrelated")],
+      scenarioIds: ["child"],
+      reporter: recordingReporter(events),
+    });
+    expect(events.filter((e) => e.type === "end").map((e) => (e as any).id)).toEqual(["child"]);
+  });
+
+  it("runs a gating scenario first when both are selected", async () => {
+    const events: Event[] = [];
+    await runFromMetadata({
+      scenarios: [pass("child", { dependsOn: ["parent"] }), pass("parent")],
+      reporter: recordingReporter(events),
+    });
+    expect(events.filter((e) => e.type === "end").map((e) => (e as any).id)).toEqual(["parent", "child"]);
+  });
+});
+
+// The legacy path runs every run that contains a mobile scenario, ui and api scenarios included. Called directly here,
+// so its dependsOn, restoreFrom and session rules stay covered now that ui and api runs no longer reach it.
+describe("runLegacy with dependsOn", () => {
+  it("with failFast off, skips dependents of a failure and keeps running independent scenarios", async () => {
+    const events: Event[] = [];
+    await expect(
+      runLegacy({
         scenarios: [
           fail("setup"),
           pass("child", { dependsOn: ["setup"] }),
@@ -174,7 +260,7 @@ describe("runFromMetadata with dependsOn", () => {
   it("fails only a scenario whose restoreFrom names an unknown scenario, skips what needs it, and runs the rest", async () => {
     const events: Event[] = [];
     await expect(
-      runFromMetadata({
+      runLegacy({
         scenarios: [
           pass("login"),
           pass("workspace", { restoreFrom: "ui-login" }),
@@ -194,19 +280,9 @@ describe("runFromMetadata with dependsOn", () => {
     expect(run.args).toMatchObject({ ok: false, total: 4, passed: 2, failed: 1, skipped: 1 });
   });
 
-  it("reports a broken scenario only when the run selected it or something that needs it", async () => {
-    const events: Event[] = [];
-    await runFromMetadata({
-      scenarios: [pass("login"), pass("workspace", { dependsOn: ["ghost"] })],
-      scenarioIds: ["login"],
-      reporter: recordingReporter(events),
-    });
-    expect(events.filter((e) => e.type !== "run").map((e) => `${e.type}:${(e as any).id}`)).toEqual(["end:login"]);
-  });
-
   it("runs a selected scenario's dependencies first", async () => {
     const events: Event[] = [];
-    await runFromMetadata({
+    await runLegacy({
       scenarios: [pass("child", { dependsOn: ["parent"] }), pass("parent"), pass("unrelated")],
       scenarioIds: ["child"],
       reporter: recordingReporter(events),
@@ -237,7 +313,7 @@ describe("runFromMetadata browser sessions", () => {
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
 
-  it("restores a saved session and gives fresh scenarios an empty one", async () => {
+  it("restores a setup's session and gives scenarios without a setup an empty one", async () => {
     const events: Event[] = [];
     const ui = (id: string, extra: Partial<ScenarioSpec>, who: string): ScenarioSpec => ({
       id,
@@ -249,61 +325,122 @@ describe("runFromMetadata browser sessions", () => {
       ...extra,
     });
     await runFromMetadata({
-      scenarios: [
+      scenarios: [ui("plain", {}, "anonymous"), ui("restored", { restoreFrom: "auth-t" }, "t-1"), ui("plain-again", {}, "anonymous")],
+      setups: [
         {
-          id: "login",
+          id: "auth-t",
+          name: "Signed in",
           type: "ui",
-          saveSession: true,
+          scope: "run",
           steps: [
             { op: "ui.goto", with: { url: "/" } },
             { op: "ui.click", with: { selector: "text=Sign in" } },
             { op: "ui.expectText", with: { selector: "#who", equals: "t-1" } },
           ],
+          ready: [
+            { op: "ui.goto", with: { url: "/" } },
+            { op: "ui.expectText", with: { selector: "#who", equals: "t-1" } },
+          ],
         },
-        ui("fresh", { session: "fresh" }, "anonymous"),
-        ui("restored", { dependsOn: ["login"], session: "restore" }, "t-1"),
       ],
       ui: { baseUrl, recordVideo: false },
       reporter: recordingReporter(events),
     });
     expect(events.filter((e) => e.type === "end")).toEqual([
-      expect.objectContaining({ id: "login", ok: true }),
-      expect.objectContaining({ id: "fresh", ok: true }),
+      expect.objectContaining({ id: "plain", ok: true }),
       expect.objectContaining({ id: "restored", ok: true }),
+      expect.objectContaining({ id: "plain-again", ok: true }),
     ]);
   }, 60_000);
 
-  it("restoreFrom restores the named scenario's session with no saveSession or dependsOn written", async () => {
+  it("fails a scenario whose restoreFrom names a scenario, telling it to run the migration", async () => {
     const events: Event[] = [];
-    await runFromMetadata({
-      scenarios: [
-        {
-          id: "restored",
-          type: "ui",
-          restoreFrom: "login",
-          steps: [
-            { op: "ui.goto", with: { url: "/" } },
-            { op: "ui.expectText", with: { selector: "#who", equals: "t-1" } },
-          ],
-        },
-        {
-          id: "login",
-          type: "ui",
-          steps: [
-            { op: "ui.goto", with: { url: "/" } },
-            { op: "ui.click", with: { selector: "text=Sign in" } },
-            { op: "ui.expectText", with: { selector: "#who", equals: "t-1" } },
-          ],
-        },
-      ],
-      ui: { baseUrl, recordVideo: false },
-      reporter: recordingReporter(events),
-    });
+    await expect(
+      runFromMetadata({
+        scenarios: [
+          { id: "login", type: "ui", steps: [{ op: "ui.goto", with: { url: "/" } }] },
+          { id: "restored", type: "ui", restoreFrom: "login", steps: [{ op: "ui.goto", with: { url: "/" } }] },
+        ],
+        ui: { baseUrl, recordVideo: false },
+        reporter: recordingReporter(events),
+        failFast: false,
+      }),
+    ).rejects.toThrow(/restoreFrom must name a setup; run the migration/);
     expect(events.filter((e) => e.type === "end")).toEqual([
+      expect.objectContaining({ id: "restored", ok: false }),
       expect.objectContaining({ id: "login", ok: true }),
-      expect.objectContaining({ id: "restored", ok: true }),
     ]);
   }, 60_000);
+
+  describe("on the legacy path", () => {
+    it("restores a saved session and gives fresh scenarios an empty one", async () => {
+      const events: Event[] = [];
+      const ui = (id: string, extra: Partial<ScenarioSpec>, who: string): ScenarioSpec => ({
+        id,
+        type: "ui",
+        steps: [
+          { op: "ui.goto", with: { url: "/" } },
+          { op: "ui.expectText", with: { selector: "#who", equals: who } },
+        ],
+        ...extra,
+      });
+      await runLegacy({
+        scenarios: [
+          {
+            id: "login",
+            type: "ui",
+            saveSession: true,
+            steps: [
+              { op: "ui.goto", with: { url: "/" } },
+              { op: "ui.click", with: { selector: "text=Sign in" } },
+              { op: "ui.expectText", with: { selector: "#who", equals: "t-1" } },
+            ],
+          },
+          ui("fresh", { session: "fresh" }, "anonymous"),
+          ui("restored", { dependsOn: ["login"], session: "restore" }, "t-1"),
+        ],
+        ui: { baseUrl, recordVideo: false },
+        reporter: recordingReporter(events),
+      });
+      expect(events.filter((e) => e.type === "end")).toEqual([
+        expect.objectContaining({ id: "login", ok: true }),
+        expect.objectContaining({ id: "fresh", ok: true }),
+        expect.objectContaining({ id: "restored", ok: true }),
+      ]);
+    }, 60_000);
+
+    it("restoreFrom restores the named scenario's session with no saveSession or dependsOn written", async () => {
+      const events: Event[] = [];
+      await runLegacy({
+        scenarios: [
+          {
+            id: "restored",
+            type: "ui",
+            restoreFrom: "login",
+            steps: [
+              { op: "ui.goto", with: { url: "/" } },
+              { op: "ui.expectText", with: { selector: "#who", equals: "t-1" } },
+            ],
+          },
+          {
+            id: "login",
+            type: "ui",
+            steps: [
+              { op: "ui.goto", with: { url: "/" } },
+              { op: "ui.click", with: { selector: "text=Sign in" } },
+              { op: "ui.expectText", with: { selector: "#who", equals: "t-1" } },
+            ],
+          },
+        ],
+        ui: { baseUrl, recordVideo: false },
+        reporter: recordingReporter(events),
+      });
+      expect(events.filter((e) => e.type === "end")).toEqual([
+        expect.objectContaining({ id: "login", ok: true }),
+        expect.objectContaining({ id: "restored", ok: true }),
+      ]);
+    }, 60_000);
+  });
 
   describe("whole-run video", () => {
     const uiScenario: ScenarioSpec = {
