@@ -11337,6 +11337,33 @@
             "isRelationManyToManyOwner": null,
             "relationFieldFixedFilter": null,
             "enableAuditTracking": true
+          },
+          {
+            "name": "agentContextArchives",
+            "displayName": "Agent Context Archives",
+            "description": null,
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": true,
+            "relationType": "one-to-many",
+            "relationCoModelFieldName": "session",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "agentContextArchive",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null,
+            "relationFieldFixedFilter": null,
+            "enableAuditTracking": true
           }
         ]
       },
@@ -12312,6 +12339,278 @@
             "decryptWhen": null,
             "columnName": null,
             "enableAuditTracking": true
+          }
+        ],
+        "moduleUserKey": "solid-core"
+      },
+      {
+        "singularName": "agentContextArchive",
+        "pluralName": "agentContextArchives",
+        "displayName": "Agent Context Archive",
+        "description": "Full, redacted originals of context that AgentHub auto-compaction removed from a session's model input. The context_recall tool reads them back. Written by the AgentHub runtime.",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_agent_context_archive",
+        "isChild": false,
+        "isSystem": true,
+        "enableSoftDelete": false,
+        "enableAuditTracking": false,
+        "draftPublishWorkflow": false,
+        "internationalisation": false,
+        "legacyTableType": "none",
+        "fields": [
+          {
+            "name": "session",
+            "displayName": "Session",
+            "description": null,
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": true,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": "agentContextArchives",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "agentSession",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null,
+            "relationFieldFixedFilter": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "ref",
+            "displayName": "Ref",
+            "description": "Stable reference shown to the model in archive stubs and context summaries; unique per session.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "kind",
+            "displayName": "Kind",
+            "description": "tool_result: one archived tool output. transcript: history replaced by a context summary.",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": null,
+            "selectionStaticValues": [
+              "tool_result:Tool Result",
+              "transcript:Transcript"
+            ],
+            "selectionValueType": "string",
+            "isMultiSelect": false,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "toolCallId",
+            "displayName": "Tool Call Id",
+            "description": null,
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "toolName",
+            "displayName": "Tool Name",
+            "description": null,
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "turnNumber",
+            "displayName": "Turn Number",
+            "description": null,
+            "type": "int",
+            "ormType": "integer",
+            "isSystem": true,
+            "defaultValue": "0",
+            "min": null,
+            "max": null,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "stepNumber",
+            "displayName": "Step Number",
+            "description": null,
+            "type": "int",
+            "ormType": "integer",
+            "isSystem": true,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "compactionId",
+            "displayName": "Compaction Id",
+            "description": "Groups the rows written by one compaction.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "content",
+            "displayName": "Content",
+            "description": "Redacted original content.",
+            "type": "longText",
+            "ormType": "text",
+            "isSystem": true,
+            "defaultValue": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": false
+          },
+          {
+            "name": "contentChars",
+            "displayName": "Content Chars",
+            "description": null,
+            "type": "int",
+            "ormType": "integer",
+            "isSystem": true,
+            "defaultValue": "0",
+            "min": null,
+            "max": null,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "tokenEstimate",
+            "displayName": "Token Estimate",
+            "description": null,
+            "type": "int",
+            "ormType": "integer",
+            "isSystem": true,
+            "defaultValue": "0",
+            "min": null,
+            "max": null,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
           }
         ],
         "moduleUserKey": "solid-core"
@@ -14252,6 +14551,32 @@
       "viewUserKey": "agentBrowserSession-tree-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "agentBrowserSession"
+    },
+    {
+      "displayName": "Agent Context Archive List Action",
+      "name": "agentContextArchive-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "agentContextArchive-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentContextArchive"
+    },
+    {
+      "displayName": "Agent Context Archive Tree View Action",
+      "name": "agentContextArchive-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "agentContextArchive-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentContextArchive"
     },
     {
       "displayName": "Agent Human Request List Action",
@@ -30700,6 +31025,294 @@
             "type": "field",
             "attrs": {
               "name": "handoffExpiresAt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "agentContextArchive-list-view",
+      "displayName": "Agent Context Archive",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentContextArchive",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "session"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "ref"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "kind"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "toolName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "turnNumber"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "stepNumber"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "contentChars"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "tokenEstimate"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "agentContextArchive-form-view",
+      "displayName": "Agent Context Archive",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentContextArchive",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Agent Context Archive",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "session"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "ref"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "kind"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "toolName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "toolCallId"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-2",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "turnNumber"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "stepNumber"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "compactionId"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "contentChars"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "tokenEstimate"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-3",
+                      "label": "",
+                      "className": "col-12"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "content"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "agentContextArchive-tree-view",
+      "displayName": "Agent Context Archive",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentContextArchive",
+      "layout": {
+        "type": "tree",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "session"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "ref"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "kind"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "toolName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "turnNumber"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "stepNumber"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "contentChars"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "tokenEstimate"
             }
           }
         ]

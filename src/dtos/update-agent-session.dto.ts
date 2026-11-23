@@ -6,6 +6,7 @@ import { UpdateAgentEventDto } from './update-agent-event.dto';
 import { UpdateAgentSessionCheckpointDto } from './update-agent-session-checkpoint.dto';
 import { UpdateAgentHumanRequestDto } from './update-agent-human-request.dto';
 import { UpdateAgentBrowserSessionDto } from './update-agent-browser-session.dto';
+import { UpdateAgentContextArchiveDto } from './update-agent-context-archive.dto';
 
 export class UpdateAgentSessionDto {
     @IsOptional()
@@ -211,4 +212,21 @@ export class UpdateAgentSessionDto {
     @IsOptional()
     @ApiProperty()
     agentBrowserSessionsCommand: string;
+
+    @IsOptional()
+    @ApiProperty()
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => UpdateAgentContextArchiveDto)
+    agentContextArchives: UpdateAgentContextArchiveDto[];
+
+    @IsOptional()
+    @IsArray()
+    @ApiProperty()
+    agentContextArchivesIds: number[];
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty()
+    agentContextArchivesCommand: string;
 }
