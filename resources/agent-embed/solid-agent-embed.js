@@ -1,11 +1,11 @@
-/* SolidX AgentHub Embed SDK v7. No dependencies; credentials stay in memory.
+/* SolidX AgentHub Embed SDK v9. No dependencies; credentials stay in memory.
  * mode: "popup" (default) owns its launcher and floating window.
  * mode: "inline" fills the supplied container; the host owns its layout.
  * mountWorkspace owns the host layout around an inline chat.
  */
 (function (global) {
   "use strict";
-  if (global.SolidAgentEmbed && global.SolidAgentEmbed.version >= 7) return;
+  if (global.SolidAgentEmbed && global.SolidAgentEmbed.version >= 9) return;
   var channel = "solidx-agent-embed";
   var publicProtocolVersion = 2;
   var maxContextBytes = 32 * 1024;
@@ -567,7 +567,9 @@
         onRecovered: clearError });
       if (options.namespace && typeof options.beforeSend === "function") instance.on("onBeforeUserMessageSend", options.beforeSend,
         { namespace: options.namespace, priority: 0, timeoutMs: 3000 });
+      instance.on("onAgentTurnCompleted", function (event) { if (typeof options.onTurnCompleted === "function") options.onTurnCompleted(event); });
       instance.on("onAgentNavigationRequested", function (event) { if (typeof options.onNavigationRequested === "function") options.onNavigationRequested(event); });
+      instance.on("onWidgetEvent", function (event) { if (typeof options.onWidgetEvent === "function") options.onWidgetEvent(event); });
       instance.on("onWorkspaceActionRequested", function (event) {
         if (event.action === "close") close();
         else if (event.action === "selectAgent") selectAgent(event.agentName);
@@ -715,5 +717,5 @@
       else document.documentElement.style.removeProperty("--agent-chat-space");
     } };
   }
-  global.SolidAgentEmbed = { version: 7, mount: mount, mountWorkspace: mountWorkspace };
+  global.SolidAgentEmbed = { version: 9, mount: mount, mountWorkspace: mountWorkspace };
 })(window);
