@@ -76,10 +76,16 @@ export function setupChain(setupId: string, byId: Map<string, SetupSpec>): strin
   return chain;
 }
 
-/** sha256 hex of the chain's setups as JSON with sorted keys. Editing any setup in the chain changes it. */
+/**
+ * sha256 hex of the chain's setups as JSON with sorted keys. Editing any setup in the chain changes it. The deprecated
+ * `scope` is left out, so adding or removing it does not invalidate a setup's stored state.
+ */
 export function setupHash(setupId: string, byId: Map<string, SetupSpec>): string {
   const body = setupChain(setupId, byId)
-    .map((id) => JSON.stringify(sortKeys(byId.get(id))))
+    .map((id) => {
+      const { scope: _ignored, ...setup } = byId.get(id) as SetupSpec;
+      return JSON.stringify(sortKeys(setup));
+    })
     .join("\n");
   return createHash("sha256").update(body).digest("hex");
 }

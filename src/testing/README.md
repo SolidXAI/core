@@ -84,7 +84,6 @@ counted or reported as a scenario, and it has no scenario history.
   "id": "auth-default",
   "name": "Signed in as the default user",
   "type": "ui",
-  "scope": "run",
   "from": "optional-parent-setup-id",
   "steps":    [ { "given": { "op": "ui.goto", "with": { "url": "/login" } } } ],
   "ready":    [ { "given": { "op": "ui.goto", "with": { "url": "/" } } },
@@ -99,7 +98,6 @@ counted or reported as a scenario, and it has no scenario history.
 | `id` | yes | Unique per application across scenarios and setups. Convention: `auth-<role>`, `<thing>-exists`. |
 | `name` | yes | Label shown in run results. |
 | `type` | yes | `ui`, `api` or `mixed`. |
-| `scope` | yes | `run`: runs at most once per run and is shared by every consumer. `scenario`: runs again for every consumer. |
 | `from` | no | Parent setup id. The parent's state is restored first, then these steps run. No cycles. |
 | `steps` | yes | Ordinary steps, same syntax as scenarios. |
 | `ready` | yes for `ui`/`mixed` | Check-only steps proving a restored state works. The first step must be `ui.goto`. |
@@ -112,8 +110,8 @@ Setups are passed in `RunnerOptions.setups` or `metadata.testing.setups`. The wo
 ### `restoreFrom` and `dependsOn` on a scenario
 - `restoreFrom` names **one setup** (never a scenario). It takes `"auth-default"` or
   `{ "setup": "auth-default", "fresh": true }`. `fresh: true` runs the named setup again just for this scenario and
-  does not share the result, even when the setup is `scope: "run"`. Only the top-level setup is re-run; its `from`
-  parents follow their own `scope`.
+  does not share the result. Only the top-level setup is re-run; its `from` parents stay shared, so a fresh child
+  cannot ask for a private parent.
 - `dependsOn` is a **skip rule only**: if one of the listed scenarios is in the run and did not pass, this scenario
   is reported as Blocked. It never adds scenarios to a run and never passes state. When both are in the run, the
   gating scenario runs first.
@@ -128,7 +126,7 @@ Setups are passed in `RunnerOptions.setups` or `metadata.testing.setups`. The wo
 |---|---|---|
 | The scenario to start signed in | `restoreFrom: "auth-<role>"` | `dependsOn` on the Login scenario |
 | The scenario to start with a record that exists | `restoreFrom` a setup that creates it | `dependsOn` on the scenario that creates it |
-| The scenario to change or delete that record | a `scope: "scenario"` setup, or `fresh: true` | a shared `scope: "run"` setup |
+| The scenario to change or delete that record | `restoreFrom: { "setup": "<id>", "fresh": true }` | a shared setup |
 | The scenario to end the shared session (logout) | `restoreFrom: { "setup": "auth-<role>", "fresh": true }` | the shared session |
 | An API token from a sign-in call | an API setup that `exports` it | `${res:...}` written by another scenario |
 | Several identities | one setup per role | logout/login bridge scenarios |

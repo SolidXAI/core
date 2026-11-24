@@ -37,7 +37,8 @@ export interface Reporter {
     startedAt: string;
     scenarioIds: string[];
     scenarios?: Array<{ id: string; name?: string; type: ScenarioType }>;
-    setups?: Array<{ id: string; name: string; scope: SetupScope }>;
+    /** `scope` is no longer used; older readers may still see it as optional. */
+    setups?: Array<{ id: string; name: string; scope?: SetupScope }>;
     order?: "file" | "shuffle";
     shuffleSeed?: string;
   }): void;

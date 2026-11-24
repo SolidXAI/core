@@ -9,7 +9,7 @@ function scn(id: string, extra: Partial<ScenarioSpec> = {}): ScenarioSpec {
 }
 
 function setup(id: string, extra: Partial<SetupSpec> = {}): SetupSpec {
-  return { id, name: id, type: "ui", scope: "run", steps: [GOTO], ready: [GOTO], ...extra } as SetupSpec;
+  return { id, name: id, type: "ui", steps: [GOTO], ready: [GOTO], ...extra } as SetupSpec;
 }
 
 function byIdOf(setups: SetupSpec[]): Map<string, SetupSpec> {
@@ -18,9 +18,18 @@ function byIdOf(setups: SetupSpec[]): Map<string, SetupSpec> {
 
 describe("validateIndependent", () => {
   it("reports no errors for a valid chain auth-default -> project-exists", () => {
-    const setups = [setup("auth-default"), setup("project-exists", { from: "auth-default", scope: "scenario" })];
+    const setups = [setup("auth-default"), setup("project-exists", { from: "auth-default" })];
     const scenarios = [scn("create-project", { restoreFrom: "project-exists" }), scn("sign-in", { restoreFrom: { setup: "auth-default", fresh: true } })];
     const result = validateIndependent(scenarios, setups);
+    expect([...result.setupErrors]).toEqual([]);
+    expect([...result.scenarioErrors]).toEqual([]);
+  });
+
+  it("accepts a setup without scope, and a setup that still has scope (it is ignored)", () => {
+    const result = validateIndependent(
+      [scn("a", { restoreFrom: "old-setup" }), scn("b", { restoreFrom: "auth-default" })],
+      [setup("old-setup", { scope: "scenario" }), setup("auth-default")],
+    );
     expect([...result.setupErrors]).toEqual([]);
     expect([...result.scenarioErrors]).toEqual([]);
   });
@@ -179,6 +188,14 @@ describe("setupHash", () => {
     expect(setupHash("project-exists", before)).not.toBe(setupHash("project-exists", after));
   });
 
+  it("is the same with and without the deprecated scope", () => {
+    const without = byIdOf([setup("auth-default"), setup("project-exists", { from: "auth-default" })]);
+    const withRun = byIdOf([setup("auth-default", { scope: "run" }), setup("project-exists", { from: "auth-default", scope: "run" })]);
+    const withScenario = byIdOf([setup("auth-default", { scope: "scenario" }), setup("project-exists", { from: "auth-default", scope: "scenario" })]);
+    expect(setupHash("project-exists", withRun)).toBe(setupHash("project-exists", without));
+    expect(setupHash("project-exists", withScenario)).toBe(setupHash("project-exists", without));
+  });
+
   it("changes when a nested value in the setup itself changes", () => {
     const before = byIdOf([setup("auth-default")]);
     const after = byIdOf([setup("auth-default", { steps: [{ given: { op: "ui.goto", with: { url: "/login" } } }] })]);
@@ -186,8 +203,8 @@ describe("setupHash", () => {
   });
 
   it("does not depend on key order", () => {
-    const a = byIdOf([setup("auth-default", { name: "Signed in", scope: "run" })]);
-    const b = byIdOf([{ scope: "run", name: "Signed in", ready: [GOTO], steps: [GOTO], type: "ui", id: "auth-default" } as SetupSpec]);
+    const a = byIdOf([setup("auth-default", { name: "Signed in" })]);
+    const b = byIdOf([{ name: "Signed in", ready: [GOTO], steps: [GOTO], type: "ui", id: "auth-default" } as SetupSpec]);
     expect(setupHash("auth-default", a)).toBe(setupHash("auth-default", b));
   });
 

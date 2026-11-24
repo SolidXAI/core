@@ -171,8 +171,8 @@ describe("runtime manifest", () => {
       "mobile.terminate",
       "mobile.type",
     ]);
-    expect(CAPABILITIES).toEqual(expect.arrayContaining(["mobileRuntime", "mobileSelfHealing", "mobileSessionModes", "mobileReset", "restoreFrom"]));
-    expect(RUNTIME_VERSION).toBe("1.6.0");
+    expect(CAPABILITIES).toEqual(expect.arrayContaining(["mobileRuntime", "mobileSelfHealing", "mobileSessionModes", "mobileReset", "restoreFrom", "setupScopeRemoved"]));
+    expect(RUNTIME_VERSION).toBe("1.7.0");
   });
 
   it("exports the runner so a vendored copy can run scenarios alone with their setups", () => {

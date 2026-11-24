@@ -9,7 +9,7 @@ import { createDefaultStepRegistry } from "./default-registry";
  * Bumped when the step contract changes in a way vendored copies must notice. Consumers
  * compare it with the version they were written against.
  */
-export const RUNTIME_VERSION = "1.6.0";
+export const RUNTIME_VERSION = "1.7.0";
 
 /**
  * Scenario features this runner understands. Authoring tools only emit a feature the
@@ -33,6 +33,7 @@ export const CAPABILITIES = [
   "restoreFromFresh",
   "blockedStatus",
   "shuffleOrder",
+  "setupScopeRemoved",
 ] as const;
 
 export type RuntimeCapability = (typeof CAPABILITIES)[number];

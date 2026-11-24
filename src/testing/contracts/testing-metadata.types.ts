@@ -44,6 +44,10 @@ export interface TestingMetadata {
   };
 }
 
+/**
+ * @deprecated Ignored. Every setup is shared; use `restoreFrom: { setup, fresh: true }` for a private copy.
+ * Kept so older imports still compile.
+ */
 export type SetupScope = "run" | "scenario";
 
 /** A named starting state that scenarios restore from. Not a test: never selected, counted or reported as a scenario. */
@@ -51,7 +55,11 @@ export interface SetupSpec {
   id: string;
   name: string;
   type: "ui" | "api" | "mixed";
-  scope: SetupScope;
+  /**
+   * @deprecated Ignored: every setup is shared, and a stored `scope` is never an error. For a private copy of a setup,
+   * a scenario uses `restoreFrom: { setup, fresh: true }`.
+   */
+  scope?: SetupScope;
   /** Parent setup whose state is restored before these steps run. */
   from?: string;
   steps: StepBlock[];

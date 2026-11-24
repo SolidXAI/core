@@ -65,8 +65,8 @@ export interface RunStartData {
   scenarioIds: string[];
   scenarios: ScenarioDescriptor[];
   startedAt: string;
-  /** Setups the run may use (run-scoped and scenario-scoped). */
-  setups?: Array<{ id: string; name: string; scope: SetupScope }>;
+  /** Setups the run may use. `scope` is no longer used; kept optional for older readers. */
+  setups?: Array<{ id: string; name: string; scope?: SetupScope }>;
   order?: "file" | "shuffle";
   shuffleSeed?: string;
 }

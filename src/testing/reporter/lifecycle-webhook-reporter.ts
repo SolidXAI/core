@@ -160,7 +160,7 @@ export class LifecycleWebhookReporter extends ConsoleReporter {
     startedAt: string;
     scenarioIds: string[];
     scenarios?: ScenarioDescriptor[];
-    setups?: Array<{ id: string; name: string; scope: SetupScope }>;
+    setups?: Array<{ id: string; name: string; scope?: SetupScope }>;
     order?: "file" | "shuffle";
     shuffleSeed?: string;
   }): void {

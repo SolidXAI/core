@@ -54,12 +54,12 @@ export class SetupManager {
   private readonly hashes = new Map<string, string>();
   private readonly failed = new Map<string, string>();
   /**
-   * Run-scoped setups that ran and have teardown steps, in the order each first ran (a parent always before its
+   * Shared setups that ran and have teardown steps, in the order each first ran (a parent always before its
    * children), with every state they ran to: one per run, so a re-run after a failed ready check does not lose the
    * earlier run's teardown.
    */
   private readonly pendingTeardown = new Map<string, SetupState[]>();
-  /** Per consumer: scope "scenario" or fresh acquisitions (parents included) that have teardown steps. */
+  /** Per consumer: fresh acquisitions that have teardown steps. */
   private readonly consumerTeardowns = new Map<string, TeardownDue[]>();
 
   constructor(private readonly deps: SetupManagerDeps) {
@@ -78,7 +78,7 @@ export class SetupManager {
     const key = this.keyFor(setup);
     const { forScenarioId } = opts;
 
-    if (setup.scope === "run" && !opts.fresh) {
+    if (!opts.fresh) {
       const cached = this.deps.store.get(key);
       if (cached !== undefined) {
         this.deps.reporter.onSetupEnd?.({
@@ -147,7 +147,7 @@ export class SetupManager {
       };
 
       const hasTeardown = (setup.teardown?.length ?? 0) > 0;
-      if (setup.scope === "run" && !opts.fresh) {
+      if (!opts.fresh) {
         this.deps.store.set(key, cloneState(state));
         if (hasTeardown) {
           const states = this.pendingTeardown.get(setupId) ?? [];
@@ -168,7 +168,7 @@ export class SetupManager {
   }
 
   /**
-   * Drop a run-scoped setup's cached state, and its parents', so the next acquire runs them again (used after a
+   * Drop a shared setup's cached state, and its parents', so the next acquire runs them again (used after a
    * failed ready check: the consumer's state was built on the whole chain, and a stale parent session would break
    * the re-run too).
    */
@@ -189,7 +189,7 @@ export class SetupManager {
   }
 
   /**
-   * Run-scoped setups that ran in this run and have teardown steps, with the state to run teardown from: children
+   * Shared setups that ran in this run and have teardown steps, with the state to run teardown from: children
    * before their parents, and for a setup that ran more than once (re-run after a failed ready check) one entry per
    * run, newest first.
    */
@@ -200,9 +200,8 @@ export class SetupManager {
   }
 
   /**
-   * Scope "scenario" and fresh acquisitions made for this consumer (scope "scenario" parents included) that have
-   * teardown steps, newest first (children before their parents). Includes acquisitions made before a later setup in
-   * the chain failed, and every re-acquire after a failed ready check. Clears the list: call it once per consumer,
+   * Fresh acquisitions made for this consumer that have teardown steps, newest first (children before their parents).
+   * Includes acquisitions made before a later setup in the chain failed. Clears the list: call it once per consumer,
    * right after the consumer (R8).
    */
   takeConsumerTeardowns(forScenarioId: string): TeardownDue[] {

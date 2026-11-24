@@ -5,7 +5,7 @@ import { InMemorySessionStore, type SetupState } from "./session-store";
 const STEP: StepBlock = { given: { op: "api.get", with: { path: "/" } } };
 
 function setup(id: string, extra: Partial<SetupSpec> = {}): SetupSpec {
-  return { id, name: id, type: "api", scope: "run", steps: [STEP], ...extra } as SetupSpec;
+  return { id, name: id, type: "api", steps: [STEP], ...extra } as SetupSpec;
 }
 
 type RunStepsArgs = Parameters<SetupManagerDeps["runSteps"]>[0];
@@ -69,11 +69,22 @@ describe("SetupManager", () => {
     expect(onSetupEnd).toHaveBeenCalledTimes(3);
   });
 
-  it("runs a scenario-scoped setup once for every consumer and does not cache it", async () => {
+  it("ignores a stored scope: a setup with scope \"scenario\" is shared", async () => {
     const { manager, runSteps } = build([setup("project-exists", { scope: "scenario" })]);
 
+    const first = await manager.acquire("project-exists", { forScenarioId: "s1", fresh: false });
+    const second = await manager.acquire("project-exists", { forScenarioId: "s2", fresh: false });
+
+    expect(runSteps).toHaveBeenCalledTimes(1);
+    expect(second.reused).toBe(true);
+    expect(second.state).toEqual(first.state);
+  });
+
+  it("runs a fresh setup once for every acquisition and does not cache it", async () => {
+    const { manager, runSteps } = build([setup("project-exists")]);
+
     for (const id of ["s1", "s2", "s3"]) {
-      const result = await manager.acquire("project-exists", { forScenarioId: id, fresh: false });
+      const result = await manager.acquire("project-exists", { forScenarioId: id, fresh: true });
       expect(result.reused).toBe(false);
     }
 
@@ -94,14 +105,14 @@ describe("SetupManager", () => {
     expect(later.state).toEqual(original.state);
   });
 
-  it("runs a run-scoped parent once and its scenario-scoped child per consumer", async () => {
+  it("runs a shared parent once and a fresh child once per consumer", async () => {
     const { manager, calls } = build(
-      [setup("auth-default", { exports: ["login"] }), setup("project-exists", { from: "auth-default", scope: "scenario" })],
+      [setup("auth-default", { exports: ["login"] }), setup("project-exists", { from: "auth-default" })],
       { resources: { "auth-default": { login: "t" } } },
     );
 
-    await manager.acquire("project-exists", { forScenarioId: "s1", fresh: false });
-    await manager.acquire("project-exists", { forScenarioId: "s2", fresh: false });
+    await manager.acquire("project-exists", { forScenarioId: "s1", fresh: true });
+    await manager.acquire("project-exists", { forScenarioId: "s2", fresh: true });
 
     expect(calls.map((c) => c.setup.id)).toEqual(["auth-default", "project-exists", "project-exists"]);
     expect(calls[0].startFrom).toBeUndefined();
@@ -140,7 +151,7 @@ describe("SetupManager", () => {
 
   it("blocks a child when its parent cannot be brought up, without running the child", async () => {
     const { manager, runSteps } = build(
-      [setup("auth-default"), setup("project-exists", { from: "auth-default", scope: "scenario" })],
+      [setup("auth-default"), setup("project-exists", { from: "auth-default" })],
       { failures: { "auth-default": 2 } },
     );
 
@@ -155,7 +166,7 @@ describe("SetupManager", () => {
     const { manager } = build(
       [
         setup("auth-default", { exports: ["login"] }),
-        setup("project-exists", { from: "auth-default", scope: "scenario", exports: ["projectId"] }),
+        setup("project-exists", { from: "auth-default", exports: ["projectId"] }),
       ],
       {
         resources: {
@@ -173,7 +184,7 @@ describe("SetupManager", () => {
   it("carries browser state into a child and returns the child's own state", async () => {
     const parentState: SetupState = { exports: {}, sessionStorage: { "https://app": { a: "1" } } };
     const { manager, calls } = build(
-      [setup("auth-default", { type: "ui" }), setup("project-exists", { from: "auth-default", type: "ui", scope: "scenario" })],
+      [setup("auth-default", { type: "ui" }), setup("project-exists", { from: "auth-default", type: "ui" })],
       { state: { "auth-default": parentState } },
     );
 
@@ -226,22 +237,22 @@ describe("SetupManager", () => {
     expect(runSteps).not.toHaveBeenCalled();
   });
 
-  it("lists only run-scoped setups that ran and have teardown steps", async () => {
+  it("lists only shared setups that ran and have teardown steps", async () => {
     const teardown = [STEP];
     const { manager } = build([
       setup("auth-default", { teardown }),
-      setup("project-exists", { from: "auth-default", scope: "scenario", teardown }),
+      setup("project-exists", { from: "auth-default", teardown }),
       setup("no-teardown"),
     ]);
 
-    await manager.acquire("project-exists", { forScenarioId: "s1", fresh: false });
+    await manager.acquire("project-exists", { forScenarioId: "s1", fresh: true });
     await manager.acquire("no-teardown", { forScenarioId: "s1", fresh: false });
     await manager.acquire("auth-default", { forScenarioId: "s1", fresh: false });
 
     expect(manager.ranWithTeardown().map((r) => r.setupId)).toEqual(["auth-default"]);
   });
 
-  it("lists run-scoped teardowns children first, and keeps every run of a setup that was invalidated and re-run", async () => {
+  it("lists shared teardowns children first, and keeps every run of a setup that was invalidated and re-run", async () => {
     const teardown = [STEP];
     let n = 0;
     // Every run of the parent exports the next number, so its two states can be told apart.
@@ -261,7 +272,7 @@ describe("SetupManager", () => {
     ]);
   });
 
-  it("does not list a fresh run-scoped setup for teardown", async () => {
+  it("does not list a fresh setup for teardown in the shared list", async () => {
     const { manager } = build([setup("auth-default", { teardown: [STEP] })]);
 
     await manager.acquire("auth-default", { forScenarioId: "s1", fresh: true });
@@ -286,39 +297,41 @@ describe("SetupManager", () => {
     expect(third.state.sessionStorage).toEqual({ "https://app": { a: "1" } });
   });
 
-  it("lists a consumer's scenario-scoped and fresh acquisitions for teardown, children first, once", async () => {
+  it("lists a consumer's fresh acquisitions for teardown, once, and keeps the shared parents for the run", async () => {
     const teardown = [STEP];
     const { manager } = build([
       setup("auth-default", { teardown }),
-      setup("org-exists", { from: "auth-default", scope: "scenario", teardown, exports: ["orgId"] }),
-      setup("project-exists", { from: "org-exists", scope: "scenario", teardown }),
+      setup("org-exists", { from: "auth-default", teardown, exports: ["orgId"] }),
+      setup("project-exists", { from: "org-exists", teardown }),
     ], { resources: { "org-exists": { orgId: 3 } } });
 
-    await manager.acquire("project-exists", { forScenarioId: "s1", fresh: false });
+    await manager.acquire("project-exists", { forScenarioId: "s1", fresh: true });
     await manager.acquire("auth-default", { forScenarioId: "s2", fresh: true });
 
-    const s1 = manager.takeConsumerTeardowns("s1");
-    expect(s1.map((d) => d.setupId)).toEqual(["project-exists", "org-exists"]);
-    expect(s1[1].state.exports).toEqual({ orgId: 3 });
+    expect(manager.takeConsumerTeardowns("s1").map((d) => d.setupId)).toEqual(["project-exists"]);
     expect(manager.takeConsumerTeardowns("s1")).toEqual([]);
     expect(manager.takeConsumerTeardowns("s2").map((d) => d.setupId)).toEqual(["auth-default"]);
-    expect(manager.ranWithTeardown().map((d) => d.setupId)).toEqual(["auth-default"]);
+    // The parents of a fresh child stay shared, so they are still due for run-level teardown, children first.
+    const shared = manager.ranWithTeardown();
+    expect(shared.map((d) => d.setupId)).toEqual(["org-exists", "auth-default"]);
+    expect(shared[0].state.exports).toEqual({ orgId: 3 });
   });
 
-  it("keeps a scenario-scoped parent's teardown when its child fails", async () => {
+  it("keeps a shared parent's teardown when its fresh child fails", async () => {
     const { manager } = build(
       [
-        setup("org-exists", { scope: "scenario", teardown: [STEP] }),
-        setup("project-exists", { from: "org-exists", scope: "scenario" }),
+        setup("org-exists", { teardown: [STEP] }),
+        setup("project-exists", { from: "org-exists" }),
       ],
       { failures: { "project-exists": 2 } },
     );
 
-    await expect(manager.acquire("project-exists", { forScenarioId: "s1", fresh: false })).rejects.toBeInstanceOf(
+    await expect(manager.acquire("project-exists", { forScenarioId: "s1", fresh: true })).rejects.toBeInstanceOf(
       SetupFailedError,
     );
 
-    expect(manager.takeConsumerTeardowns("s1").map((d) => d.setupId)).toEqual(["org-exists"]);
+    expect(manager.takeConsumerTeardowns("s1")).toEqual([]);
+    expect(manager.ranWithTeardown().map((d) => d.setupId)).toEqual(["org-exists"]);
   });
 
   it("throws SetupFailedError for an unknown setup", async () => {

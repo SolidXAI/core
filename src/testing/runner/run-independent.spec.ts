@@ -41,7 +41,6 @@ const apiSetup = (id: string, extra: Partial<SetupSpec> = {}): SetupSpec => ({
   id,
   name: id,
   type: "api",
-  scope: "run",
   steps: [{ op: "assert.equals", with: { actual: 1, expected: 1 } }],
   ...extra,
 });
@@ -354,11 +353,15 @@ describe("runIndependent: teardown", () => {
     expect(reporter.runEnd).toMatchObject({ passed: 0, failed: 1 });
   });
 
-  it("tears a scenario-scoped setup down after each consumer", async () => {
+  it("tears a fresh setup down after each consumer, and a stored scope does not change that", async () => {
     const reporter = new Timeline();
     await runFromMetadata({
       setups: [withTeardown("s1", { scope: "scenario" })],
-      scenarios: [pass("a", { restoreFrom: "s1" }), fail("b", { restoreFrom: "s1" }), pass("c", { restoreFrom: "s1" })],
+      scenarios: [
+        pass("a", { restoreFrom: { setup: "s1", fresh: true } }),
+        fail("b", { restoreFrom: { setup: "s1", fresh: true } }),
+        pass("c", { restoreFrom: { setup: "s1", fresh: true } }),
+      ],
       reporter,
       failFast: false,
     }).catch(() => undefined);
@@ -378,8 +381,8 @@ describe("runIndependent: teardown", () => {
   it("tears a child down before its parent", async () => {
     const reporter = new Timeline();
     await runFromMetadata({
-      setups: [withTeardown("parent"), withTeardown("child", { from: "parent", scope: "scenario" })],
-      scenarios: [pass("a", { restoreFrom: "child" })],
+      setups: [withTeardown("parent"), withTeardown("child", { from: "parent" })],
+      scenarios: [pass("a", { restoreFrom: { setup: "child", fresh: true } })],
       reporter,
     });
     expect(reporter.log).toEqual(["end:a", "teardown:child", "teardown:parent"]);
@@ -399,8 +402,8 @@ describe("runIndependent: teardown", () => {
     const reporter = new Timeline();
     await expect(
       runFromMetadata({
-        setups: [withTeardown("s1"), withTeardown("s2", { scope: "scenario" })],
-        scenarios: [pass("a", { restoreFrom: "s1" }), fail("b", { restoreFrom: "s2" }), pass("c", { restoreFrom: "s1" })],
+        setups: [withTeardown("s1"), withTeardown("s2")],
+        scenarios: [pass("a", { restoreFrom: "s1" }), fail("b", { restoreFrom: { setup: "s2", fresh: true } }), pass("c", { restoreFrom: "s1" })],
         reporter,
       }),
     ).rejects.toThrow();

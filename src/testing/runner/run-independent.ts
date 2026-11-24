@@ -142,7 +142,7 @@ export async function runIndependent(opts: RunnerOptions): Promise<void> {
     startedAt: new Date(startedAt).toISOString(),
     scenarioIds: reported.map((s) => s.id),
     scenarios: reported.map((s) => ({ id: s.id, name: s.name, type: s.type })),
-    setups: planned.map(({ id, name, scope }) => ({ id, name, scope })),
+    setups: planned.map(({ id, name }) => ({ id, name })),
     order,
     ...(shuffleSeed !== undefined ? { shuffleSeed } : {}),
   });
@@ -348,7 +348,7 @@ export async function runIndependent(opts: RunnerOptions): Promise<void> {
     return "next";
   };
 
-  /** Run-scoped setups already torn down, so none runs twice. */
+  /** Shared setups already torn down, so none runs twice. */
   const tornDown = new Set<string>();
   let inFlight: ScenarioSpec | undefined;
 
@@ -391,7 +391,7 @@ export async function runIndependent(opts: RunnerOptions): Promise<void> {
     await tearDownRunScoped((setupId) => lastConsumerIndex.get(setupId) === index, scenario.id);
   };
 
-  /** Teardowns of the run-scoped setups `due` picks, children first; every run of a setup, each setup only once. */
+  /** Teardowns of the shared setups `due` picks, children first; every run of a setup, each setup only once. */
   const tearDownRunScoped = async (due: (setupId: string) => boolean, forScenarioId: string): Promise<void> => {
     const picked = manager.ranWithTeardown().filter((d) => !tornDown.has(d.setupId) && due(d.setupId));
     for (const d of picked) tornDown.add(d.setupId);
@@ -418,7 +418,7 @@ export async function runIndependent(opts: RunnerOptions): Promise<void> {
     for (const [index, scenario] of ordered.entries()) {
       inFlight = scenario;
       const next = await runOne(scenario);
-      // After each scenario, whatever its outcome: its own teardowns (children first), then the run-scoped setups
+      // After each scenario, whatever its outcome: its own teardowns (children first), then the shared setups
       // it was the last consumer of.
       await tearDownAfter(scenario, index);
       inFlight = undefined;
