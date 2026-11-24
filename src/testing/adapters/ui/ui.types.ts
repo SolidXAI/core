@@ -34,10 +34,12 @@ export interface PlaywrightAdapterOptions {
   navigationTimeoutMs?: number;
   capture?: CaptureOptions;
   recordVideo?: boolean;
+  /** Whether the context {@link PlaywrightAdapter.start} opens is filmed (default true). A runner that opens a context per scenario turns it off. */
+  recordInitialContext?: boolean;
   /** Selector healing for UI steps; see {@link HealingPolicy}. Defaults to `report`. */
   healing?: HealingPolicy;
   viewport?: ViewportOptions;
 }
 
 /** Options for wrapping a page the caller already owns. */
-export type AttachOptions = Omit<PlaywrightAdapterOptions, "headless" | "recordVideo">;
+export type AttachOptions = Omit<PlaywrightAdapterOptions, "headless" | "recordVideo" | "recordInitialContext">;

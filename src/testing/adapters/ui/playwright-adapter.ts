@@ -53,6 +53,7 @@ export class PlaywrightAdapter {
   private readonly navigationTimeoutMs: number;
   private readonly capture: CaptureOptions;
   private readonly recordVideo: boolean;
+  private readonly recordInitialContext: boolean;
   private readonly healing: HealingPolicy;
   private readonly viewport?: ViewportOptions;
   private browser?: Browser;
@@ -60,6 +61,8 @@ export class PlaywrightAdapter {
   public page?: Page;
   /** The tab {@link openContext} opened: its video is the context's clip, whichever tab is active at close. */
   private contextPage?: Page;
+  /** Whether the current context records video: setups and checks open unfilmed contexts so they stay out of the run video. */
+  private recording = false;
   /** False when wrapping a caller-owned page via {@link attach}: stop() leaves it open. */
   private ownsBrowser = true;
 
@@ -89,6 +92,7 @@ export class PlaywrightAdapter {
       opts?.navigationTimeoutMs ?? this.defaultTimeoutMs;
     this.capture = opts?.capture ?? {};
     this.recordVideo = opts?.recordVideo ?? true;
+    this.recordInitialContext = opts?.recordInitialContext ?? true;
     this.healing = opts?.healing ?? "report";
     this.viewport = sanitizeViewport(opts?.viewport);
   }
@@ -155,10 +159,10 @@ export class PlaywrightAdapter {
       const fs = await import('fs');
       this.videoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'solid-run-video-'));
     }
-    await this.openContext();
+    await this.openContext(undefined, this.recordInitialContext);
   }
 
-  private async openContext(storageState?: StorageState): Promise<void> {
+  private async openContext(storageState?: StorageState, record = true): Promise<void> {
     if (!this.browser) {
       throw new Error("PlaywrightAdapter: browser is not started");
     }
@@ -166,13 +170,14 @@ export class PlaywrightAdapter {
       ...contextViewportOptions(this.viewport),
       // At the viewport's own size: without `size` Playwright scales the recording down to fit 800x800, so a 1920x1080
       // run was recorded at about 800x450 and its text was unreadable.
-      ...(this.videoDir
+      ...(this.videoDir && record
         ? { recordVideo: { dir: this.videoDir, size: this.viewport ? { width: this.viewport.width, height: this.viewport.height } : { width: 1280, height: 720 } } }
         : {}),
       ...(storageState ? { storageState } : {}),
     });
     this.context.setDefaultTimeout(this.defaultTimeoutMs);
     this.context.setDefaultNavigationTimeout(this.navigationTimeoutMs);
+    this.recording = !!(this.videoDir && record);
     this.page = await this.context.newPage();
     this.contextPage = this.page;
     this.segmentStartedAt = Date.now();
@@ -187,7 +192,7 @@ export class PlaywrightAdapter {
    */
   async closeContext(): Promise<void> {
     if (!this.ownsBrowser) return;
-    const video = this.videoDir ? (this.contextPage ?? this.page)?.video() : undefined;
+    const video = this.recording ? (this.contextPage ?? this.page)?.video() : undefined;
     if (video) this.videoSegments.push({ video, startedAt: this.segmentStartedAt, endedAt: Date.now() });
     try {
       if (this.context) {
@@ -197,19 +202,21 @@ export class PlaywrightAdapter {
       this.context = undefined;
       this.page = undefined;
       this.contextPage = undefined;
+      this.recording = false;
     }
   }
 
   /**
    * Replace the current browser context with a new one, optionally seeded with a saved
-   * storage state. Used for `session: fresh|restore` scenarios.
+   * storage state. Used for `session: fresh|restore` scenarios. `record: false` keeps the context out of the run
+   * video (default true), for setups and checks that are not part of a scenario.
    */
-  async newContext(opts?: { storageState?: StorageState; sessionStorage?: SessionStorageByOrigin }): Promise<void> {
+  async newContext(opts?: { storageState?: StorageState; sessionStorage?: SessionStorageByOrigin; record?: boolean }): Promise<void> {
     if (!this.ownsBrowser) {
       throw new Error("PlaywrightAdapter: cannot replace the context of an attached page");
     }
     await this.closeContext();
-    await this.openContext(opts?.storageState);
+    await this.openContext(opts?.storageState, opts?.record ?? true);
     if (opts?.sessionStorage) await this.seedSessionStorage(opts.sessionStorage);
   }
 

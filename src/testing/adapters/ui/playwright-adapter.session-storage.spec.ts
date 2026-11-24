@@ -156,4 +156,24 @@ describe("PlaywrightAdapter sessionStorage and contexts", () => {
       await adapter.stop();
     }
   }, 120_000);
+  it("keeps an unrecorded context out of the run video", async () => {
+    if (!chromiumAvailable) {
+      console.warn("Chromium is not installed; skipping the Playwright-backed adapter test");
+      return;
+    }
+    const adapter = new PlaywrightAdapter({ baseUrl, recordVideo: true, recordInitialContext: false });
+    await adapter.start();
+    try {
+      await adapter.page!.goto(baseUrl);
+      await adapter.newContext({ record: false });
+      await adapter.page!.goto(baseUrl);
+      expect(adapter.page!.video()).toBeNull();
+      await adapter.newContext();
+      await adapter.page!.goto(baseUrl);
+    } finally {
+      await adapter.stop({ keepVideo: true });
+    }
+    // Three contexts opened, only the last one filmed.
+    expect(adapter.getRunVideoTimeline()?.clips).toHaveLength(1);
+  }, 120_000);
 });

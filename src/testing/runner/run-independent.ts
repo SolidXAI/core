@@ -98,7 +98,7 @@ export async function runIndependent(opts: RunnerOptions): Promise<void> {
   const reporter: Reporter = opts.reporter ?? new ConsoleReporter();
   const api = new ApiAdapter(opts.api);
   const { PlaywrightAdapter } = await import("../adapters/ui/playwright-adapter");
-  const ui = new PlaywrightAdapter(opts.ui);
+  const ui = new PlaywrightAdapter({ ...opts.ui, recordInitialContext: false });
   const randomData = new RandomDataRegistry();
   // `resources` here is only a placeholder: every scenario, setup and ready check gets a store of its own.
   const ctxBase = {
@@ -158,7 +158,8 @@ export async function runIndependent(opts: RunnerOptions): Promise<void> {
     const usesUi = isUiSetup(setup);
     if (usesUi && !inCurrentContext) {
       await ensureUiStarted(ctxBase, uiStarted);
-      await ui.newContext({ storageState: startFrom?.storageState, sessionStorage: startFrom?.sessionStorage });
+      // Setups and teardowns are not filmed: the run video shows scenarios only.
+      await ui.newContext({ storageState: startFrom?.storageState, sessionStorage: startFrom?.sessionStorage, record: false });
       ui.resetCapture();
     }
     const ctx: TestContext = {
@@ -267,7 +268,8 @@ export async function runIndependent(opts: RunnerOptions): Promise<void> {
         try {
           if (needsUi) {
             await ensureUiStarted(ctxBase, uiStarted);
-            await ui.newContext({ storageState: acquired.state.storageState, sessionStorage: acquired.state.sessionStorage });
+            // With a ready check this context is only for the check, so it is not filmed.
+            await ui.newContext({ storageState: acquired.state.storageState, sessionStorage: acquired.state.sessionStorage, record: !runsReady });
           }
           if (runsReady) {
             await runSteps({
@@ -279,6 +281,9 @@ export async function runIndependent(opts: RunnerOptions): Promise<void> {
               startFrom: acquired.state,
               inCurrentContext: true,
             });
+            // The ready check ran off camera; the scenario gets a filmed context seeded from the same state (as a
+            // retry does in beforeRetry). runsReady implies needsUi.
+            await ui.newContext({ storageState: acquired.state.storageState, sessionStorage: acquired.state.sessionStorage });
           }
           break;
         } catch (error) {
@@ -453,7 +458,8 @@ export async function runIndependent(opts: RunnerOptions): Promise<void> {
       opts,
       reporter,
       ui,
-      // The UI setups count as browser use, so a run whose only browser use was a setup keeps its video when it failed.
+      // The UI setups count as browser use. Their contexts are not filmed, so a run whose only browser use was a setup has
+      // no video; its step log and error explain the failure.
       scenarios: [...ordered, ...planned.filter(isUiSetup).map(setupAsScenario)],
       outcomes,
       runError,
