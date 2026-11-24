@@ -39,6 +39,11 @@ export class CreateSmsTemplateDto {
     type: string;
 
     @IsOptional()
+    @IsBoolean()
+    @ApiProperty({ required: false })
+    isTransactional: boolean = false;
+
+    @IsOptional()
     @IsInt()
     @ApiProperty({ required: false, description: 'Related module id' })
     moduleId?: number;
