@@ -67,6 +67,8 @@ export { normalizeBlock } from "../core/normalize-steps";
 export { buildTestDataIndex, runFromMetadata } from "../runner/run-from-metadata";
 export type { RunnerOptions } from "../runner/run-from-metadata";
 export { RunCanceledError } from "../runner/run-cancellation";
+export { registerRunFrameSink, releaseRunFrameSink, getRunFrameSink } from "../runner/run-live-frames";
+export type { RunLiveFrame, RunFrameSink } from "../runner/run-live-frames";
 export type {
   BlockedBy,
   Reporter,

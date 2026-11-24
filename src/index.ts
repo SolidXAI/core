@@ -617,3 +617,7 @@ export type { MobileRunOptionsInput } from './testing/adapters/mobile/mobile.typ
 
 // The shape of run-timeline.json, the run.end artifact saying where each scenario is in the run video.
 export type { RunVideoTimeline } from './testing/adapters/ui/run-video'
+
+// Lets Test Hub watch a run: it registers a sink for a run id before the job starts and the browser streams frames into it.
+export { registerRunFrameSink, releaseRunFrameSink, getRunFrameSink } from './testing/runner/run-live-frames';
+export type { RunLiveFrame, RunFrameSink } from './testing/runner/run-live-frames';

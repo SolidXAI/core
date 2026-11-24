@@ -1,4 +1,5 @@
 import type { HealingPolicy } from "../../contracts/testing-metadata.types";
+import type { RunFrameSink } from "../../runner/run-live-frames";
 
 /**
  * Per-run capture toggles for the Playwright adapter. Console/network events are
@@ -39,6 +40,8 @@ export interface PlaywrightAdapterOptions {
   /** Selector healing for UI steps; see {@link HealingPolicy}. Defaults to `report`. */
   healing?: HealingPolicy;
   viewport?: ViewportOptions;
+  /** Receives screencast frames of filmed contexts while someone is watching; nothing is captured otherwise. */
+  liveFrames?: RunFrameSink;
 }
 
 /** Options for wrapping a page the caller already owns. */

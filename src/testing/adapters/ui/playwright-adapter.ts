@@ -1,7 +1,8 @@
-import type { Browser, BrowserContext, Page, ConsoleMessage, Response, Request, Video } from "playwright";
+import type { Browser, BrowserContext, CDPSession, Page, ConsoleMessage, Response, Request, Video } from "playwright";
 
 import type { HealEvent } from "../../contracts/runtime-context.types";
 import type { HealingPolicy, SessionStorageByOrigin } from "../../contracts/testing-metadata.types";
+import type { RunFrameSink } from "../../runner/run-live-frames";
 import type { AttachOptions, CaptureOptions, PlaywrightAdapterOptions, ViewportOptions } from "./ui.types";
 import { buildTimeline, clipDurationMs, findFfmpeg, joinClips, type ClipTiming, type RunVideoTimeline, type ScenarioMark } from "./run-video";
 
@@ -13,6 +14,8 @@ function isAbsoluteUrl(url: string): boolean {
 }
 
 export const DEFAULT_UI_TIMEOUT_MS = 30_000;
+/** Live frames are acked no faster than this, about 25 fps. */
+const LIVE_FRAME_MIN_GAP_MS = 40;
 /** Keep the buffers bounded so a chatty page can't grow memory without limit. */
 const MAX_CONSOLE_ENTRIES = 500;
 const MAX_NETWORK_ENTRIES = 500;
@@ -56,6 +59,7 @@ export class PlaywrightAdapter {
   private readonly recordInitialContext: boolean;
   private readonly healing: HealingPolicy;
   private readonly viewport?: ViewportOptions;
+  private readonly liveFrames?: RunFrameSink;
   private browser?: Browser;
   private context?: BrowserContext;
   public page?: Page;
@@ -84,6 +88,13 @@ export class PlaywrightAdapter {
   private runVideoTimeline?: RunVideoTimeline;
   private readonly requestStartedAt = new Map<Request, number>();
 
+  /** The filmed page being streamed to viewers, and the CDP session streaming it (only while someone watches). */
+  private livePage?: Page;
+  private liveCdp?: CDPSession;
+  private liveUnsubscribe?: () => void;
+  /** Serializes {@link syncLive} runs so rapid viewer changes cannot create two sessions. */
+  private liveSync: Promise<void> = Promise.resolve();
+
   constructor(opts?: PlaywrightAdapterOptions) {
     this.baseUrl = opts?.baseUrl;
     this.headless = opts?.headless ?? true;
@@ -95,6 +106,7 @@ export class PlaywrightAdapter {
     this.recordInitialContext = opts?.recordInitialContext ?? true;
     this.healing = opts?.healing ?? "report";
     this.viewport = sanitizeViewport(opts?.viewport);
+    this.liveFrames = opts?.liveFrames;
   }
 
   /**
@@ -159,6 +171,8 @@ export class PlaywrightAdapter {
       const fs = await import('fs');
       this.videoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'solid-run-video-'));
     }
+    // Viewers can arrive or leave mid-run; the callback only starts or stops the screencast, never a step.
+    this.liveUnsubscribe = this.liveFrames?.onViewersChanged(() => void this.syncLive());
     await this.openContext(undefined, this.recordInitialContext);
   }
 
@@ -182,6 +196,71 @@ export class PlaywrightAdapter {
     this.contextPage = this.page;
     this.segmentStartedAt = Date.now();
     this.attachCaptureListeners(this.page);
+    // Only filmed (scenario) contexts are streamed; setups, ready-checks and teardown stay out of the live view.
+    if (record && this.liveFrames) this.attachLive(this.page);
+  }
+
+  private attachLive(page: Page): void {
+    this.livePage = page;
+    void this.syncLive();
+  }
+
+  /**
+   * Starts the screencast when someone is watching and stops it when nobody is. Fire-and-forget by design: the step
+   * path never awaits it, every CDP call is guarded, and without viewers no CDP session exists at all.
+   */
+  private syncLive(): Promise<void> {
+    this.liveSync = this.liveSync.then(() => this.doSyncLive()).catch(() => {});
+    return this.liveSync;
+  }
+
+  private async doSyncLive(): Promise<void> {
+    const sink = this.liveFrames;
+    if (!sink) return;
+    try {
+      const page = this.livePage;
+      const watched = !!page && !page.isClosed() && sink.hasViewers();
+      if (!watched) {
+        await this.detachLiveCdp();
+        return;
+      }
+      if (this.liveCdp) return;
+      const cdp = await page.context().newCDPSession(page);
+      this.liveCdp = cdp;
+      let lastAckAt = 0;
+      cdp.on("Page.screencastFrame", (e: { data: string; sessionId: number }) => {
+        try {
+          sink.push({ data: e.data, at: Date.now(), url: page.url() });
+        } catch {
+          // a failing viewer must not stop the stream
+        }
+        // Chromium sends the next frame only after the ack, so delaying the ack caps the rate.
+        const wait = Math.max(0, LIVE_FRAME_MIN_GAP_MS - (Date.now() - lastAckAt));
+        setTimeout(() => {
+          lastAckAt = Date.now();
+          if (this.liveCdp === cdp) void cdp.send("Page.screencastFrameAck", { sessionId: e.sessionId }).catch(() => {});
+        }, wait);
+      });
+      await cdp.send("Page.startScreencast", { format: "jpeg", quality: 60, maxWidth: 1280, maxHeight: 800 });
+    } catch {
+      // streaming is best effort
+    }
+  }
+
+  private async detachLiveCdp(): Promise<void> {
+    const cdp = this.liveCdp;
+    this.liveCdp = undefined;
+    if (!cdp) return;
+    try {
+      await cdp.send("Page.stopScreencast");
+    } catch {
+      // the page may already be gone
+    }
+    try {
+      await cdp.detach();
+    } catch {
+      // ditto
+    }
   }
 
   /**
@@ -194,6 +273,9 @@ export class PlaywrightAdapter {
     if (!this.ownsBrowser) return;
     const video = this.recording ? (this.contextPage ?? this.page)?.video() : undefined;
     if (video) this.videoSegments.push({ video, startedAt: this.segmentStartedAt, endedAt: Date.now() });
+    // Fire-and-forget through the serialized sync, so a session still being created is detached too.
+    this.livePage = undefined;
+    void this.syncLive();
     try {
       if (this.context) {
         await this.context.close();
@@ -435,6 +517,8 @@ export class PlaywrightAdapter {
       return;
     }
     const keepVideo = opts?.keepVideo ?? false;
+    this.liveUnsubscribe?.();
+    this.liveUnsubscribe = undefined;
     // closeContext() grabs the video handle first; its file is only finalized on close().
     await this.closeContext();
 
