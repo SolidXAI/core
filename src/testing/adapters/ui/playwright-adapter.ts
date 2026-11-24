@@ -142,7 +142,9 @@ export class PlaywrightAdapter {
   }
 
   async start(): Promise<void> {
-    const { chromium } = await import('playwright');
+    // require, not import(): a CommonJS require honours NODE_PATH, so the runner finds Playwright wherever the caller
+    // has it installed (a dynamic import looks only beside the bundle and in its parent folders).
+    const { chromium } = require("playwright") as typeof import("playwright");
     this.browser = await chromium.launch({ headless: this.headless });
     // Record a whole-run video only when this run enables it; it is still only KEPT when
     // the run fails (see stop({ keepVideo }) / the runner). The temp dir has to exist

@@ -115,7 +115,8 @@ export function isChromiumBundleComplete(chromiumExecutable: string, browsersJso
  */
 export async function isChromiumInstalled(): Promise<boolean> {
   try {
-    const { chromium } = await import("playwright");
+    // require, not import(): see playwright-adapter.ts (NODE_PATH must reach this lookup too).
+    const { chromium } = require("playwright") as typeof import("playwright");
     return isChromiumBundleComplete(chromium.executablePath(), readPlaywrightBrowsersJson());
   } catch {
     return false;
