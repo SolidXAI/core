@@ -4,6 +4,7 @@ import * as fs from 'fs/promises'; // Use the Promise-based version of fs for as
 import * as path from 'path'; // To handle file paths
 import { SOLID_CORE_MODULE_NAME } from "src/constants";
 import { DiskFileService } from "src/services/file";
+import { getCoreRepoMetadataPath } from "./solid-core-dev-paths";
 
 @Injectable()
 export class ModuleMetadataHelperService {
@@ -62,6 +63,11 @@ export class ModuleMetadataHelperService {
         );
 
         if (dashModuleName === SOLID_CORE_MODULE_NAME) {
+            const coreRepoMetadataPath = getCoreRepoMetadataPath();
+            if (coreRepoMetadataPath && await this.fileService.exists(coreRepoMetadataPath)) {
+                this.logger.debug(`Core mode metadata path: ${coreRepoMetadataPath}`);
+                return coreRepoMetadataPath;
+            }
             const fallbackPath = path.resolve(process.cwd(), 'src', 'seeders', 'seed-data', `${dashModuleName}-metadata.json`);
             const fallbackExists = await this.fileService.exists(fallbackPath);
             if (fallbackExists) {

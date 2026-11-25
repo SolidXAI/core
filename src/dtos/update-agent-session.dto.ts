@@ -5,6 +5,8 @@ import { UpdateAgentJobDto } from './update-agent-job.dto';
 import { UpdateAgentEventDto } from './update-agent-event.dto';
 import { UpdateAgentSessionCheckpointDto } from './update-agent-session-checkpoint.dto';
 import { UpdateAgentHumanRequestDto } from './update-agent-human-request.dto';
+import { UpdateAgentBrowserSessionDto } from './update-agent-browser-session.dto';
+import { UpdateAgentContextArchiveDto } from './update-agent-context-archive.dto';
 
 export class UpdateAgentSessionDto {
     @IsOptional()
@@ -34,7 +36,7 @@ export class UpdateAgentSessionDto {
     @IsNotEmpty()
     @IsOptional()
     @IsString()
-    @ApiProperty()
+    @ApiProperty({ description: "Original session entry point. Use api or webhook for the background jobs inbox." })
     trigger: string;
 
     @IsOptional()
@@ -122,6 +124,11 @@ export class UpdateAgentSessionDto {
     fastModelKey: string;
 
     @IsOptional()
+    @IsString()
+    @ApiProperty({ required: false, nullable: true, description: "Optional reference ID supplied by the host application." })
+    hostRefId?: string | null;
+
+    @IsOptional()
     @ApiProperty()
     @IsArray()
     @ValidateNested({ each: true })
@@ -188,4 +195,38 @@ export class UpdateAgentSessionDto {
     @IsOptional()
     @ApiProperty()
     agentHumanRequestsCommand: string;
+
+    @IsOptional()
+    @ApiProperty()
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => UpdateAgentBrowserSessionDto)
+    agentBrowserSessions: UpdateAgentBrowserSessionDto[];
+
+    @IsOptional()
+    @IsArray()
+    @ApiProperty()
+    agentBrowserSessionsIds: number[];
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty()
+    agentBrowserSessionsCommand: string;
+
+    @IsOptional()
+    @ApiProperty()
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => UpdateAgentContextArchiveDto)
+    agentContextArchives: UpdateAgentContextArchiveDto[];
+
+    @IsOptional()
+    @IsArray()
+    @ApiProperty()
+    agentContextArchivesIds: number[];
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty()
+    agentContextArchivesCommand: string;
 }

@@ -32,14 +32,32 @@ import {
   orderByDependencies,
   expandRestoreFrom,
   sessionSourceFor,
+  splitUnrunnable,
   usesDependencies,
   validateSessions,
+  type UnrunnableScenario,
 } from "./scenario-graph";
 
 /**
  * Give a scenario the browser context its `session` asks for. `justStarted` skips a
  * redundant context swap when the browser was opened for this very scenario.
  */
+/**
+ * The scenarios set aside as unrunnable that this run reports: the ones it selected, plus the broken ones they wait on
+ * (so a skip names a failure the run shows). Broken ones first, so each skip follows the failure that caused it.
+ */
+function selectedUnrunnable(unrunnable: UnrunnableScenario[], selected: Array<{ id: string }>): UnrunnableScenario[] {
+  const byId = new Map(unrunnable.map((u) => [u.scenario.id, u]));
+  const keep = new Set<string>();
+  for (const { id } of selected) {
+    for (let at = byId.get(id); at && !keep.has(at.scenario.id); at = at.blockedBy ? byId.get(at.blockedBy) : undefined) {
+      keep.add(at.scenario.id);
+    }
+  }
+  const kept = unrunnable.filter((u) => keep.has(u.scenario.id));
+  return [...kept.filter((u) => u.error), ...kept.filter((u) => !u.error)];
+}
+
 async function prepareSession(
   ui: UiAdapter,
   scenario: ScenarioSpec,
@@ -98,6 +116,11 @@ export type RunnerOptions = {
    * are skipped — and the run still throws after the last one if any failed.
    */
   failFast?: boolean;
+  /**
+   * Which runs keep their whole-run video. `"failed"` (default) keeps it only for a failed run; `"always"` keeps it
+   * for every run that used the browser or a device. A canceled run never keeps it.
+   */
+  keepVideo?: "failed" | "always";
   specs?: (registry: SpecRegistry) => void;
   /**
    * Resolves `${secret:...}` references against the secret store. Injected by the
@@ -166,16 +189,18 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
   const { reset: resetScenario, rest: unexpandedScenarios } = splitResetScenario(
     opts.scenarios ?? opts.metadata?.testing?.scenarios ?? [],
   );
+  // A scenario whose restoreFrom or dependsOn names a scenario that is not there cannot run, nor can what needs it. They
+  // are reported as failed / skipped below instead of stopping the run before the others start.
+  const { runnable, unrunnable } = splitUnrunnable(unexpandedScenarios, resetScenario?.id);
   // restoreFrom becomes dependsOn + session: restore + saveSession on its source, so the rest of the run sees only those.
-  const allScenarios = expandRestoreFrom(unexpandedScenarios, resetScenario?.id);
-  const selected = expandWithDependencies(
-    allScenarios,
-    filterScenarios(allScenarios, {
-      scenarioIds: opts.scenarioIds,
-      includeTags: opts.includeTags,
-      skipScenarioIds: opts.skipScenarioIds,
-    }),
-  );
+  const allScenarios = expandRestoreFrom(runnable, resetScenario?.id);
+  const filterOptions = {
+    scenarioIds: opts.scenarioIds,
+    includeTags: opts.includeTags,
+    skipScenarioIds: opts.skipScenarioIds,
+  };
+  const selected = expandWithDependencies(allScenarios, filterScenarios(allScenarios, filterOptions));
+  const notRunnable = selectedUnrunnable(unrunnable, filterScenarios(unrunnable.map((u) => u.scenario), filterOptions));
   // Without dependsOn/session settings a run keeps its original contract: file order,
   // one shared browser context, stop at the first failure.
   const dependencyMode = usesDependencies(selected);
@@ -231,14 +256,30 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
     if (opts.signal?.aborted) throw new RunCanceledError();
   };
 
+  const reported = [...notRunnable.map((u) => u.scenario), ...scenarios];
   reporter.onRunStart?.({
-    total: scenarios.length,
+    total: reported.length,
     startedAt: new Date(startedAt).toISOString(),
-    scenarioIds: scenarios.map((s) => s.id),
-    scenarios: scenarios.map((s) => ({ id: s.id, name: s.name, type: s.type })),
+    scenarioIds: reported.map((s) => s.id),
+    scenarios: reported.map((s) => ({ id: s.id, name: s.name, type: s.type })),
   });
 
   try {
+    // Scenarios that cannot run fail (a broken reference) or are skipped (they need one that cannot run), and the run goes on.
+    for (const { scenario, error, blockedBy } of notRunnable) {
+      if (error) {
+        const failure = new Error(error);
+        reporter.onScenarioStart(scenario);
+        reporter.onScenarioEnd(scenario, { ok: false, error: failure, durationMs: 0 });
+        failed += 1;
+        runError = failure;
+        outcomes.set(scenario.id, "failed");
+      } else {
+        skipped += 1;
+        outcomes.set(scenario.id, "skipped");
+        reporter.onScenarioSkipped?.(scenario, { reason: "dependency_failed", dependency: String(blockedBy) });
+      }
+    }
     // Checked inside the try so a bad mobile setup still reports run.end.
     for (const scenario of scenarios) {
       const problem = mobileScenarioProblem(scenario);
@@ -362,16 +403,21 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
   } finally {
     reporter.onRunEnd?.({
       ok: !runError,
-      total: scenarios.length,
+      total: reported.length,
       passed,
       failed,
-      ...(dependencyMode ? { skipped } : {}),
+      ...(dependencyMode || skipped > 0 ? { skipped } : {}),
       durationMs: Date.now() - startedAt,
     });
     opts.signal?.removeEventListener("abort", closeOnCancel);
     if (uiStarted.value && !uiClosedOnCancel) {
-      // Only KEEP the whole-run video when the run FAILED — passing runs discard it unread.
-      const keepVideo = !!runError;
+      // By default only KEEP the whole-run video when the run FAILED in the browser — passing runs, and runs where
+      // only API scenarios failed (nothing of theirs is on screen), discard it unread. With keepVideo "always" every
+      // run that has a browser scenario keeps it.
+      const keepVideo =
+        opts.keepVideo === "always"
+          ? scenarios.some((s) => scenarioNeedsUi(s))
+          : !!runError && scenarios.some((s) => scenarioNeedsUi(s) && outcomes.get(s.id) === "failed");
       await ui.stop({ keepVideo });
       // Video bytes are only finalized after ui.stop(); attach it as a run-level artifact so
       // the reporter uploads it and references it on run.end (queued before flushPending runs).
@@ -387,8 +433,8 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
       }
     }
     if (mobile && mobileStarted.value && !mobileClosedOnCancel) {
-      // Same policy as the browser video: only keep the recording when the run failed.
-      const keepVideo = !!runError;
+      // Same policy as the browser video: keep the recording when the run failed, or for every run with "always".
+      const keepVideo = opts.keepVideo === "always" || !!runError;
       await mobile.stop({ keepVideo });
       if (keepVideo) {
         const video = mobile.getRunVideo();

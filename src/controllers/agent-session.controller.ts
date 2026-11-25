@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch, ParseIntPipe } from '@nestjs/common';
+import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch, ParseIntPipe, Headers, UnauthorizedException, Header } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { AgentSessionService } from '../services/agent-session.service';
@@ -7,11 +7,65 @@ import { UpdateAgentSessionDto } from '../dtos/update-agent-session.dto';
 import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 import { ActiveUser } from '../decorators/active-user.decorator';
 import { ActiveUserData } from '../interfaces/active-user-data.interface';
+import { AgentHubProcessManagerService } from '../services/agent-hub-process-manager.service';
 
 @ApiTags('Agent Hub')
 @Controller('agent-session')
 export class AgentSessionController {
-  constructor(private readonly service: AgentSessionService) {}
+  constructor(private readonly service: AgentSessionService, private readonly manager: AgentHubProcessManagerService) {}
+
+  private bearer(authorization?: string) {
+    if (!authorization?.startsWith('Bearer ')) throw new UnauthorizedException();
+    return authorization;
+  }
+
+  @ApiBearerAuth('jwt')
+  @Get('inbox')
+  listInbox(@Headers('authorization') authorization: string, @Query('review') review: string,
+            @Query('offset') offset: string, @Query('limit') limit: string,
+            @Query('agent') agent: string, @Query('hostRefId') hostRefId: string,
+            @Query('sessionId') sessionId: string, @Query('status') status: string,
+            @Query('trigger') trigger: string, @Query('runtime') runtime: string,
+            @Query('startedFrom') startedFrom: string, @Query('startedTo') startedTo: string,
+            @Query('q') search: string, @Query('sort') sort: string) {
+    const start = Number(offset);
+    const pageSize = Number(limit);
+    return this.manager.listJobSessions(this.bearer(authorization), {
+      review: review === 'true',
+      offset: Number.isSafeInteger(start) && start > 0 ? start : 0,
+      limit: Number.isSafeInteger(pageSize) && pageSize > 0 ? Math.min(pageSize, 100) : 25,
+      agent: agent?.trim() || undefined,
+      hostRefId: hostRefId?.trim() || undefined,
+      sessionId: sessionId?.trim() || undefined,
+      status: status?.trim() || undefined,
+      trigger: trigger?.trim() || undefined,
+      runtime: runtime?.trim() || undefined,
+      startedFrom: startedFrom?.trim() || undefined,
+      startedTo: startedTo?.trim() || undefined,
+      search: search?.trim() || undefined,
+      sort: sort?.trim() || undefined,
+    });
+  }
+
+  @ApiBearerAuth('jwt')
+  @Get('inbox/:sessionId')
+  getInboxRun(@Headers('authorization') authorization: string, @Param('sessionId') sessionId: string) {
+    return this.manager.getJobSession(this.bearer(authorization), sessionId);
+  }
+
+  @ApiBearerAuth('jwt')
+  @Header('Cache-Control', 'no-store')
+  @Post('inbox/:sessionId/connect')
+  connectInboxRun(@Headers('authorization') authorization: string, @Param('sessionId') sessionId: string) {
+    return this.manager.connectJobSession(this.bearer(authorization), sessionId);
+  }
+
+  @ApiBearerAuth('jwt')
+  @Post('inbox/:sessionId/requests/:requestId/answer')
+  answerInboxRun(@Headers('authorization') authorization: string, @Param('sessionId') sessionId: string,
+                 @Param('requestId', ParseIntPipe) requestId: number, @Body() answer: unknown) {
+    return this.manager.answerJobSession(this.bearer(authorization), sessionId, requestId, answer);
+  }
 
   @ApiBearerAuth("jwt")
   @Post()

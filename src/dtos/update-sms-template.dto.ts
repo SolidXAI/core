@@ -41,4 +41,9 @@ export class UpdateSmsTemplateDto extends PartialType(CreateSmsTemplateDto) {
     @IsBoolean()
     @ApiProperty()
     active: boolean;
+
+    @IsOptional()
+    @IsBoolean()
+    @ApiProperty({ required: false })
+    isTransactional: boolean;
 } { }

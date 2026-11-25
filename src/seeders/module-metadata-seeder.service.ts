@@ -3,6 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { plainToInstance } from 'class-transformer';
 import { ValidationError, validate } from 'class-validator';
 import * as fs from 'fs';
+import { getCoreRepoMetadataPath } from '../helpers/solid-core-dev-paths';
 import * as os from 'os';
 import * as path from 'path';
 import { createHash } from 'crypto';
@@ -1088,7 +1089,14 @@ export class ModuleMetadataSeederService {
 
     // OK
     private get seedDataFiles(): any[] {
-        const typedSolidCoreMetadata = structuredClone(solidCoreMetadata);
+        const coreRepoMetadataPath = getCoreRepoMetadataPath();
+        const useCoreRepoMetadata = !!coreRepoMetadataPath && fs.existsSync(coreRepoMetadataPath);
+        const typedSolidCoreMetadata = useCoreRepoMetadata
+            ? JSON.parse(fs.readFileSync(coreRepoMetadataPath!, 'utf-8'))
+            : structuredClone(solidCoreMetadata);
+        if (useCoreRepoMetadata) {
+            this.logger.log(`Core mode: seeding solid-core metadata from ${coreRepoMetadataPath}`);
+        }
         const seedDataFiles = [typedSolidCoreMetadata];
         // const enabledModules = getDynamicModuleNames();
         const enabledModules = getDynamicModuleNamesBasedOnMetadata();

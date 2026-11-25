@@ -117,6 +117,7 @@ import { ServiceController } from "./controllers/service.controller";
 import { SmsTemplateController } from "./controllers/sms-template.controller";
 import { TestQueueController } from "./controllers/test-queue.controller";
 import { TestRunController } from "./controllers/test-run.controller";
+import { TestDataController } from "./controllers/test-data.controller";
 import { EmailAttachment } from "./entities/email-attachment.entity";
 import { EmailTemplate } from "./entities/email-template.entity";
 import { MenuItemMetadata } from "./entities/menu-item-metadata.entity";
@@ -514,11 +515,14 @@ import { AgentSession } from "./entities/agent-session.entity";
 import { AgentJob } from "./entities/agent-job.entity";
 import { AgentRole } from "./entities/agent-role.entity";
 import { AgentSessionCheckpoint } from "./entities/agent-session-checkpoint.entity";
+import { AgentBrowserSession } from "./entities/agent-browser-session.entity";
+import { AgentContextArchive } from "./entities/agent-context-archive.entity";
 import { AgentUserMemory } from "./entities/agent-user-memory.entity";
 import { AgentHumanRequest } from "./entities/agent-human-request.entity";
 import { AgentConfigVersion } from "./entities/agent-config-version.entity";
 import { AgentRegistryController } from "./controllers/agent-registry.controller";
 import { AgentEmbedController } from './controllers/agent-embed.controller';
+import { AdminEmbedController } from './controllers/admin-embed.controller';
 import { AgentToolRegistryController } from "./controllers/agent-tool-registry.controller";
 import { AgentSkillRegistryController } from "./controllers/agent-skill-registry.controller";
 import { AgentHubTagController } from "./controllers/agent-hub-tag.controller";
@@ -530,6 +534,8 @@ import { AgentProcessController } from "./controllers/agent-process.controller";
 import { AgentSessionController } from "./controllers/agent-session.controller";
 import { AgentJobController } from "./controllers/agent-job.controller";
 import { AgentSessionCheckpointController } from "./controllers/agent-session-checkpoint.controller";
+import { AgentBrowserSessionController } from "./controllers/agent-browser-session.controller";
+import { AgentContextArchiveController } from "./controllers/agent-context-archive.controller";
 import { AgentUserMemoryController } from "./controllers/agent-user-memory.controller";
 import { AgentHumanRequestController } from "./controllers/agent-human-request.controller";
 import { AgentConfigVersionController } from "./controllers/agent-config-version.controller";
@@ -539,6 +545,10 @@ import { AgentHumanRequestService } from "./services/agent-human-request.service
 import { AgentConfigVersionRecordService } from "./services/agent-config-version-record.service";
 import { AgentSessionCheckpointRepository } from "./repository/agent-session-checkpoint.repository";
 import { AgentSessionCheckpointService } from "./services/agent-session-checkpoint.service";
+import { AgentBrowserSessionRepository } from "./repository/agent-browser-session.repository";
+import { AgentBrowserSessionService } from "./services/agent-browser-session.service";
+import { AgentContextArchiveRepository } from "./repository/agent-context-archive.repository";
+import { AgentContextArchiveService } from "./services/agent-context-archive.service";
 import { AgentUserMemoryRepository } from "./repository/agent-user-memory.repository";
 import { AgentUserMemoryService } from "./services/agent-user-memory.service";
 import { AgentSessionRepository } from "./repository/agent-session.repository";
@@ -628,6 +638,8 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
       AgentSession,
       AgentJob,
       AgentSessionCheckpoint,
+      AgentBrowserSession,
+      AgentContextArchive,
       AgentUserMemory,
       AgentHumanRequest,
       AgentConfigVersion
@@ -756,6 +768,7 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     TestController,
     TestQueueController,
     TestRunController,
+    TestDataController,
     UserActivityHistoryController,
     UserController,
     UserViewMetadataController,
@@ -771,6 +784,7 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     SecretController,
     AgentRegistryController,
     AgentEmbedController,
+    AdminEmbedController,
     AgentToolRegistryController,
     AgentSkillRegistryController,
     AgentHubTagController,
@@ -782,6 +796,8 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     AgentSessionController,
     AgentJobController,
     AgentSessionCheckpointController,
+    AgentBrowserSessionController,
+    AgentContextArchiveController,
     AgentUserMemoryController,
     AgentHumanRequestController,
     AgentConfigVersionController
@@ -1194,6 +1210,10 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     AgentJobRepository,
     AgentSessionCheckpointService,
     AgentSessionCheckpointRepository,
+    AgentBrowserSessionService,
+    AgentBrowserSessionRepository,
+    AgentContextArchiveService,
+    AgentContextArchiveRepository,
     AgentUserMemoryService,
     AgentUserMemoryRepository,
     AgentHumanRequestService,
@@ -1213,6 +1233,7 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     ConfigModule,
     DraftPublishHelperService,
     InternationalisationHelperService,
+    ModuleTestDataService,
     CrudHelperService,
     CRUDService,
     CsvService,

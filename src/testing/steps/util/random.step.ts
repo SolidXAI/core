@@ -2,6 +2,7 @@ import type { TestContext } from "../../contracts/runtime-context.types";
 import type { OpStep } from "../../contracts/testing-metadata.types";
 import { randomDataFor } from "../../core/random-data";
 import { StepRegistry } from "../../core/step-registry";
+import { recordStepData } from "../../core/step-data";
 
 type RandomInput = { generator: string; args?: Record<string, unknown> };
 
@@ -18,6 +19,8 @@ export function registerRandomStep(registry: StepRegistry): void {
     if (typeof args !== "object" || Array.isArray(args)) {
       throw new Error('"args" must be an object for op "util.random", e.g. { "domain": "acme.test" }');
     }
-    return randomDataFor(ctx).generate(String(input.generator), args);
+    const value = randomDataFor(ctx).generate(String(input.generator), args);
+    recordStepData(ctx, { kind: "random", source: `random:${input.generator}`, value, ...(step.saveAs ? { saveAs: step.saveAs } : {}) });
+    return value;
   });
 }

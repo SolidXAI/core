@@ -56,6 +56,12 @@ export class CreateAgentJobDto {
     @ApiProperty()
     leaseExpiresAt: Date;
 
+    @IsOptional()
+    @Type(() => Date)
+    @IsDate()
+    @ApiProperty({ required: false, nullable: true, type: Date })
+    dispatchedAt?: Date | null;
+
     @IsNotEmpty()
     @IsInt()
     @ApiProperty()
@@ -65,6 +71,11 @@ export class CreateAgentJobDto {
     @IsString()
     @ApiProperty()
     idempotencyKey: string;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ required: false, nullable: true, description: "Optional reference ID supplied by the host application." })
+    hostRefId?: string | null;
 
     @IsOptional()
     @IsString()

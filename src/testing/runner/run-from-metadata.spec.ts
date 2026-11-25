@@ -171,6 +171,39 @@ describe("runFromMetadata with dependsOn", () => {
     expect(run.args).toMatchObject({ ok: false, total: 4, passed: 1, failed: 1, skipped: 2 });
   });
 
+  it("fails only a scenario whose restoreFrom names an unknown scenario, skips what needs it, and runs the rest", async () => {
+    const events: Event[] = [];
+    await expect(
+      runFromMetadata({
+        scenarios: [
+          pass("login"),
+          pass("workspace", { restoreFrom: "ui-login" }),
+          pass("after-workspace", { dependsOn: ["workspace"] }),
+          pass("other", { dependsOn: ["login"] }),
+        ],
+        reporter: recordingReporter(events),
+      }),
+    ).rejects.toThrow(/restores from unknown scenario "ui-login"/);
+    expect(events.filter((e) => e.type !== "run")).toEqual([
+      expect.objectContaining({ type: "end", id: "workspace", ok: false }),
+      { type: "skip", id: "after-workspace", dependency: "workspace" },
+      expect.objectContaining({ type: "end", id: "login", ok: true }),
+      expect.objectContaining({ type: "end", id: "other", ok: true }),
+    ]);
+    const run = events.find((e) => e.type === "run") as { args: RunEndArgs };
+    expect(run.args).toMatchObject({ ok: false, total: 4, passed: 2, failed: 1, skipped: 1 });
+  });
+
+  it("reports a broken scenario only when the run selected it or something that needs it", async () => {
+    const events: Event[] = [];
+    await runFromMetadata({
+      scenarios: [pass("login"), pass("workspace", { dependsOn: ["ghost"] })],
+      scenarioIds: ["login"],
+      reporter: recordingReporter(events),
+    });
+    expect(events.filter((e) => e.type !== "run").map((e) => `${e.type}:${(e as any).id}`)).toEqual(["end:login"]);
+  });
+
   it("runs a selected scenario's dependencies first", async () => {
     const events: Event[] = [];
     await runFromMetadata({
@@ -271,4 +304,38 @@ describe("runFromMetadata browser sessions", () => {
       expect.objectContaining({ id: "restored", ok: true }),
     ]);
   }, 60_000);
+
+  describe("whole-run video", () => {
+    const uiScenario: ScenarioSpec = {
+      id: "open",
+      type: "ui",
+      steps: [
+        { op: "ui.goto", with: { url: "/" } },
+        { op: "ui.expectText", with: { selector: "#who", equals: "anonymous" } },
+      ],
+    };
+
+    async function keptArtifactNames(keepVideo: "failed" | "always" | undefined, scenarios: ScenarioSpec[]): Promise<string[]> {
+      const kept: string[] = [];
+      const base = recordingReporter([]);
+      const reporter: Reporter = {
+        ...base,
+        attachRunArtifact: (args: { name: string }) => void kept.push(args.name),
+      };
+      await runFromMetadata({ scenarios, ui: { baseUrl, recordVideo: true }, reporter, keepVideo });
+      return kept.filter((name) => name.endsWith(".webm"));
+    }
+
+    it("discards the video of a passing run by default", async () => {
+      expect(await keptArtifactNames(undefined, [uiScenario])).toEqual([]);
+    }, 60_000);
+
+    it("keeps the video of a passing run when keepVideo is always", async () => {
+      expect((await keptArtifactNames("always", [uiScenario])).length).toBeGreaterThan(0);
+    }, 60_000);
+
+    it("keeps no video for a run with only API scenarios, even when keepVideo is always", async () => {
+      expect(await keptArtifactNames("always", [pass("api-only")])).toEqual([]);
+    }, 60_000);
+  });
 });

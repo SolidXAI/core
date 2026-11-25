@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { CommandService, CommandWithArgs } from './command.service';
 import { SolidRegistry } from './solid-registry';
+import { SOLID_CORE_MODULE_NAME } from '../constants';
+import { getCoreRepoRoot, getInstalledCodeBuilderCollection } from './solid-core-dev-paths';
 
 export const ADD_MODULE_COMMAND = 'add-module';
 export type GenerateModuleOptions = {
@@ -39,14 +41,24 @@ export class SchematicService {
     options: GenerateModuleOptions | ModelAndFieldGenerationOptions,
     debug: boolean,
   ): CommandWithArgs {
-    const schematicName = `${this.SCHEMATIC_PROJECT}:${command}`;
+    // Core mode (solidctl --core): solid-core models generate into the core repo, using the local code-builder build.
+    const coreRoot = options.module === SOLID_CORE_MODULE_NAME ? getCoreRepoRoot() : undefined;
+    // Core mode runs the installed code-builder by file path, so the generator runs from the core repo directory.
+    const collection = coreRoot ? getInstalledCodeBuilderCollection() : this.SCHEMATIC_PROJECT;
+    if (coreRoot) {
+      this.logger.log(`Core mode: generating solid-core code into ${coreRoot} using ${collection}`);
+    }
+    const schematicName = `${collection}:${command}`;
     // Only forward --debug when explicitly enabled. The Angular schematics
     // CLI treats the *presence* of --debug as truthy (regardless of the
     // assigned value), and once debug is on it forces dry-run mode — so
     // passing `--debug=false` previously made every schematic invocation
     // silently dry-run, leaving "CREATE …" lines in the log but writing
     // nothing to disk.
-    const baseArgs = [schematicName, ...(debug ? ['--debug=true'] : [])];
+    // A local collection path (core mode) makes the schematics CLI default to debug, which implies dry run.
+    // Pass --no-dry-run so core-mode runs actually write files. (`--dry-run=false` does not work: the CLI's
+    // parseArgs reads it as the string "false", which is truthy.)
+    const baseArgs = [schematicName, ...(debug ? ['--debug=true'] : coreRoot ? ['--no-dry-run'] : [])];
 
     if (
       command === REMOVE_FIELDS_COMMAND ||
@@ -61,12 +73,12 @@ export class SchematicService {
       }
       const args = [...baseArgs, ...modelArgs, ...fieldArgs];
       this.logger.debug('schematicCommand args', args);
-      return { command: this.SCHEMATICS_COMMAND, args };
+      return { command: this.SCHEMATICS_COMMAND, args, cwd: coreRoot };
     } else if (command === ADD_MODULE_COMMAND) {
       const moduleOptions = options as GenerateModuleOptions;
       const args = [...baseArgs, `--module=${moduleOptions.module}`];
       this.logger.debug('schematicCommand args', args);
-      return { command: this.SCHEMATICS_COMMAND, args };
+      return { command: this.SCHEMATICS_COMMAND, args, cwd: coreRoot };
     } else {
       throw new Error('Schematic command not supported.');
     }

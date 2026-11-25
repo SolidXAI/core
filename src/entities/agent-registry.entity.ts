@@ -54,6 +54,21 @@ export class AgentRegistry extends CommonEntity {
     @Column({ type: "integer", nullable: true, default: 1 })
     configVersion?: number = 1;
 
+    @Column({ type: "varchar", nullable: true })
+    runner: string | null;
+
+    @Column({ type: "integer", default: 0 })
+    minProcesses: number = 0;
+
+    @Column({ type: "integer", nullable: true })
+    maxProcesses: number | null;
+
+    @Column({ type: "integer", nullable: true })
+    processCpu: number | null;
+
+    @Column({ type: "integer", nullable: true })
+    processMemory: number | null;
+
     @Index()
     @ManyToOne(() => ModuleMetadata, { onDelete: "RESTRICT", nullable: false })
     @JoinColumn({ name: 'module_id', referencedColumnName: 'id' })

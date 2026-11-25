@@ -49,6 +49,22 @@ export interface TestContext {
    * (`steps[3].when`, `steps[5].then[1]`). Heal reports use it to address the step.
    */
   stepPath?: string;
+  /** Values the current step generated or extracted, reported with its result. Reset for every step. */
+  stepData?: StepDataUsed[];
+}
+
+/**
+ * A value a step made up or pulled out while it ran, so a run's results show the data it actually used: a
+ * `${random:...}` token or `util.random` value, or the text a `match` regex extracted (`| match:` or
+ * `ui.storeText`'s `match`). Values from secrets are never recorded.
+ */
+export interface StepDataUsed {
+  kind: "random" | "match";
+  /** What produced it, e.g. `${random:emailAddress}`, `random:firstName`, `match:(\d{6})`. */
+  source: string;
+  value: string;
+  /** The resource name the step saved the value under, when it has one. */
+  saveAs?: string;
 }
 
 /**

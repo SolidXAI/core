@@ -439,15 +439,23 @@ const getSolidCoreSettings = (isProd: boolean) =>
       level: SettingLevel.SystemEnv,
     },
     {
+      // Lets POST /api/test-data/load write seed data into this app. Off unless the env var is "true". SystemEnv keeps it
+      // out of the settings screen and out of reach of the settings API.
+      moduleName: "solid-core",
+      key: "testDataEndpointEnabled",
+      value: process.env.SOLIDX_TEST_DATA_ENDPOINT_ENABLED === "true",
+      level: SettingLevel.SystemEnv,
+    },
+    {
       moduleName: "solid-core",
       key: "solidAgentEnabled",
       value: process.env.SOLIDX_AGENT_ENABLED === "true",
-      level: SettingLevel.SystemAdminReadonly,
+      level: SettingLevel.SystemAdminEditable,
       label: "SolidX Agent Enabled",
       group: "ai-settings",
       sortOrder: 40,
       controlType: "boolean",
-      helpText: "Shows the floating SolidX Agent launcher in the admin UI for users with the agent:invoke permission.",
+      helpText: "Shows the floating SolidX Agent launcher in the admin UI for users with the agent:invoke permission. Starts from SOLIDX_AGENT_ENABLED in .env; once changed here, this value is used.",
     },
     {
       moduleName: "solid-core",
@@ -1224,7 +1232,9 @@ const getSolidCoreSettings = (isProd: boolean) =>
     {
       moduleName: "solid-core",
       key: "forceChangePasswordOnFirstLogin",
-      value: false,
+      // Defaults to true. Set FORCE_CHANGE_PASSWORD_ON_FIRST_LOGIN=false before the first
+      // start on a fresh database to create users without the flag (used by test apps).
+      value: process.env.FORCE_CHANGE_PASSWORD_ON_FIRST_LOGIN !== "false",
       level: SettingLevel.SystemAdminEditable,
       label: "Force Change Password On First Login",
       group: "authentication-settings",
