@@ -8976,6 +8976,27 @@
             "isPrimaryKey": false
           },
           {
+            "name": "isBuiltin",
+            "displayName": "Built-in",
+            "description": null,
+            "type": "boolean",
+            "ormType": "boolean",
+            "isSystem": true,
+            "defaultValue": "false",
+            "min": null,
+            "max": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": "is_builtin",
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
             "name": "runner",
             "displayName": "Runner",
             "description": "Runner for new processes. Inherit the installation default when unset.",
@@ -27024,6 +27045,13 @@
           {
             "type": "field",
             "attrs": {
+              "name": "isBuiltin",
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "module"
             }
           }
@@ -27112,6 +27140,12 @@
                 "type": "field",
                 "attrs": {
                   "name": "configVersion"
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "isBuiltin"
                 }
               }
             ]

@@ -10,6 +10,7 @@ import { AgentProcess } from './agent-process.entity';
 import { AgentSession } from './agent-session.entity';
 import { AgentJob } from './agent-job.entity'
 import { AgentConfigVersion } from './agent-config-version.entity';
+import { getColumnType } from 'src/helpers/typeorm-db-helper';
 
 @Entity('ss_agent_registry')
 export class AgentRegistry extends CommonEntity {
@@ -53,6 +54,9 @@ export class AgentRegistry extends CommonEntity {
 
     @Column({ type: "integer", nullable: true, default: 1 })
     configVersion?: number = 1;
+
+    @Column({ ...getColumnType('boolean'), name: "is_builtin", default: false })
+    isBuiltin: boolean = false;
 
     @Column({ type: "varchar", nullable: true })
     runner: string | null;
