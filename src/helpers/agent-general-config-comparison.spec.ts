@@ -32,6 +32,13 @@ describe('general configuration comparison', () => {
             expect(field(key, {}, [entry(key, 14, 'old', 'new')])).toMatchObject({ status: 'changed', left: 'old', right: 'new' });
         }
     });
+    it.each(['temperatureReasoningModel', 'topPReasoningModel', 'reasoningEffortReasoningModel',
+        'temperatureFastModel', 'topPFastModel', 'reasoningEffortFastModel'])('resolves generation setting %s at activation dates', (key) => {
+        expect(field(key, { [key]: 1 }, [entry(key, 14, null, 0), entry(key, 19, 0, 1)]))
+            .toMatchObject({ status: 'changed', left: null, right: '0', emptyLabel: 'Provider default' });
+        expect(field(key, {}, [entry(key, 14, 'high', null)]))
+            .toMatchObject({ status: 'changed', left: 'high', right: null });
+    });
     it('excludes activation metadata and fields already compared in dedicated sections', () => {
         const result = compareAgentGeneralConfig({}, [entry('configVersion', 14, 1, 2), entry('status', 14, 'draft', 'active')], older, newer);
         expect(result.status).toBe('matched');

@@ -1,4 +1,5 @@
 import { IsInt,IsOptional, IsString, IsNotEmpty, IsJSON, IsNumber, ValidateNested, IsArray, Min, ValidateIf } from 'class-validator';
+import { IsIn, Max } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { UpdateAgentToolDto } from './update-agent-tool.dto';
@@ -270,4 +271,43 @@ export class UpdateAgentRegistryDto {
     @IsOptional()
     @ApiProperty()
     agentJobsCommand: string;
+
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    @Max(2)
+    @ApiProperty({ required: false, nullable: true, description: "Leave unset to use the provider default." })
+    temperatureReasoningModel?: number | null;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    @Max(1)
+    @ApiProperty({ required: false, nullable: true, description: "Leave unset to use the provider default." })
+    topPReasoningModel?: number | null;
+
+    @IsOptional()
+    @IsIn(["none", "minimal", "low", "medium", "high", "xhigh", "max"])
+    @ApiProperty({ required: false, nullable: true, description: "Leave unset to use the provider default." })
+    reasoningEffortReasoningModel?: string | null;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    @Max(2)
+    @ApiProperty({ required: false, nullable: true, description: "Leave unset to use the provider default." })
+    temperatureFastModel?: number | null;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    @Max(1)
+    @ApiProperty({ required: false, nullable: true, description: "Leave unset to use the provider default." })
+    topPFastModel?: number | null;
+
+    @IsOptional()
+    @IsIn(["none", "minimal", "low", "medium", "high", "xhigh", "max"])
+    @ApiProperty({ required: false, nullable: true, description: "Leave unset to use the provider default." })
+    reasoningEffortFastModel?: string | null;
 }
