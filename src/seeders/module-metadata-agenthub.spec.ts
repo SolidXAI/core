@@ -3,6 +3,8 @@ import { AgentHubTag } from '../entities/agent-hub-tag.entity';
 import { AgentSkill } from '../entities/agent-skill.entity';
 import { AgentSkillRegistry } from '../entities/agent-skill-registry.entity';
 import { AgentTool } from '../entities/agent-tool.entity';
+import { AgentRole } from '../entities/agent-role.entity';
+import { AgentSecret } from '../entities/agent-secret.entity';
 import { AgentToolRegistry } from '../entities/agent-tool-registry.entity';
 import { ModuleMetadataSeederService } from './module-metadata-seeder.service';
 
@@ -62,6 +64,7 @@ describe('AgentHub metadata seeding', () => {
         ]);
         const registryRepo = (entity: any) => ({
             findOne: async () => rows.get(entity),
+            delete: async () => undefined,
             save: async (row: any) => { rows.set(entity, row); return row; },
         });
         seeder.dataSource = { getRepository: (entity: any) => entity === AgentHubTag
@@ -70,8 +73,12 @@ describe('AgentHub metadata seeding', () => {
         seeder.getAgentHubSeedModule = async () => module;
 
         await seeder.seedAgentHubSkills([{ name: 'skill', tags: ['research'] }], module);
-        await seeder.seedAgentHubTools([{ name: 'tool', tags: ['research'] }], module);
-        await seeder.seedAgentHubAgents([{ name: 'agent', tags: ['research'] }], module);
+        await seeder.seedAgentHubTools([{ name: 'tool', sourceCode: '# test tool', tags: ['research'] }], module);
+        await seeder.seedAgentHubAgents([{ name: 'agent', tags: ['research'],
+            temperatureReasoningModel: 0, topPReasoningModel: 0.8, reasoningEffortReasoningModel: 'high',
+            temperatureFastModel: null, topPFastModel: 1, reasoningEffortFastModel: 'low' }], module);
+        expect(rows.get(AgentRegistry)).toMatchObject({ temperatureReasoningModel: 0, topPReasoningModel: 0.8,
+            reasoningEffortReasoningModel: 'high', temperatureFastModel: null, topPFastModel: 1, reasoningEffortFastModel: 'low' });
 
         for (const entity of [AgentSkillRegistry, AgentToolRegistry, AgentRegistry]) {
             expect(rows.get(entity).tags).toEqual([tag]);
@@ -86,15 +93,17 @@ describe('AgentHub metadata seeding', () => {
         const tool = { id: 4, name: 'search' };
         const skillLinks: any[] = [];
         const toolLinks: any[] = [];
-        const agentRepo = { findOne: async () => agent };
+        const agentRepo = { findOne: async () => agent, save: async () => agent };
         const skillRepo = { findOneBy: async () => skill };
         const toolRepo = { findOneBy: async () => tool };
         const agentSkillRepo = {
+            delete: async () => { skillLinks.length = 0; },
             findOneBy: async () => skillLinks[0],
             create: (value: any) => value,
             save: async (value: any) => { skillLinks.push(value); return value; },
         };
         const agentToolRepo = {
+            delete: async () => { toolLinks.length = 0; },
             findOneBy: async () => toolLinks[0],
             create: (value: any) => value,
             save: async (value: any) => { toolLinks.push(value); return value; },
@@ -102,6 +111,7 @@ describe('AgentHub metadata seeding', () => {
         const repositories = new Map<any, any>([
             [AgentRegistry, agentRepo], [AgentSkillRegistry, skillRepo], [AgentToolRegistry, toolRepo],
             [AgentSkill, agentSkillRepo], [AgentTool, agentToolRepo],
+            [AgentRole, { delete: async () => undefined }], [AgentSecret, { delete: async () => undefined }],
         ]);
         seeder.dataSource = { getRepository: (entity: any) => repositories.get(entity) };
         seeder.getAgentHubSeedModule = async () => module;

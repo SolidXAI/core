@@ -4,6 +4,12 @@ export const AGENT_GENERAL_CONFIG_FIELDS = {
     runner: 'Runner', minProcesses: 'Minimum processes', maxProcesses: 'Maximum processes',
     processCpu: 'Process CPU (units)', processMemory: 'Process memory (MiB)',
     stepLimit: 'Step limit', turnStepLimit: 'Turn step limit', costLimit: 'Cost limit',
+    temperatureReasoningModel: 'Reasoning model temperature',
+    topPReasoningModel: 'Reasoning model top P',
+    reasoningEffortReasoningModel: 'Reasoning model reasoning effort',
+    temperatureFastModel: 'Fast model temperature',
+    topPFastModel: 'Fast model top P',
+    reasoningEffortFastModel: 'Fast model reasoning effort',
     name: 'Name', title: 'Title', description: 'Description', iconName: 'Icon', requiredInputs: 'Required inputs',
 };
 
@@ -20,7 +26,7 @@ export function compareAgentGeneralConfig(current: Record<string, unknown>, entr
         const changed = values[0] !== values[1] || history.some((entry) => entry.createdAt > older && entry.createdAt <= newer);
         const emptyLabel = key === 'runner' ? 'Installation default'
             : key === 'maxProcesses' ? 'Installation limit'
-            : ['processCpu', 'processMemory'].includes(key) ? 'Task definition default' : 'Not set';
+            : ['processCpu', 'processMemory'].includes(key) ? 'Task definition default' : /^(temperature|topP|reasoningEffort)/.test(key) ? 'Provider default' : 'Not set';
         return { key, label, status: changed ? 'changed' : 'matched', left: values[0], right: values[1], emptyLabel };
     });
     return { title: 'General configuration', status: fields.some((field) => field.status === 'changed') ? 'changed' : 'matched', fields };

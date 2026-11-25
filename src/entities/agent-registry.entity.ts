@@ -101,4 +101,23 @@ export class AgentRegistry extends CommonEntity {
 
     @OneToMany(() => AgentConfigVersion, configVersion => configVersion.agentRegistry)
     configVersions: AgentConfigVersion[];
+
+
+    @Column({ type: "decimal", nullable: true })
+    temperatureReasoningModel?: number | null;
+
+    @Column({ type: "decimal", nullable: true })
+    topPReasoningModel?: number | null;
+
+    @Column({ type: "varchar", nullable: true })
+    reasoningEffortReasoningModel?: string | null;
+
+    @Column({ type: "decimal", nullable: true })
+    temperatureFastModel?: number | null;
+
+    @Column({ type: "decimal", nullable: true })
+    topPFastModel?: number | null;
+
+    @Column({ type: "varchar", nullable: true })
+    reasoningEffortFastModel?: string | null;
 }

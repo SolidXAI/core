@@ -124,6 +124,10 @@ describe('AgentHub registry subscribers', () => {
                     name: 'assistant', title: 'Assistant', systemPrompt: 'Updated persona', requiredInputs: '[]',
                     reasoningModelKey: 'provider:reasoning', fastModelKey: 'provider:fast', status: 'draft',
                     stepLimit: 100, turnStepLimit: 20, costLimit: 3,
+                    temperatureReasoningModel: '0', topPReasoningModel: '0.9', reasoningEffortReasoningModel: 'high',
+                    temperatureFastModel: null, topPFastModel: '1', reasoningEffortFastModel: null,
+                    agentSkills: [{ agentSkillRegistry: { name: 'research' }, alwaysInclude: true }],
+                    agentTools: [{ agentToolRegistry: { name: 'search' }, requiresApproval: false }],
                 }],
                 [AgentToolRegistry, { name: 'search', type: 'custom', sourceCode: 'print(1)', checksum: 'abc', status: 'inactive' }],
                 [AgentSkillRegistry, { name: 'research', type: 'custom', body: '# Updated skill' }],
@@ -144,11 +148,14 @@ describe('AgentHub registry subscribers', () => {
                 ? [{ name: 'research', moduleUserKey: 'thing7-agent-registry' }]
                 : [{ name: 'research' }]);
             expect(metadata.agenthubAgents[0].systemPrompt).toBe('Updated persona');
+            expect(metadata.agenthubAgents[0]).toMatchObject({ temperatureReasoningModel: 0, topPReasoningModel: 0.9,
+                reasoningEffortReasoningModel: 'high', temperatureFastModel: null, topPFastModel: 1, reasoningEffortFastModel: null });
             if (hook === 'afterUpdate') {
                 expect(metadata.agenthubAgents[0].agentSkills).toEqual([{ name: 'research', alwaysInclude: true }]);
                 expect(metadata.agenthubAgents[0].agentTools).toEqual([{ name: 'search', requiresApproval: false }]);
             }
-            expect(metadata.agenthubTools[0].sourceCode).toBe('print(1)');
+            expect(metadata.agenthubTools[0].sourceCode).toBeUndefined();
+            expect(await fs.readFile(path.join(path.dirname(directory), 'agent-hub/tools/search.py'), 'utf8')).toBe('print(1)');
             expect(metadata.agenthubSkills[0].body).toBe('# Updated skill');
             expect(metadata.agenthubAgents[0].tags).toEqual(['new']);
             expect(metadata.agenthubTools[0].tags).toEqual(['new']);

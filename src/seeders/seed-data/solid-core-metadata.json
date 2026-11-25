@@ -9290,6 +9290,120 @@
             "isRelationManyToManyOwner": null,
             "relationFieldFixedFilter": null,
             "enableAuditTracking": true
+          },
+          {
+            "name": "temperatureReasoningModel",
+            "displayName": "Reasoning Model Temperature",
+            "description": "Leave unset to use the provider default.",
+            "type": "decimal",
+            "ormType": "decimal",
+            "isSystem": true,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "enableAuditTracking": true,
+            "min": 0,
+            "max": 2
+          },
+          {
+            "name": "topPReasoningModel",
+            "displayName": "Reasoning Model Top P",
+            "description": "Leave unset to use the provider default.",
+            "type": "decimal",
+            "ormType": "decimal",
+            "isSystem": true,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "enableAuditTracking": true,
+            "min": 0,
+            "max": 1
+          },
+          {
+            "name": "reasoningEffortReasoningModel",
+            "displayName": "Reasoning Model Reasoning Effort",
+            "description": "Leave unset to use the provider default.",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": true,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "enableAuditTracking": true,
+            "selectionStaticValues": [
+              "none:None",
+              "minimal:Minimal",
+              "low:Low",
+              "medium:Medium",
+              "high:High",
+              "xhigh:Extra High",
+              "max:Maximum"
+            ],
+            "selectionValueType": "string",
+            "isMultiSelect": false
+          },
+          {
+            "name": "temperatureFastModel",
+            "displayName": "Fast Model Temperature",
+            "description": "Leave unset to use the provider default.",
+            "type": "decimal",
+            "ormType": "decimal",
+            "isSystem": true,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "enableAuditTracking": true,
+            "min": 0,
+            "max": 2
+          },
+          {
+            "name": "topPFastModel",
+            "displayName": "Fast Model Top P",
+            "description": "Leave unset to use the provider default.",
+            "type": "decimal",
+            "ormType": "decimal",
+            "isSystem": true,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "enableAuditTracking": true,
+            "min": 0,
+            "max": 1
+          },
+          {
+            "name": "reasoningEffortFastModel",
+            "displayName": "Fast Model Reasoning Effort",
+            "description": "Leave unset to use the provider default.",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": true,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "enableAuditTracking": true,
+            "selectionStaticValues": [
+              "none:None",
+              "minimal:Minimal",
+              "low:Low",
+              "medium:Medium",
+              "high:High",
+              "xhigh:Extra High",
+              "max:Maximum"
+            ],
+            "selectionValueType": "string",
+            "isMultiSelect": false
           }
         ]
       },
@@ -27061,6 +27175,24 @@
                       {
                         "type": "field",
                         "attrs": {
+                          "name": "temperatureReasoningModel"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "topPReasoningModel"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "reasoningEffortReasoningModel"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
                           "name": "status"
                         }
                       },
@@ -27102,6 +27234,24 @@
                         "type": "field",
                         "attrs": {
                           "name": "fastModelKey"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "temperatureFastModel"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "topPFastModel"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "reasoningEffortFastModel"
                         }
                       },
                       {
@@ -28993,10 +29143,12 @@
                 "confirmLabel": "Restart agent",
                 "successSummary": "Agent restarted",
                 "successMessage": "A process is running with the latest agent config. Older processes are draining.",
-                "customComponentIsSystem": true
+                "customComponentIsSystem": true,
+                "visible": false
               }
             }
-          ]
+          ],
+          "rowButtonsPosition": "left"
         },
         "children": [
           {
