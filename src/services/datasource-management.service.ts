@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
+import { DisallowInProduction } from "src/decorators/disallow-in-production.decorator";
 import { CreateDatasourceManagementDto } from "src/dtos/create-datasource-management.dto";
 import { DatasourceType } from "src/dtos/create-model-metadata.dto";
 import { SolidTsMorphService } from "./solid-ts-morph.service";
@@ -74,6 +75,8 @@ export class DatasourceManagementService {
         return this.listRecords().find((record) => record.name.toLowerCase() === normalizedName) ?? null;
     }
 
+    // Writes generated .ts and .env files on the server; dev-only.
+    @DisallowInProduction("create")
     async create(createDto: CreateDatasourceManagementDto) {
         const solidApiRoot = this.resolveSolidApiRoot();
         const datasourceName = createDto.name.trim().toLowerCase();
