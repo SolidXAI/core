@@ -110,6 +110,8 @@ export class DraftPublishHelperService {
         isPartialUpdate: boolean,
         model: ModelMetadata,
     ): Promise<T> {
+        this.assertPublishedRecordUpdateAllowed(model, context.modelName, updateDto);
+
         // Many-to-many relations are not loaded: re-saving thousands of links through TypeORM is
         // O(n²) and blocks the API. They are copied in SQL instead (copyManyToManyLinksToNewVersion).
         const allRelations = this.getVersionedRelationNames(model);
@@ -489,6 +491,27 @@ export class DraftPublishHelperService {
         return model.fields
             .filter(field => field.type === SolidFieldType.relation && field.relationType !== RelationType.oneToMany)
             .map(field => field.name);
+    }
+
+    /**
+     * Rejects changes that can't be applied to a published record through a draft copy.
+     * Currently: one-to-many and many-to-many commands (set/link/unlink/clear/...), which write
+     * straight to the published row's children or join table. Many-to-one is a column on the
+     * row and is copied fine. Add further published-edit restrictions here.
+     */
+    private assertPublishedRecordUpdateAllowed(model: ModelMetadata, modelName: string, dto: any): void {
+        if (!dto) return;
+        const submittedToManyFields = model.fields.filter(field =>
+            field.type === SolidFieldType.relation &&
+            (field.relationType === RelationType.oneToMany || field.relationType === RelationType.manyTomany) &&
+            [field.name, `${field.name}Ids`, `${field.name}Command`].some(key => Object.prototype.hasOwnProperty.call(dto, key))
+        );
+        if (submittedToManyFields.length === 0) return;
+
+        const fieldNames = submittedToManyFields.map(field => field.displayName || field.name).join(', ');
+        throw new BadRequestException(
+            `Published ${modelName} record cannot change one-to-many or many-to-many relations (${fieldNames}). Please unpublish the record first, then edit it.`
+        );
     }
 
     private wasFieldSubmitted(dto: any, field: FieldMetadata): boolean {
