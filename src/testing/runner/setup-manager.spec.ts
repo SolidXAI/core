@@ -226,6 +226,89 @@ describe("SetupManager", () => {
     expect(calls.map((c) => c.setup.id)).toEqual(["parent", "child"]);
   });
 
+  describe("a child built on a cached parent", () => {
+    const kinds = (runSteps: jest.Mock) => runSteps.mock.calls.map(([a]) => `${a.kind}:${a.setup.id}`);
+    const readyParent = () => [setup("parent", { ready: [STEP] }), setup("child", { from: "parent" })];
+
+    it("checks the cached parent's ready steps before building on it", async () => {
+      const { manager, runSteps } = build(readyParent());
+
+      await manager.acquire("child", { forScenarioId: "s1", fresh: false });
+      await manager.acquire("child", { forScenarioId: "s2", fresh: true });
+
+      expect(kinds(runSteps)).toEqual(["setup:parent", "setup:child", "ready:parent", "setup:child"]);
+      expect(runSteps.mock.calls[2][0].startFrom).toEqual(expect.objectContaining({ exports: {} }));
+    });
+
+    it("rebuilds the parent when its ready check fails, then builds the child on the rebuilt parent", async () => {
+      const { manager, runSteps } = build(readyParent());
+
+      await manager.acquire("child", { forScenarioId: "s1", fresh: false });
+      runSteps.mockImplementationOnce(async () => {
+        throw new Error("Apple Juice not visible");
+      });
+      const result = await manager.acquire("child", { forScenarioId: "s2", fresh: true });
+
+      expect(result.reused).toBe(false);
+      expect(kinds(runSteps)).toEqual([
+        "setup:parent",
+        "setup:child",
+        "ready:parent",
+        "setup:parent",
+        "ready:parent",
+        "setup:child",
+      ]);
+    });
+
+    it("marks the parent failed when its ready check fails twice, and blocks later consumers of it", async () => {
+      const { manager, runSteps } = build(readyParent());
+      runSteps.mockImplementation(async (args) => {
+        if (args.kind === "ready") throw new Error("basket empty\nmore");
+        return { state: { exports: {} }, resources: {} };
+      });
+
+      await manager.acquire("child", { forScenarioId: "s0", fresh: false });
+      const error = await manager.acquire("child", { forScenarioId: "s1", fresh: true }).catch((e) => e);
+      expect(error).toBeInstanceOf(SetupFailedError);
+      expect(error.setupId).toBe("parent");
+      expect(error.message).toBe('Setup "parent" is not ready: basket empty');
+      const callsAfterFailure = runSteps.mock.calls.length;
+
+      await expect(manager.acquire("child", { forScenarioId: "s2", fresh: true })).rejects.toBeInstanceOf(SetupFailedError);
+      expect(runSteps.mock.calls.length).toBe(callsAfterFailure);
+    });
+
+    it("does not check the ready steps of a parent that was built just now", async () => {
+      const { manager, runSteps } = build(readyParent());
+
+      await manager.acquire("child", { forScenarioId: "s1", fresh: false });
+
+      expect(kinds(runSteps)).toEqual(["setup:parent", "setup:child"]);
+    });
+
+    it("does not rebuild a cached parent whose ready check passed when the child's first attempt fails", async () => {
+      const { manager, runSteps } = build(readyParent(), { failures: { child: 1 } });
+
+      await manager.acquire("parent", { forScenarioId: "s0", fresh: false });
+      const result = await manager.acquire("child", { forScenarioId: "s1", fresh: false });
+
+      expect(result.reused).toBe(false);
+      expect(kinds(runSteps)).toEqual(["setup:parent", "ready:parent", "setup:child", "setup:child"]);
+    });
+
+    it("rebuilds a cached parent before a retry when the child's first attempt fails", async () => {
+      const { manager, runSteps } = build([setup("parent"), setup("child", { from: "parent" })], {
+        failures: { child: 1 },
+      });
+
+      await manager.acquire("parent", { forScenarioId: "s0", fresh: false });
+      const result = await manager.acquire("child", { forScenarioId: "s1", fresh: false });
+
+      expect(result.reused).toBe(false);
+      expect(kinds(runSteps)).toEqual(["setup:parent", "setup:child", "setup:parent", "setup:child"]);
+    });
+  });
+
   it("refuses an acquire for a setup marked failed with markFailed", async () => {
     const { manager, runSteps } = build([setup("auth-default")]);
 

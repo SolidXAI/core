@@ -94,10 +94,8 @@ export class SetupManager {
     }
 
     // A parent failure rethrows: the consumer is blocked by the parent, the parent is already marked failed.
-    const parent =
-      setup.from !== undefined
-        ? await this.acquire(setup.from, { forScenarioId, fresh: false })
-        : undefined;
+    let parent =
+      setup.from !== undefined ? await this.acquireParent(setup.from, forScenarioId) : undefined;
 
     let lastError: unknown;
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
@@ -124,6 +122,19 @@ export class SetupManager {
           reused: false,
           forScenarioId,
         });
+        // A failure built on a cached parent that has no ready check may be the parent's fault (its state went
+        // stale, and nothing can tell): rebuild it before the retry, so the retry does not start from the same state.
+        // A parent whose ready check just passed is known good, and rebuilding it would repeat its changes (a second
+        // item in the basket).
+        if (
+          attempt < MAX_ATTEMPTS &&
+          setup.from !== undefined &&
+          parent?.reused &&
+          (this.deps.setups.get(setup.from)?.ready?.length ?? 0) === 0
+        ) {
+          this.invalidate(setup.from);
+          parent = await this.acquireParent(setup.from, forScenarioId);
+        }
         continue;
       }
       this.deps.reporter.onSetupEnd?.({
@@ -165,6 +176,46 @@ export class SetupManager {
     const message = `Setup "${setup.name}" failed: ${firstLine(messageOf(lastError))}`;
     this.markFailed(setupId, message);
     throw new SetupFailedError(setupId, message);
+  }
+
+  /**
+   * A parent a child is about to build on. A parent taken from the cache must pass its `ready` check first: a setup
+   * that changed server-side data (an emptied basket, say) leaves a cached browser state that looks valid but is not.
+   * When the check fails, the parent (and its ancestors) is rebuilt and checked once more; a second failure marks the
+   * parent failed for the run.
+   */
+  private async acquireParent(parentId: string, forScenarioId: string): Promise<AcquireResult> {
+    const parentSetup = this.requireSetup(parentId);
+    const parent = await this.acquire(parentId, { forScenarioId, fresh: false });
+    if (!parent.reused || (parentSetup.ready?.length ?? 0) === 0) return parent;
+
+    try {
+      await this.runReadyCheck(parentSetup, parent.state, forScenarioId);
+      return parent;
+    } catch {
+      this.invalidate(parentId);
+    }
+
+    const rebuilt = await this.acquire(parentId, { forScenarioId, fresh: false });
+    try {
+      await this.runReadyCheck(parentSetup, rebuilt.state, forScenarioId);
+      return rebuilt;
+    } catch (error) {
+      const message = `Setup "${parentSetup.name}" is not ready: ${firstLine(messageOf(error))}`;
+      this.markFailed(parentId, message);
+      throw new SetupFailedError(parentId, message);
+    }
+  }
+
+  private async runReadyCheck(setup: SetupSpec, startFrom: SetupState, forScenarioId: string): Promise<void> {
+    await this.deps.runSteps({
+      kind: "ready",
+      setup,
+      steps: setup.ready ?? [],
+      attempt: 1,
+      forScenarioId,
+      startFrom,
+    });
   }
 
   /**
