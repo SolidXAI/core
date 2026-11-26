@@ -15222,9 +15222,6 @@
       "displayName": "Agent",
       "name": "agent-menu-item",
       "sequenceNumber": 8,
-      "roles": [
-        "Internal User"
-      ],
       "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
@@ -15341,9 +15338,6 @@
       "displayName": "Jobs inbox",
       "name": "agentSession-inbox-menu-item",
       "sequenceNumber": 7,
-      "roles": [
-        "Internal User"
-      ],
       "actionUserKey": "agentSession-inbox-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "agent-menu-item",
