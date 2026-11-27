@@ -9404,6 +9404,30 @@
             ],
             "selectionValueType": "string",
             "isMultiSelect": false
+          },
+          {
+            "name": "webhookUrl",
+            "displayName": "Webhook URL",
+            "description": "Destination for signed AgentHub session completion events.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
           }
         ]
       },

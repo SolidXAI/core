@@ -310,4 +310,9 @@ export class UpdateAgentRegistryDto {
     @IsIn(["none", "minimal", "low", "medium", "high", "xhigh", "max"])
     @ApiProperty({ required: false, nullable: true, description: "Leave unset to use the provider default." })
     reasoningEffortFastModel?: string | null;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ required: false, nullable: true, description: "Destination for signed AgentHub session completion events." })
+    webhookUrl?: string | null;
 }
