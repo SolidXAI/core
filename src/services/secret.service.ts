@@ -137,10 +137,25 @@ export class SecretService extends CRUDService<Secret> {
       where: { key: In(uniqueKeys), status: "active" } as any,
     });
 
-    return secrets.reduce((resolved, secret) => {
+    const resolved = secrets.reduce((resolved, secret) => {
       resolved[secret.key] = this.decryptAndCoerce(secret);
       return resolved;
     }, {} as Record<string, any>);
+
+    await this.markAccessed(secrets.map((secret) => secret.id));
+    return resolved;
+  }
+
+  /** Sets `lastAccessedAt` on the given secret rows. A failure is logged, not thrown: the resolution already succeeded. */
+  private async markAccessed(ids: number[]): Promise<void> {
+    if (ids.length === 0) {
+      return;
+    }
+    try {
+      await this.repo.update({ id: In(ids) } as any, { lastAccessedAt: new Date() } as any);
+    } catch (error) {
+      this.logger.warn(`Failed to update lastAccessedAt for secrets: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   async findAvailableKeys(keys: string[]): Promise<string[]> {

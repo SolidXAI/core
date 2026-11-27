@@ -1225,6 +1225,7 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     // Exported for DI, not merely re-exported from index.ts: a consuming
     // project composing its own logout has to be able to inject this.
     AccessTokenDenylistService,
+    SecretService,
     AuthenticationService,
     ChatterMessageDetailsRepository,
     ChatterMessageDetailsService,

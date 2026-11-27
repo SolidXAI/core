@@ -22,6 +22,7 @@ import { FILE_SERVICE, IFileService } from '../../services/file/file-service.int
 import { FILE_STORAGE_PATH_BUILDER, IStoragePathBuilder } from '../../services/file/storage-path-builder';
 import { TestRunJobPayload } from '../../dtos/test-run-request.dto';
 import { SecretService } from '../../services/secret.service';
+import { resolveWithAliases } from '../../testing/secret-aliases';
 
 /**
  * Executes a queued test run on the worker tier (QUEUES_SERVICE_ROLE=subscriber).
@@ -135,7 +136,7 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
                 failFast: p.failFast,
                 keepVideo: p.keepVideo,
                 externalRunId: p.externalRunId,
-                resolveSecrets: (keys) => this.secretService.resolveAvailable(keys),
+                resolveSecrets: (keys) => resolveWithAliases(keys, p.secretAliases, (names) => this.secretService.resolveAvailable(names)),
             });
         } catch (err: any) {
             // A failed scenario is surfaced via the run.end webhook, not as a job failure.

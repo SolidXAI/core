@@ -159,6 +159,11 @@ export class TestRunRequestDto {
   @IsObject()
   variables?: Record<string, string>;
 
+  /** Maps a scenario's `${secret:KEY}` to the stored secret key to read. Keys without an entry are read by their own name. */
+  @IsOptional()
+  @IsObject()
+  secretAliases?: Record<string, string>;
+
   @IsOptional()
   @IsObject()
   capture?: CaptureOptionsInput;
