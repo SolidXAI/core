@@ -14808,6 +14808,19 @@
       "modelUserKey": "agentRegistry"
     },
     {
+      "displayName": "Agent dashboard",
+      "name": "agent-dashboard-action",
+      "type": "custom",
+      "domain": "",
+      "context": "{}",
+      "customComponent": "/admin/core/solid-core/agent/dashboard",
+      "customIsModal": false,
+      "serverEndpoint": "",
+      "viewUserKey": "",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": ""
+    },
+    {
       "displayName": "Jobs inbox",
       "name": "agentSession-inbox-action",
       "type": "custom",
@@ -15291,6 +15304,15 @@
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "other-menu-item",
       "iconName": "key"
+    },
+    {
+      "displayName": "Dashboard",
+      "name": "agent-dashboard-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "agent-dashboard-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "agent-menu-item",
+      "iconName": "dashboard"
     },
     {
       "displayName": "Agents",
