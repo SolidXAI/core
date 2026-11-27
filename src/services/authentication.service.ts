@@ -1799,6 +1799,18 @@ export class AuthenticationService {
       );
     }
 
+    // On forced password change, disallow saving the same password again (except for sa).
+    if (user.forcePasswordChange && user.username !== "sa") {
+      const isSameAsCurrent = await this.hashingService.compare(
+        changePasswordDto.newPassword,
+        user.password,
+        user.passwordSchemeVersion,
+      );
+      if (isSameAsCurrent) {
+        throw new BadRequestException(ERROR_MESSAGES.PASSWORD_REUSED);
+      }
+    }
+
     // Update Password
     const pwdData = await this.userService.hashPassword(
       changePasswordDto.newPassword,
